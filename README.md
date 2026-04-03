@@ -1,11 +1,17 @@
 # Network Attack Visualizer
 
+## [Launch Live Demo](https://stewalexander-com.github.io/network-attack-visualizer/)
+
 > Interactive Layer 2/3 network attack visualization — D3.js, zero backend, GitHub Pages
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue)](https://StewAlexander-com.github.io/network-attack-visualizer)
-[![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v14-red)](https://attack.mitre.org)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://stewalexander-com.github.io/network-attack-visualizer/)
+[![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v14-red?style=for-the-badge)](https://attack.mitre.org)
 
 Watch six classic network attacks unfold in real time on an interactive topology. Each scenario animates packet flow, shows ARP/routing table corruption, and links to the corresponding MITRE ATT&CK technique — with detection and mitigation guidance built in.
+
+Works on desktop, tablet, and mobile. Zero backend. Offline after first load.
+
+---
 
 ## Attack Scenarios
 
@@ -21,15 +27,33 @@ Watch six classic network attacks unfold in real time on an interactive topology
 ## Features
 
 - **6 animated attack scenarios** with step-by-step progression
-- **Interactive network topology** — click nodes for IP, MAC, role, and compromise state
+- **Interactive network topology** — tap/click nodes for IP, MAC, role, and compromise state
 - **Live packet capture table** with protocol and flag data
 - **MITRE ATT&CK mapping** with clickable technique IDs
 - **Detection + Mitigation** callouts for each scenario
 - **Transport controls** — play, pause, reset with 0.5×–3× speed
-- **Baseline traffic toggle** — see normal network activity alongside attacks
-- **Dark/Light mode** toggle
-- **Responsive** — sidebar collapses to bottom drawer on mobile
-- **Offline-capable** — works after first load, no backend needed
+- **Baseline traffic toggle** — normal network activity alongside attacks
+- **Dark/Light mode** toggle with meta theme-color for mobile browser chrome
+- **Mobile-first responsive** — bottom control bar, drawer panel, touch-optimized targets
+- **Offline-capable** — works after first load, zero backend
+- **Fault-tolerant** — CDN fallbacks (jsDelivr → cdnjs → unpkg), graceful degradation, try/catch around all animation chains
+- **Battery-friendly** — Page Visibility API pauses animations when tab is hidden
+- **Reduced motion** — respects `prefers-reduced-motion`
+- **Safe area aware** — iPhone notch/Dynamic Island support via `env(safe-area-inset-*)`
+
+## Resilience
+
+| Failure Mode | Graceful Fallback |
+|---|---|
+| D3.js CDN down | Automatic failover: jsDelivr → cdnjs |
+| Lucide CDN down | Automatic failover: jsDelivr → unpkg; app runs with Unicode icons |
+| Both CDNs fail | User sees notice; app structure still renders |
+| Animation error | `safeExec` wraps all steps — one failure doesn't kill the chain |
+| Tab hidden/backgrounded | Visibility API pauses all timers and animations |
+| Resize/orientation change | Debounced re-render, drawers auto-close |
+| Touch vs mouse | Invisible enlarged touch targets (30px radius) on touch devices |
+| iOS Safari gestures | `gesturestart` prevented; `touch-action: manipulation` globally |
+| Notched phones | `viewport-fit=cover` + `env(safe-area-inset-*)` padding |
 
 ## Tech Stack
 
@@ -62,7 +86,7 @@ INTERNET ──── GATEWAY/FIREWALL ──── CORE ROUTER (L3)
                   (victim)          (kali)
 ```
 
-9 nodes, 9 edges. Fixed-position layout arranged as a logical network diagram.
+9 nodes, 9 edges. Fixed-position layout, responsive to viewport.
 
 ## Why This Exists
 
