@@ -640,11 +640,10 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 56px;
       background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 0 12px;
-      padding-bottom: var(--safe-bottom);
+      padding: 8px 12px;
+      padding-bottom: calc(8px + var(--safe-bottom));
       z-index: 250;
       align-items: center;
       justify-content: space-between;
@@ -809,14 +808,14 @@
         left: 0;
         right: 0;
         width: 100%;
-        max-height: 65vh;
+        max-height: 40vh;
         border-left: none;
         border-top: 1px solid var(--border);
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 200;
         border-radius: 16px 16px 0 0;
-        padding-bottom: calc(56px + var(--safe-bottom));
+        padding-bottom: calc(64px + var(--safe-bottom));
         overscroll-behavior-y: contain;
       }
       #detail-panel.open { transform: translateY(0); }
@@ -896,7 +895,7 @@
     @media (max-width: 768px) and (orientation: landscape) {
       :root { --topbar-height: 40px; }
       #detail-panel { max-height: 50vh; }
-      .mobile-bottom-bar { height: 44px; }
+      .mobile-bottom-bar { padding: 4px 8px; padding-bottom: calc(4px + var(--safe-bottom)); }
       .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
     }
 
