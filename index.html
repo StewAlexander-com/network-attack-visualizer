@@ -12,6 +12,12 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <meta name="apple-mobile-web-app-title" content="NetAttack.viz">
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -3296,6 +3302,15 @@
   })();
 
 })();
+</script>
+
+<!-- Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').catch(function() {});
+  });
+}
 </script>
 </body>
 </html>
