@@ -1077,6 +1077,137 @@
       line-height: 1.6;
     }
 
+    /* ===== SPLASH SCREEN ===== */
+    .splash {
+      position: fixed;
+      inset: 0;
+      z-index: 20000;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    .splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-inner {
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    .splash-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      opacity: 0;
+      animation: splashFadeUp 0.8s ease 0.2s forwards;
+    }
+    .splash-title {
+      font-family: var(--font-ui);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 8px;
+      opacity: 0;
+      animation: splashFadeUp 0.8s ease 0.4s forwards;
+    }
+    .splash-title .accent { color: var(--accent-blue); }
+    .splash-subtitle {
+      font-family: var(--font-ui);
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      line-height: 1.5;
+      opacity: 0;
+      animation: splashFadeUp 0.8s ease 0.6s forwards;
+    }
+    .splash-hook {
+      font-family: var(--font-ui);
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: splashFadeUp 0.8s ease 0.7s forwards;
+    }
+    .splash-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      text-align: left;
+      margin-bottom: 36px;
+      opacity: 0;
+      animation: splashFadeUp 0.8s ease 0.9s forwards;
+    }
+    .splash-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+    .splash-feature-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      margin-top: 1px;
+    }
+    .sf-blue { color: var(--accent-blue); }
+    .sf-red { color: var(--accent-red); }
+    .sf-green { color: var(--accent-green); }
+    .sf-orange { color: var(--accent-orange); }
+    .splash-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      font-family: var(--font-ui);
+      font-size: 1rem;
+      font-weight: 600;
+      color: #0d1117;
+      background: var(--accent-blue);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      opacity: 0;
+      animation: splashFadeUp 0.8s ease 1.1s forwards;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .splash-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(88,166,255,0.3);
+    }
+    .splash-cta:active { transform: translateY(0); }
+    .splash-mitre {
+      margin-top: 20px;
+      font-size: 0.75rem;
+      color: var(--text-faint);
+      opacity: 0;
+      animation: splashFadeUp 0.8s ease 1.3s forwards;
+    }
+    .splash-mitre a {
+      color: var(--accent-red);
+      text-decoration: none;
+    }
+    @keyframes splashFadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 420px) {
+      .splash-features { grid-template-columns: 1fr; }
+      .splash-title { font-size: 1.6rem; }
+    }
+
     /* ===== ANIMATIONS ===== */
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -1354,6 +1485,63 @@
   </style>
 </head>
 <body>
+
+  <!-- ===== SPLASH SCREEN ===== -->
+  <div class="splash" id="splashScreen">
+    <div class="splash-inner">
+      <svg class="splash-logo" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" rx="96" fill="#161b22"/>
+        <path d="M256 72L108 144v120c0 88 63 170 148 196 85-26 148-108 148-196V144L256 72z" fill="none" stroke="#58a6ff" stroke-width="8" stroke-linejoin="round"/>
+        <path d="M256 72L108 144v120c0 88 63 170 148 196 85-26 148-108 148-196V144L256 72z" fill="rgba(88,166,255,0.06)"/>
+        <circle cx="256" cy="180" r="20" fill="none" stroke="#3fb950" stroke-width="4"/>
+        <circle cx="256" cy="180" r="6" fill="#3fb950"/>
+        <rect x="155" y="268" width="36" height="28" rx="5" fill="none" stroke="#8b949e" stroke-width="3"/>
+        <rect x="321" y="268" width="36" height="28" rx="5" fill="none" stroke="#58a6ff" stroke-width="3"/>
+        <circle cx="256" cy="340" r="18" fill="none" stroke="#f85149" stroke-width="3.5"/>
+        <line x1="256" y1="200" x2="173" y2="268" stroke="#30363d" stroke-width="2.5"/>
+        <line x1="256" y1="200" x2="339" y2="268" stroke="#30363d" stroke-width="2.5"/>
+        <line x1="173" y1="296" x2="256" y2="322" stroke="#30363d" stroke-width="2.5"/>
+        <line x1="339" y1="296" x2="256" y2="322" stroke="#30363d" stroke-width="2.5"/>
+        <circle cx="214" cy="234" r="5" fill="#58a6ff" opacity="0.8"/>
+        <circle cx="298" cy="234" r="5" fill="#f85149" opacity="0.8"/>
+      </svg>
+
+      <div class="splash-title">Net<span class="accent">Attack</span>.viz</div>
+      <div class="splash-subtitle">Interactive Network Attack Visualizer</div>
+
+      <div class="splash-hook">
+        See how attackers actually compromise networks — layer by layer, packet by packet.
+      </div>
+
+      <div class="splash-features">
+        <div class="splash-feature">
+          <svg class="splash-feature-icon sf-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>6 real attack scenarios with animated packet flow</span>
+        </div>
+        <div class="splash-feature">
+          <svg class="splash-feature-icon sf-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>SWOT defense analysis at every stage</span>
+        </div>
+        <div class="splash-feature">
+          <svg class="splash-feature-icon sf-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Step through at your own pace — no rush</span>
+        </div>
+        <div class="splash-feature">
+          <svg class="splash-feature-icon sf-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Actionable mitigations from NIST, MITRE, and CISA</span>
+        </div>
+      </div>
+
+      <button class="splash-cta" id="splashCta">
+        Launch Visualizer
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+
+      <div class="splash-mitre">
+        Mapped to <a href="https://attack.mitre.org" target="_blank" rel="noopener">MITRE ATT&CK</a> v14 · Zero backend · Works offline
+      </div>
+    </div>
+  </div>
 
   <div class="cdn-fallback-notice" id="cdnNotice"></div>
 
@@ -3181,6 +3369,15 @@
     safeExec(() => renderPanel(0), 'renderPanel');
     try { lucide.createIcons(); } catch(e) {}
     setStatus('Ready \u2014 press Next to begin');
+
+    // Splash screen dismiss
+    const splashCta = document.getElementById('splashCta');
+    const splashScreen = document.getElementById('splashScreen');
+    if (splashCta && splashScreen) {
+      splashCta.addEventListener('click', () => {
+        splashScreen.classList.add('hidden');
+      });
+    }
   }
 
   if (document.readyState === 'loading') {
