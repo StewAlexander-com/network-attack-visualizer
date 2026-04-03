@@ -912,6 +912,101 @@
       max-width: 90vw;
     }
 
+    /* ===== BROWSER WARNING BANNER ===== */
+    .browser-warning-banner {
+      position: relative;
+      top: 0; left: 0; right: 0;
+      z-index: 10000;
+      padding: 10px 16px;
+      padding-top: calc(10px + var(--safe-top));
+      font-family: var(--font-ui);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .browser-warning-banner.visible { display: flex; }
+    .browser-warning-banner.warning {
+      background: rgba(210,153,34,0.15);
+      border-bottom: 1px solid rgba(210,153,34,0.3);
+      color: var(--accent-orange);
+    }
+    .browser-warning-banner.fatal {
+      background: rgba(248,81,73,0.15);
+      border-bottom: 1px solid rgba(248,81,73,0.3);
+      color: var(--accent-red);
+    }
+    .browser-warning-banner .bw-icon {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+      margin-top: 1px;
+    }
+    .browser-warning-banner .bw-content { flex: 1; }
+    .browser-warning-banner .bw-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+    .browser-warning-banner .bw-list {
+      margin: 0; padding: 0 0 0 16px;
+      font-size: 0.8rem;
+    }
+    .browser-warning-banner .bw-list li { margin-bottom: 2px; }
+    .browser-warning-banner .bw-dismiss {
+      flex-shrink: 0;
+      background: none;
+      border: 1px solid currentColor;
+      color: inherit;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      cursor: pointer;
+      opacity: 0.8;
+    }
+    .browser-warning-banner .bw-dismiss:hover { opacity: 1; }
+
+    /* Fatal overlay blocks interaction */
+    .browser-fatal-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9998;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+    }
+    .browser-fatal-overlay.visible { display: flex; }
+    .browser-fatal-overlay .fatal-content {
+      max-width: 500px;
+    }
+    .browser-fatal-overlay .fatal-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+    .browser-fatal-overlay .fatal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-red);
+      margin-bottom: 12px;
+    }
+    .browser-fatal-overlay .fatal-text {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    .browser-fatal-overlay .fatal-list {
+      text-align: left;
+      padding: 0 0 0 20px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
     /* ===== ANIMATIONS ===== */
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -1192,6 +1287,29 @@
 
   <div class="cdn-fallback-notice" id="cdnNotice"></div>
 
+  <!-- Browser warning banner (non-fatal) -->
+  <div class="browser-warning-banner warning" id="browserWarning">
+    <span class="bw-icon">⚠</span>
+    <div class="bw-content">
+      <div class="bw-title">Browser Compatibility Notice</div>
+      <ul class="bw-list" id="browserWarningList"></ul>
+    </div>
+    <button class="bw-dismiss" id="browserWarningDismiss">Dismiss</button>
+  </div>
+
+  <!-- Fatal browser overlay -->
+  <div class="browser-fatal-overlay" id="browserFatal">
+    <div class="fatal-content">
+      <div class="fatal-icon">⛔</div>
+      <div class="fatal-title">Browser Not Supported</div>
+      <div class="fatal-text">This application requires a modern browser with SVG, CSS Grid, and ES6 support.</div>
+      <ul class="fatal-list" id="browserFatalList"></ul>
+      <div class="fatal-text" style="margin-top:16px">
+        Recommended browsers: Chrome 80+, Firefox 78+, Safari 14+, Edge 80+
+      </div>
+    </div>
+  </div>
+
   <!-- ===== TOPBAR ===== -->
   <header id="topbar">
     <div class="logo">
@@ -1351,6 +1469,84 @@
       </div>
     </div>
   </div>
+
+<!-- ===== BROWSER CAPABILITY DETECTION ===== -->
+<script>
+(function() {
+  var warnings = [];
+  var fatal = false;
+
+  // 1. Check for Internet Explorer (any version)
+  if (/*@cc_on!@*/false || typeof document.documentMode !== 'undefined') {
+    warnings.push('Internet Explorer is not supported. Please use Chrome, Firefox, Safari, or Edge.');
+    fatal = true;
+  }
+
+  // 2. Check for SVG support (required for D3 graph)
+  if (!document.createElementNS || !document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGRect) {
+    warnings.push('Your browser does not support SVG — the network graph cannot render.');
+    fatal = true;
+  }
+
+  // 3. Check for CSS Grid (used by SWOT grid)
+  if (!CSS || !CSS.supports || !CSS.supports('display', 'grid')) {
+    warnings.push('CSS Grid is not supported — SWOT mitigation cards may not display correctly.');
+  }
+
+  // 4. Check for CSS Custom Properties (variables)
+  if (!CSS || !CSS.supports || !CSS.supports('color', 'var(--fake)')) {
+    warnings.push('CSS variables are not supported — colors and theming may not work.');
+    fatal = true;
+  }
+
+  // 5. Check for ES6 features (arrow functions, template literals, const/let)
+  try { new Function('const a=1;let b=`${a}`;(()=>b)()'); } catch(e) {
+    warnings.push('Your browser does not support modern JavaScript (ES6+). Please update your browser.');
+    fatal = true;
+  }
+
+  // 6. Check for Flexbox gap support (used extensively)
+  var testEl = document.createElement('div');
+  testEl.style.display = 'flex';
+  testEl.style.gap = '1px';
+  if (!testEl.style.gap) {
+    warnings.push('Flexbox gap is not supported — some spacing may appear off. Consider updating your browser.');
+  }
+
+  // 7. Detect old Safari (<14) — limited CSS support
+  var ua = navigator.userAgent;
+  var safariMatch = ua.match(/Version\/(\d+).*Safari/);
+  if (safariMatch && parseInt(safariMatch[1]) < 14) {
+    warnings.push('Safari ' + safariMatch[1] + ' has limited support. Update to Safari 14+ for the best experience.');
+  }
+
+  // 8. Detect old Chrome (<80)
+  var chromeMatch = ua.match(/Chrome\/(\d+)/);
+  if (chromeMatch && parseInt(chromeMatch[1]) < 80 && !ua.match(/Edg/)) {
+    warnings.push('Chrome ' + chromeMatch[1] + ' is outdated. Update to Chrome 80+ for full feature support.');
+  }
+
+  // 9. Check viewport width — warn on extremely narrow screens
+  if (window.innerWidth < 280) {
+    warnings.push('Screen width is very narrow (' + window.innerWidth + 'px). Some elements may overlap.');
+  }
+
+  // 10. Check for WebGL (nice-to-have, not required)
+  // Not checked — app doesn't use WebGL
+
+  // 11. Detect Samsung Internet old versions
+  var samsungMatch = ua.match(/SamsungBrowser\/(\d+)/);
+  if (samsungMatch && parseInt(samsungMatch[1]) < 14) {
+    warnings.push('Samsung Internet ' + samsungMatch[1] + ' may have display issues. Update for the best experience.');
+  }
+
+  // Display warnings
+  if (warnings.length > 0) {
+    window._browserWarnings = warnings;
+    window._browserFatal = fatal;
+  }
+})();
+</script>
 
 <!-- CDN: D3.js with fallback -->
 <script>
@@ -2803,8 +2999,38 @@
     });
   }
 
+  // ===== BROWSER WARNING DISPLAY =====
+  function showBrowserWarnings() {
+    if (!window._browserWarnings || window._browserWarnings.length === 0) return;
+
+    if (window._browserFatal) {
+      // Fatal: show full-screen overlay blocking the app
+      const overlay = document.getElementById('browserFatal');
+      const list = document.getElementById('browserFatalList');
+      if (overlay && list) {
+        list.innerHTML = window._browserWarnings.map(w => '<li>' + w + '</li>').join('');
+        overlay.classList.add('visible');
+      }
+    } else {
+      // Non-fatal: show dismissable banner at top
+      const banner = document.getElementById('browserWarning');
+      const list = document.getElementById('browserWarningList');
+      const dismissBtn = document.getElementById('browserWarningDismiss');
+      if (banner && list) {
+        list.innerHTML = window._browserWarnings.map(w => '<li>' + w + '</li>').join('');
+        banner.classList.add('visible');
+        if (dismissBtn) {
+          dismissBtn.addEventListener('click', () => {
+            banner.classList.remove('visible');
+          });
+        }
+      }
+    }
+  }
+
   // ===== INIT =====
   function init() {
+    safeExec(showBrowserWarnings, 'browserWarnings');
     safeExec(buildTabs, 'buildTabs');
     safeExec(wireControls, 'wireControls');
     safeExec(renderGraph, 'renderGraph');
