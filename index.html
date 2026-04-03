@@ -2752,7 +2752,9 @@
     scrollUpEl.style.left = rect.left + 'px';
     scrollUpEl.style.right = (window.innerWidth - rect.right) + 'px';
     scrollUpEl.style.width = rect.width + 'px';
-    scrollDownEl.style.top = (rect.bottom - 40) + 'px';
+    // On mobile, offset above the bottom bar padding
+    const bottomOffset = window.innerWidth <= 768 ? 64 : 0;
+    scrollDownEl.style.top = (rect.bottom - 40 - bottomOffset) + 'px';
     scrollDownEl.style.left = rect.left + 'px';
     scrollDownEl.style.right = (window.innerWidth - rect.right) + 'px';
     scrollDownEl.style.width = rect.width + 'px';
