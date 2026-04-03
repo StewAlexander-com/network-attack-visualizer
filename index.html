@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Attack Visualizer</title>
+  <meta name="description" content="Interactive Layer 2/3 network attack visualization — ARP Spoofing, MAC Flooding, SYN Flood, DHCP Starvation, ICMP Redirect, Lateral Movement. Built with D3.js.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- D3.js v7 -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <style>
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-faint: #484f58;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-red: #f85149;
+      --accent-orange: #d29922;
+      --accent-purple: #bc8cff;
+      --font-ui: 'Space Grotesk', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --sidebar-width: 340px;
+      --topbar-height: 52px;
+      --footer-height: 36px;
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f8fa;
+      --surface: #ffffff;
+      --surface-2: #f0f2f5;
+      --border: #d0d7de;
+      --text: #1f2328;
+      --text-muted: #656d76;
+      --text-faint: #8b949e;
+    }
+
+    /* ===== RESET ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== TOPBAR ===== */
+    #topbar {
+      height: var(--topbar-height);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .logo svg { width: 28px; height: 28px; }
+    .logo-text {
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .logo-text .accent { color: var(--accent-blue); }
+
+    .divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Attack Tabs */
+    .attack-tabs {
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      flex-shrink: 1;
+      min-width: 0;
+      scrollbar-width: none;
+    }
+    .attack-tabs::-webkit-scrollbar { display: none; }
+
+    .attack-tab {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: var(--font-ui);
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .attack-tab:hover { color: var(--text); background: var(--surface-2); }
+    .attack-tab.active {
+      color: var(--text);
+      background: var(--surface-2);
+      border-color: var(--border);
+    }
+
+    /* Transport Controls */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .ctrl-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .ctrl-btn:hover { color: var(--text); background: var(--surface-2); }
+    .ctrl-btn.active { color: var(--accent-blue); border-color: var(--accent-blue); }
+
+    .speed-group {
+      display: flex;
+      gap: 2px;
+    }
+    .speed-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      color: var(--text-faint);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .speed-btn:hover { color: var(--text-muted); }
+    .speed-btn.active {
+      color: var(--accent-blue);
+      background: rgba(88,166,255,0.08);
+      border-color: rgba(88,166,255,0.3);
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toggle-label input { accent-color: var(--accent-blue); cursor: pointer; }
+
+    .theme-toggle {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .theme-toggle:hover { color: var(--text); background: var(--surface-2); }
+
+    /* ===== MAIN LAYOUT ===== */
+    #app {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      height: calc(100vh - var(--topbar-height) - var(--footer-height));
+    }
+
+    #canvas-container {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #network-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ===== SIDEBAR ===== */
+    #detail-panel {
+      width: var(--sidebar-width);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    #detail-panel::-webkit-scrollbar { width: 6px; }
+    #detail-panel::-webkit-scrollbar-track { background: transparent; }
+    #detail-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .panel-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-section:last-child { border-bottom: none; }
+
+    .attack-title {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .mitre-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      color: var(--accent-red);
+      background: rgba(248,81,73,0.08);
+      border: 1px solid rgba(248,81,73,0.2);
+      border-radius: 4px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .mitre-badge:hover { background: rgba(248,81,73,0.15); }
+
+    .phase-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent-orange);
+      background: rgba(210,153,34,0.08);
+      border: 1px solid rgba(210,153,34,0.2);
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    /* Attack Steps */
+    .steps-list {
+      list-style: none;
+      counter-reset: step;
+    }
+    .step-item {
+      counter-increment: step;
+      position: relative;
+      padding: 10px 12px 10px 36px;
+      margin-bottom: 4px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      border-left: 3px solid transparent;
+      border-radius: 0 6px 6px 0;
+      transition: all 0.25s ease;
+    }
+    .step-item::before {
+      content: counter(step);
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      color: var(--text-faint);
+      background: var(--surface-2);
+      border-radius: 50%;
+      transition: all 0.25s ease;
+    }
+    .step-item.active {
+      color: var(--text);
+      background: rgba(248,81,73,0.06);
+      border-left-color: var(--accent-red);
+    }
+    .step-item.active::before {
+      color: #fff;
+      background: var(--accent-red);
+    }
+    .step-item.completed {
+      color: var(--text);
+    }
+    .step-item.completed::before {
+      color: #fff;
+      background: var(--accent-green);
+    }
+
+    /* Packet Table */
+    .packet-table-wrap {
+      overflow-x: auto;
+    }
+    .packet-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .packet-table th {
+      text-align: left;
+      padding: 6px 6px;
+      color: var(--text-faint);
+      font-weight: 500;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .packet-table td {
+      padding: 5px 6px;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      white-space: nowrap;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .packet-table td:last-child {
+      max-width: 40px;
+      overflow: visible;
+    }
+    .packet-table tr { transition: opacity 0.2s ease; }
+    .packet-table tr.new-row { animation: slideIn 0.3s ease; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .packet-table .flag-atk { color: var(--accent-red); }
+    .packet-table .flag-norm { color: var(--accent-blue); }
+    .packet-table .flag-warn { color: var(--accent-orange); }
+
+    /* Callout boxes */
+    .callout {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      display: flex;
+      gap: 10px;
+    }
+    .callout-icon {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+    }
+    .callout-detect {
+      background: rgba(139,148,158,0.06);
+      border: 1px solid rgba(139,148,158,0.15);
+      color: var(--text-muted);
+    }
+    .callout-mitigate {
+      background: rgba(63,185,80,0.06);
+      border: 1px solid rgba(63,185,80,0.15);
+      color: var(--accent-green);
+    }
+    .callout-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .callout-detect .callout-title { color: var(--text-faint); }
+    .callout-mitigate .callout-title { color: var(--accent-green); }
+    .callout-text { color: var(--text-muted); }
+
+    /* Section header */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      margin-bottom: 10px;
+    }
+
+    /* ===== FOOTER ===== */
+    #statusbar {
+      height: var(--footer-height);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      font-size: 11px;
+      color: var(--text-faint);
+      flex-shrink: 0;
+    }
+    .footer-left, .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .footer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .footer-link {
+      color: var(--text-faint);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .footer-link:hover { color: var(--accent-blue); }
+
+    /* ===== SVG NETWORK GRAPH ===== */
+    .node-group { cursor: pointer; }
+    .node-shape {
+      stroke-width: 1.5;
+      transition: filter 0.3s ease;
+    }
+    .node-label {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 500;
+      fill: var(--text);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .node-ip {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      fill: var(--text-faint);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .node-icon {
+      pointer-events: none;
+    }
+
+    .link-line {
+      stroke: var(--border);
+      stroke-width: 1.5;
+      stroke-opacity: 0.6;
+    }
+    .link-line.active {
+      stroke: var(--accent-blue);
+      stroke-opacity: 0.4;
+    }
+
+    .node-compromised .node-shape {
+      filter: drop-shadow(0 0 12px var(--accent-red));
+      animation: pulse-red 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(248,81,73,0.4)); }
+      50% { filter: drop-shadow(0 0 16px rgba(248,81,73,0.8)); }
+    }
+
+    /* Node tooltip */
+    .node-tooltip {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 12px;
+      z-index: 200;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      min-width: 200px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .node-tooltip.visible { opacity: 1; }
+    .node-tooltip .tt-label {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .node-tooltip .tt-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 2px 0;
+    }
+    .node-tooltip .tt-key {
+      color: var(--text-faint);
+      font-size: 11px;
+    }
+    .node-tooltip .tt-val {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .node-tooltip .tt-status {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .tt-status.secure { color: var(--accent-green); }
+    .tt-status.compromised { color: var(--accent-red); }
+
+    /* Packets */
+    .packet-dot {
+      pointer-events: none;
+    }
+    .packet-label {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 500;
+      pointer-events: none;
+    }
+
+    /* Overlay labels on edges */
+    .edge-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 500;
+      fill: var(--accent-purple);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .edge-label.visible { opacity: 1; }
+
+    /* CAM table / routing overlay on nodes */
+    .node-overlay {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--accent-orange);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent-orange);
+      z-index: 150;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      white-space: nowrap;
+    }
+    .node-overlay.visible { opacity: 1; }
+
+    /* Progress bar overlay on nodes */
+    .progress-overlay {
+      pointer-events: none;
+    }
+    .progress-bg {
+      fill: var(--surface-2);
+      rx: 2;
+    }
+    .progress-fill {
+      fill: var(--accent-red);
+      rx: 2;
+      transition: width 0.5s ease;
+    }
+
+    /* Hub mode animation */
+    @keyframes hub-flash {
+      0%, 100% { stroke-opacity: 0.3; }
+      50% { stroke-opacity: 0.9; }
+    }
+    .hub-mode .link-line {
+      stroke: var(--accent-orange);
+      animation: hub-flash 0.5s ease-in-out infinite;
+    }
+
+    /* ===== MOBILE ===== */
+    .mobile-toggle {
+      display: none;
+      position: fixed;
+      bottom: 56px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      background: var(--accent-blue);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      z-index: 300;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    @media (max-width: 768px) {
+      .attack-tabs { display: none; }
+      .controls .speed-group,
+      .controls .toggle-label,
+      .controls .divider { display: none; }
+
+      #app { flex-direction: column; }
+
+      #detail-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-height: 60vh;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        z-index: 200;
+        border-radius: 16px 16px 0 0;
+      }
+      #detail-panel.open { transform: translateY(0); }
+
+      .mobile-toggle { display: flex; }
+
+      #canvas-container { height: calc(100vh - var(--topbar-height) - var(--footer-height)); }
+    }
+
+    /* Mobile attack select dropdown */
+    .mobile-attack-select {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .mobile-attack-select {
+        display: block;
+        padding: 6px 10px;
+        font-family: var(--font-ui);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+      }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== TOPBAR ===== -->
+  <header id="topbar">
+    <div class="logo">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 2L3 8v12l11 6 11-6V8L14 2z" stroke="var(--accent-blue)" stroke-width="1.5" fill="none"/>
+        <circle cx="14" cy="10" r="2" fill="var(--accent-blue)"/>
+        <circle cx="9" cy="17" r="1.5" fill="var(--accent-blue)" opacity="0.7"/>
+        <circle cx="19" cy="17" r="1.5" fill="var(--accent-blue)" opacity="0.7"/>
+        <line x1="14" y1="12" x2="9" y2="15.5" stroke="var(--accent-blue)" stroke-width="1" opacity="0.5"/>
+        <line x1="14" y1="12" x2="19" y2="15.5" stroke="var(--accent-blue)" stroke-width="1" opacity="0.5"/>
+        <line x1="9" y1="17" x2="19" y2="17" stroke="var(--accent-blue)" stroke-width="1" opacity="0.3"/>
+      </svg>
+      <span class="logo-text">Net<span class="accent">Attack</span>.viz</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="attack-tabs" id="attackTabs"></div>
+
+    <select class="mobile-attack-select" id="mobileAttackSelect"></select>
+
+    <div class="divider"></div>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="btnPlay" title="Play"><i data-lucide="play" style="width:16px;height:16px"></i></button>
+      <button class="ctrl-btn" id="btnPause" title="Pause"><i data-lucide="pause" style="width:16px;height:16px"></i></button>
+      <button class="ctrl-btn" id="btnReset" title="Reset"><i data-lucide="rotate-ccw" style="width:16px;height:16px"></i></button>
+
+      <div class="divider"></div>
+
+      <div class="speed-group" id="speedGroup">
+        <button class="speed-btn" data-speed="0.5">0.5x</button>
+        <button class="speed-btn active" data-speed="1">1x</button>
+        <button class="speed-btn" data-speed="2">2x</button>
+        <button class="speed-btn" data-speed="3">3x</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <label class="toggle-label">
+        <input type="checkbox" id="baselineToggle"> Normal traffic
+      </label>
+
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+        <i data-lucide="moon" style="width:16px;height:16px" id="themeIcon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main id="app">
+    <div id="canvas-container">
+      <svg id="network-svg"></svg>
+      <div class="node-tooltip" id="nodeTooltip"></div>
+      <div class="node-overlay" id="nodeOverlay"></div>
+    </div>
+    <aside id="detail-panel">
+      <div class="panel-section" id="panelHeader"></div>
+      <div class="panel-section" id="panelSteps">
+        <div class="section-label">Attack Progression</div>
+        <ol class="steps-list" id="stepsList"></ol>
+      </div>
+      <div class="panel-section" id="panelPackets">
+        <div class="section-label">Live Packet Capture</div>
+        <div class="packet-table-wrap">
+          <table class="packet-table">
+            <thead>
+              <tr><th>Src</th><th>Dst</th><th>Proto</th><th>Info</th><th>Flag</th></tr>
+            </thead>
+            <tbody id="packetTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel-section" id="panelDetection"></div>
+      <div class="panel-section" id="panelMitigation"></div>
+    </aside>
+  </main>
+
+  <button class="mobile-toggle" id="mobileToggle">
+    <i data-lucide="info" style="width:20px;height:20px"></i>
+  </button>
+
+  <!-- ===== FOOTER ===== -->
+  <footer id="statusbar">
+    <div class="footer-left">
+      <a class="footer-badge" href="https://attack.mitre.org" target="_blank" rel="noopener" style="color:var(--accent-red);text-decoration:none">
+        <i data-lucide="target" style="width:10px;height:10px"></i>
+        MITRE ATT&CK v14
+      </a>
+      <span class="footer-badge" style="color:var(--accent-green)">
+        <i data-lucide="wifi-off" style="width:10px;height:10px"></i>
+        Zero Backend
+      </span>
+    </div>
+    <div class="footer-right">
+      <span id="statusText">Ready</span>
+      <a class="footer-link" href="https://github.com/StewAlexander-com/network-attack-visualizer" target="_blank" rel="noopener">
+        <i data-lucide="github" style="width:14px;height:14px"></i>
+      </a>
+    </div>
+  </footer>
+
+<script>
+// ============================================================
+// NETWORK ATTACK VISUALIZER — Core Application
+// ============================================================
+
+(function() {
+  'use strict';
+
+  // ===== STATE =====
+  const state = {
+    currentAttack: 0,
+    playing: false,
+    speed: 1,
+    step: -1,
+    baselineTraffic: false,
+    compromised: new Set(),
+    animationTimers: [],
+    packetAnimations: [],
+    baselineInterval: null,
+    theme: 'dark'
+  };
+
+  // ===== NODES =====
+  const nodes = [
+    { id: 'internet',  label: 'Internet',       type: 'cloud',       ip: null,         mac: null,               x: 0.08, y: 0.5 },
+    { id: 'gateway',   label: 'Gateway',         type: 'router',      ip: '192.168.1.1',mac: 'aa:bb:cc:00:00:01', x: 0.28, y: 0.5 },
+    { id: 'router',    label: 'Core Router',     type: 'router',      ip: '10.0.0.1',   mac: 'aa:bb:cc:00:00:02', x: 0.50, y: 0.5 },
+    { id: 'switch',    label: 'L2 Switch',       type: 'switch',      ip: null,         mac: null,               x: 0.42, y: 0.78 },
+    { id: 'server-a',  label: 'Web Server',      type: 'server',      ip: '10.0.0.10',  mac: 'de:ad:be:ef:00:01', x: 0.72, y: 0.35 },
+    { id: 'server-b',  label: 'DB Server',       type: 'server',      ip: '10.0.0.11',  mac: 'de:ad:be:ef:00:02', x: 0.72, y: 0.65 },
+    { id: 'ws-a',      label: 'Workstation A',   type: 'workstation', ip: '10.0.0.20',  mac: 'ca:fe:ba:be:00:01', x: 0.28, y: 0.85 },
+    { id: 'ws-b',      label: 'Workstation B',   type: 'workstation', ip: '10.0.0.21',  mac: 'ca:fe:ba:be:00:02', x: 0.50, y: 0.92 },
+    { id: 'attacker',  label: 'Attacker (Kali)', type: 'attacker',    ip: '10.0.0.99',  mac: '00:0c:29:at:tk:er', x: 0.60, y: 0.85 }
+  ];
+
+  const links = [
+    { source: 'internet', target: 'gateway' },
+    { source: 'gateway',  target: 'router' },
+    { source: 'router',   target: 'switch' },
+    { source: 'router',   target: 'server-a' },
+    { source: 'router',   target: 'server-b' },
+    { source: 'switch',   target: 'ws-a' },
+    { source: 'switch',   target: 'ws-b' },
+    { source: 'switch',   target: 'attacker' },
+    { source: 'switch',   target: 'server-a' },
+  ];
+
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = n);
+
+  // ===== ATTACK SCENARIOS =====
+  const attacks = [
+    {
+      name: 'ARP Spoofing (MITM)',
+      short: 'ARP Spoof',
+      mitre: 'T1557.002',
+      mitreUrl: 'https://attack.mitre.org/techniques/T1557/002/',
+      phase: 'Collection \u2192 Credential Access',
+      steps: [
+        'Attacker broadcasts fake ARP replies to WS-A and Gateway simultaneously',
+        'ARP tables on WS-A and Gateway update \u2014 attacker MAC now maps to their IPs',
+        'WS-A \u2192 Gateway traffic now flows through the attacker node (MITM position)',
+        'Attacker intercepts and forwards all traffic \u2014 credentials exposed'
+      ],
+      detection: 'Arpalert / arpwatch detects gratuitous ARP from unexpected MAC',
+      mitigation: 'Dynamic ARP Inspection (DAI) on L2 switch; static ARP entries for critical hosts'
+    },
+    {
+      name: 'MAC Flooding (CAM Overflow)',
+      short: 'MAC Flood',
+      mitre: 'T1498',
+      mitreUrl: 'https://attack.mitre.org/techniques/T1498/',
+      phase: 'Defense Evasion \u2192 Discovery',
+      steps: [
+        'Attacker sends thousands of frames with unique source MACs to the switch',
+        'CAM table on the L2 switch overflows \u2014 cannot learn new entries',
+        'Switch degrades to hub mode \u2014 all traffic broadcast to all ports',
+        'Attacker receives all network traffic including WS-A \u2194 Server-A'
+      ],
+      detection: 'SNMP CAM table size polling; port security violation syslog',
+      mitigation: 'Port security: max 5 MACs per port; sticky MAC; BPDU Guard'
+    },
+    {
+      name: 'SYN Flood',
+      short: 'SYN Flood',
+      mitre: 'T1498.001',
+      mitreUrl: 'https://attack.mitre.org/techniques/T1498/001/',
+      phase: 'Impact',
+      steps: [
+        'Attacker sends burst of SYN packets to Web Server with spoofed source IPs',
+        'Server\u2019s half-open connection queue fills up rapidly',
+        'Legitimate SYN from WS-A is rejected \u2014 service unavailable'
+      ],
+      detection: 'NetFlow/IPFIX: high SYN rate from single source; SYN cookie threshold alert',
+      mitigation: 'SYN cookies on server; rate limiting at firewall; upstream scrubbing'
+    },
+    {
+      name: 'DHCP Starvation + Rogue DHCP',
+      short: 'DHCP Starve',
+      mitre: 'T1557',
+      mitreUrl: 'https://attack.mitre.org/techniques/T1557/',
+      phase: 'Initial Access \u2192 Credential Access',
+      steps: [
+        'Attacker sends DHCPDISCOVER with thousands of random MACs to exhaust the pool',
+        'DHCP pool on Web Server (acting as DHCP) is fully exhausted',
+        'Attacker starts responding to WS-B DHCPDISCOVER as a rogue DHCP server',
+        'WS-B receives attacker\u2019s IP as default gateway \u2014 traffic rerouted'
+      ],
+      detection: 'DHCP snooping logs; multiple DHCPOFFER sources detected on port',
+      mitigation: 'DHCP snooping: trust only uplink ports; rate-limit DHCP on access ports'
+    },
+    {
+      name: 'ICMP Redirect Attack',
+      short: 'ICMP Redirect',
+      mitre: 'T1562.001',
+      mitreUrl: 'https://attack.mitre.org/techniques/T1562/001/',
+      phase: 'Defense Evasion',
+      steps: [
+        'Attacker sends ICMP Type 5 (Redirect) to WS-A claiming a better route exists',
+        'WS-A routing table updates \u2014 attacker is now the preferred next-hop',
+        'WS-A \u2192 DB Server traffic now flows through attacker node'
+      ],
+      detection: 'ICMP redirect messages from unexpected source; host-based routing table monitoring',
+      mitigation: 'Disable ICMP redirect acceptance: net.ipv4.conf.all.accept_redirects=0'
+    },
+    {
+      name: 'Lateral Movement (SMB/RDP)',
+      short: 'Lateral Move',
+      mitre: 'T1021.001',
+      mitreUrl: 'https://attack.mitre.org/techniques/T1021/001/',
+      phase: 'Lateral Movement',
+      steps: [
+        'WS-A is already compromised \u2014 persistent attacker foothold',
+        'Compromised WS-A performs internal port scan across all internal nodes',
+        'DB Server responds on port 445 (SMB) \u2014 connection established',
+        'Stolen credentials used \u2014 DB Server transitions to compromised state'
+      ],
+      detection: 'Windows Event ID 4624 (logon), 4625 (failed), 5140 (share access); UEBA lateral movement detection',
+      mitigation: 'Micro-segmentation; disable SMBv1; Just-in-Time access; privileged identity management'
+    }
+  ];
+
+  // ===== PACKET SPECS =====
+  const PACKET = {
+    normal:  { r: 3, color: '#58a6ff', opacity: 0.5, speed: 2000 },
+    attack:  { r: 5, color: '#f85149', opacity: 1.0, speed: 250 },
+    mitm:    { r: 4, color: '#bc8cff', opacity: 0.9, speed: 600 },
+    rogue:   { r: 4, color: '#d29922', opacity: 0.9, speed: 400 },
+    scan:    { r: 3, color: '#58a6ff', opacity: 0.7, speed: 100 },
+  };
+
+  // ===== D3 SETUP =====
+  const svg = d3.select('#network-svg');
+  const container = document.getElementById('canvas-container');
+  let width, height;
+
+  const defs = svg.append('defs');
+
+  // Glow filter
+  const glowFilter = defs.append('filter').attr('id', 'glow');
+  glowFilter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'blur');
+  const glowMerge = glowFilter.append('feMerge');
+  glowMerge.append('feMergeNode').attr('in', 'blur');
+  glowMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+  const linkGroup = svg.append('g').attr('class', 'links');
+  const packetGroup = svg.append('g').attr('class', 'packets');
+  const nodeGroup = svg.append('g').attr('class', 'nodes');
+  const overlayGroup = svg.append('g').attr('class', 'overlays');
+
+  // ===== NODE SHAPES =====
+  function getNodeShape(type) {
+    switch(type) {
+      case 'cloud': return { shape: 'circle', r: 24, fill: 'rgba(88,166,255,0.1)', stroke: '#58a6ff' };
+      case 'router': return { shape: 'circle', r: 22, fill: 'rgba(63,185,80,0.1)', stroke: '#3fb950' };
+      case 'switch': return { shape: 'rect', w: 50, h: 30, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
+      case 'server': return { shape: 'rect', w: 44, h: 34, fill: 'rgba(88,166,255,0.1)', stroke: '#58a6ff' };
+      case 'workstation': return { shape: 'rect', w: 44, h: 30, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
+      case 'attacker': return { shape: 'circle', r: 22, fill: 'rgba(248,81,73,0.1)', stroke: '#f85149' };
+      default: return { shape: 'circle', r: 20, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
+    }
+  }
+
+  function getNodeIcon(type) {
+    switch(type) {
+      case 'cloud': return 'cloud';
+      case 'router': return 'router';
+      case 'switch': return 'network';
+      case 'server': return 'server';
+      case 'workstation': return 'monitor';
+      case 'attacker': return 'skull';
+      default: return 'circle';
+    }
+  }
+
+  // ===== RENDER GRAPH =====
+  function renderGraph() {
+    const rect = container.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+
+    // Position nodes
+    nodes.forEach(n => {
+      n.px = n.x * width;
+      n.py = n.y * height;
+    });
+
+    // Links
+    const linkSel = linkGroup.selectAll('.link-line')
+      .data(links, d => d.source + '-' + d.target);
+
+    linkSel.enter()
+      .append('line')
+      .attr('class', 'link-line')
+      .merge(linkSel)
+      .attr('x1', d => nodeMap[d.source].px)
+      .attr('y1', d => nodeMap[d.source].py)
+      .attr('x2', d => nodeMap[d.target].px)
+      .attr('y2', d => nodeMap[d.target].py);
+
+    linkSel.exit().remove();
+
+    // Nodes
+    const nodeSel = nodeGroup.selectAll('.node-group')
+      .data(nodes, d => d.id);
+
+    const nodeEnter = nodeSel.enter()
+      .append('g')
+      .attr('class', 'node-group')
+      .attr('data-id', d => d.id)
+      .on('click', (event, d) => showNodeTooltip(event, d))
+      .on('mouseleave', () => hideNodeTooltip());
+
+    nodeEnter.each(function(d) {
+      const g = d3.select(this);
+      const shape = getNodeShape(d.type);
+
+      if (shape.shape === 'circle') {
+        g.append('circle')
+          .attr('class', 'node-shape')
+          .attr('r', shape.r)
+          .attr('fill', shape.fill)
+          .attr('stroke', shape.stroke);
+      } else {
+        g.append('rect')
+          .attr('class', 'node-shape')
+          .attr('width', shape.w)
+          .attr('height', shape.h)
+          .attr('x', -shape.w/2)
+          .attr('y', -shape.h/2)
+          .attr('rx', 6)
+          .attr('fill', shape.fill)
+          .attr('stroke', shape.stroke);
+      }
+
+      // Icon placeholder — we'll use Lucide later
+      g.append('text')
+        .attr('class', 'node-icon')
+        .attr('text-anchor', 'middle')
+        .attr('dy', '0.35em')
+        .attr('font-size', '14px')
+        .attr('fill', shape.stroke)
+        .text(getIconChar(d.type));
+
+      g.append('text')
+        .attr('class', 'node-label')
+        .attr('dy', d.type === 'switch' ? 28 : (shape.shape === 'circle' ? shape.r + 16 : shape.h/2 + 16))
+        .text(d.label);
+
+      if (d.ip) {
+        g.append('text')
+          .attr('class', 'node-ip')
+          .attr('dy', d.type === 'switch' ? 40 : (shape.shape === 'circle' ? shape.r + 28 : shape.h/2 + 28))
+          .text(d.ip);
+      }
+    });
+
+    nodeEnter.merge(nodeSel)
+      .attr('transform', d => `translate(${d.px}, ${d.py})`);
+
+    nodeSel.exit().remove();
+  }
+
+  function getIconChar(type) {
+    switch(type) {
+      case 'cloud': return '\u2601';
+      case 'router': return '\u25C9';
+      case 'switch': return '\u2263';
+      case 'server': return '\u25A3';
+      case 'workstation': return '\u25A1';
+      case 'attacker': return '\u2620';
+      default: return '\u25CF';
+    }
+  }
+
+  // ===== NODE TOOLTIP =====
+  const tooltip = document.getElementById('nodeTooltip');
+
+  function showNodeTooltip(event, d) {
+    const isCompromised = state.compromised.has(d.id);
+    tooltip.innerHTML = `
+      <div class="tt-label">${d.label}</div>
+      <div class="tt-row"><span class="tt-key">Type</span><span class="tt-val">${d.type}</span></div>
+      ${d.ip ? `<div class="tt-row"><span class="tt-key">IP</span><span class="tt-val">${d.ip}</span></div>` : ''}
+      ${d.mac ? `<div class="tt-row"><span class="tt-key">MAC</span><span class="tt-val">${d.mac}</span></div>` : ''}
+      <div class="tt-row"><span class="tt-key">Role</span><span class="tt-val">${getRoleName(d.type)}</span></div>
+      <div class="tt-status ${isCompromised ? 'compromised' : 'secure'}">${isCompromised ? '\u26A0 Compromised' : '\u2713 Secure'}</div>
+    `;
+
+    const rect = container.getBoundingClientRect();
+    let left = d.px + 30;
+    let top = d.py - 20;
+    if (left + 220 > rect.width) left = d.px - 230;
+    if (top + 160 > rect.height) top = rect.height - 170;
+    if (top < 0) top = 10;
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.classList.add('visible');
+  }
+
+  function hideNodeTooltip() {
+    tooltip.classList.remove('visible');
+  }
+
+  function getRoleName(type) {
+    const map = { cloud:'External Network', router:'L3 Gateway/Routing', switch:'L2 Switching', server:'Application Host', workstation:'End User Device', attacker:'Threat Actor' };
+    return map[type] || type;
+  }
+
+  // ===== NODE OVERLAY (CAM Table / Routing Table) =====
+  const overlayEl = document.getElementById('nodeOverlay');
+
+  function showNodeOverlay(nodeId, text) {
+    const n = nodeMap[nodeId];
+    if (!n) return;
+    overlayEl.innerHTML = text;
+    const rect = container.getBoundingClientRect();
+    let left = n.px + 30;
+    let top = n.py - 40;
+    if (left + 200 > rect.width) left = n.px - 210;
+    overlayEl.style.left = left + 'px';
+    overlayEl.style.top = top + 'px';
+    overlayEl.classList.add('visible');
+  }
+
+  function hideNodeOverlay() {
+    overlayEl.classList.remove('visible');
+  }
+
+  // ===== PACKET ANIMATION ENGINE =====
+  function animatePacket(sourceId, targetId, spec, label, onComplete) {
+    const s = nodeMap[sourceId];
+    const t = nodeMap[targetId];
+    if (!s || !t) { if (onComplete) onComplete(); return; }
+
+    const duration = spec.speed / state.speed;
+
+    const g = packetGroup.append('g').attr('class', 'packet-dot');
+
+    g.append('circle')
+      .attr('r', spec.r)
+      .attr('fill', spec.color)
+      .attr('opacity', spec.opacity)
+      .attr('filter', spec.opacity > 0.7 ? 'url(#glow)' : null);
+
+    if (label) {
+      g.append('text')
+        .attr('class', 'packet-label')
+        .attr('dy', -spec.r - 4)
+        .attr('text-anchor', 'middle')
+        .attr('fill', spec.color)
+        .text(label);
+    }
+
+    g.attr('transform', `translate(${s.px}, ${s.py})`);
+
+    const transition = g.transition()
+      .duration(duration)
+      .ease(d3.easeLinear)
+      .attr('transform', `translate(${t.px}, ${t.py})`)
+      .on('end', () => {
+        g.remove();
+        if (onComplete) onComplete();
+      });
+
+    state.packetAnimations.push(g);
+    return g;
+  }
+
+  function animatePacketBurst(sourceId, targetId, spec, count, label, stagger) {
+    stagger = (stagger || 50) / state.speed;
+    for (let i = 0; i < count; i++) {
+      const timer = setTimeout(() => {
+        if (!state.playing) return;
+        animatePacket(sourceId, targetId, spec, i === 0 ? label : null);
+      }, i * stagger);
+      state.animationTimers.push(timer);
+    }
+  }
+
+  // ===== BASELINE TRAFFIC =====
+  function startBaselineTraffic() {
+    if (state.baselineInterval) return;
+    const routes = [
+      ['ws-a','switch'], ['switch','router'], ['router','gateway'], ['gateway','internet'],
+      ['ws-b','switch'], ['switch','server-a'],
+    ];
+    state.baselineInterval = setInterval(() => {
+      if (!state.playing) return;
+      const route = routes[Math.floor(Math.random() * routes.length)];
+      animatePacket(route[0], route[1], PACKET.normal);
+    }, 2500 / state.speed);
+  }
+
+  function stopBaselineTraffic() {
+    if (state.baselineInterval) {
+      clearInterval(state.baselineInterval);
+      state.baselineInterval = null;
+    }
+  }
+
+  // ===== COMPROMISE STATE =====
+  function setCompromised(nodeId, compromised) {
+    const g = nodeGroup.select(`[data-id="${nodeId}"]`);
+    if (compromised) {
+      state.compromised.add(nodeId);
+      g.classed('node-compromised', true);
+    } else {
+      state.compromised.delete(nodeId);
+      g.classed('node-compromised', false);
+    }
+  }
+
+  // ===== PACKET TABLE =====
+  const packetTableBody = document.getElementById('packetTableBody');
+  let packetRows = [];
+
+  function addPacketRow(src, dst, proto, info, flag) {
+    const flagClass = flag === 'ATK' ? 'flag-atk' : flag === 'WARN' ? 'flag-warn' : 'flag-norm';
+    const row = { src, dst, proto, info, flag, flagClass };
+    packetRows.unshift(row);
+    if (packetRows.length > 5) packetRows = packetRows.slice(0, 5);
+    renderPacketTable();
+  }
+
+  function renderPacketTable() {
+    packetTableBody.innerHTML = packetRows.map((r, i) =>
+      `<tr class="${i === 0 ? 'new-row' : ''}">
+        <td>${r.src}</td><td>${r.dst}</td><td>${r.proto}</td><td>${r.info}</td>
+        <td class="${r.flagClass}">${r.flag}</td>
+      </tr>`
+    ).join('');
+  }
+
+  function clearPacketTable() {
+    packetRows = [];
+    packetTableBody.innerHTML = '';
+  }
+
+  // ===== SIDEBAR PANEL =====
+  function renderPanel(attackIdx) {
+    const atk = attacks[attackIdx];
+    document.getElementById('panelHeader').innerHTML = `
+      <div class="attack-title">${atk.name}</div>
+      <a class="mitre-badge" href="${atk.mitreUrl}" target="_blank" rel="noopener">
+        <i data-lucide="target" style="width:10px;height:10px"></i>
+        ${atk.mitre}
+      </a>
+      <div class="phase-badge">${atk.phase}</div>
+    `;
+
+    const stepsList = document.getElementById('stepsList');
+    stepsList.innerHTML = atk.steps.map((s, i) =>
+      `<li class="step-item" data-step="${i}">${s}</li>`
+    ).join('');
+
+    document.getElementById('panelDetection').innerHTML = `
+      <div class="callout callout-detect">
+        <div class="callout-icon"><i data-lucide="eye" style="width:16px;height:16px"></i></div>
+        <div>
+          <div class="callout-title">Detection</div>
+          <div class="callout-text">${atk.detection}</div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('panelMitigation').innerHTML = `
+      <div class="callout callout-mitigate">
+        <div class="callout-icon"><i data-lucide="shield" style="width:16px;height:16px"></i></div>
+        <div>
+          <div class="callout-title">Mitigation</div>
+          <div class="callout-text">${atk.mitigation}</div>
+        </div>
+      </div>
+    `;
+
+    lucide.createIcons();
+  }
+
+  function highlightStep(stepIdx) {
+    state.step = stepIdx;
+    document.querySelectorAll('.step-item').forEach((el, i) => {
+      el.classList.remove('active', 'completed');
+      if (i < stepIdx) el.classList.add('completed');
+      if (i === stepIdx) {
+        el.classList.add('active');
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }
+
+  // ===== ATTACK ANIMATIONS =====
+  function scheduleStep(delay, fn) {
+    const timer = setTimeout(() => {
+      if (state.playing) fn();
+    }, delay / state.speed);
+    state.animationTimers.push(timer);
+    return timer;
+  }
+
+  // Scenario 1: ARP Spoofing
+  function playARPSpoof() {
+    setStatus('ARP Spoofing in progress...');
+
+    // Step 1
+    highlightStep(0);
+    addPacketRow('10.0.0.99', 'broadcast', 'ARP', 'who-has 10.0.0.20? tell 00:0c:29:at:tk:er', 'ATK');
+    animatePacketBurst('attacker', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 5, 'ARP Reply', 80);
+    animatePacketBurst('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 5, null, 80);
+
+    scheduleStep(1500, () => {
+      animatePacketBurst('switch', 'gateway', { ...PACKET.attack, color: '#d29922' }, 3, 'ARP Reply', 80);
+      addPacketRow('10.0.0.99', '192.168.1.1', 'ARP', 'is-at 00:0c:29:at:tk:er', 'ATK');
+    });
+
+    // Step 2
+    scheduleStep(3000, () => {
+      highlightStep(1);
+      showNodeOverlay('ws-a', 'ARP Table Updated<br>192.168.1.1 \u2192 00:0c:29:at:tk:er');
+      addPacketRow('ws-a', 'ARP', 'TABLE', 'gateway MAC \u2192 attacker MAC', 'WARN');
+    });
+
+    // Step 3
+    scheduleStep(5000, () => {
+      highlightStep(2);
+      hideNodeOverlay();
+      setCompromised('attacker', true);
+      // MITM path: WS-A -> Attacker -> Gateway
+      animatePacket('ws-a', 'switch', PACKET.mitm, 'MITM', () => {
+        animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
+          animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
+            animatePacket('switch', 'router', PACKET.mitm, null, () => {
+              animatePacket('router', 'gateway', PACKET.mitm);
+            });
+          });
+        });
+      });
+      addPacketRow('10.0.0.20', '192.168.1.1', 'TCP', 'via attacker (MITM)', 'ATK');
+    });
+
+    // Step 4
+    scheduleStep(8000, () => {
+      highlightStep(3);
+      addPacketRow('10.0.0.20', '10.0.0.99', 'HTTP', 'GET /login credentials visible', 'ATK');
+      // Continuous MITM traffic
+      for (let i = 0; i < 3; i++) {
+        scheduleStep(i * 1500, () => {
+          if (!state.playing) return;
+          animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
+            animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
+              animatePacket('attacker', 'switch', PACKET.mitm, null, () => {
+                animatePacket('switch', 'router', PACKET.mitm);
+              });
+            });
+          });
+        });
+      }
+      setStatus('MITM active \u2014 attacker intercepting traffic');
+    });
+  }
+
+  // Scenario 2: MAC Flooding
+  function playMACFlood() {
+    setStatus('MAC Flood attack starting...');
+
+    // Step 1
+    highlightStep(0);
+    addPacketRow('RANDOM', 'switch', 'ETH', 'src=rand MAC (1/1000)', 'ATK');
+    for (let i = 0; i < 20; i++) {
+      scheduleStep(i * 60, () => {
+        if (!state.playing) return;
+        animatePacket('attacker', 'switch', { ...PACKET.attack, r: 2, speed: 150 });
+      });
+    }
+
+    // Step 2
+    scheduleStep(2000, () => {
+      highlightStep(1);
+      showNodeOverlay('switch', 'CAM TABLE OVERFLOW<br>8192/8192 entries \u2014 FULL');
+      addPacketRow('switch', 'ALL', 'WARN', 'CAM table overflow', 'WARN');
+      // Flash switch node
+      const switchG = nodeGroup.select('[data-id="switch"]');
+      switchG.select('.node-shape')
+        .transition().duration(200).attr('stroke', '#d29922')
+        .transition().duration(200).attr('stroke', '#8b949e')
+        .transition().duration(200).attr('stroke', '#d29922')
+        .transition().duration(200).attr('stroke', '#8b949e');
+    });
+
+    // Step 3
+    scheduleStep(4000, () => {
+      highlightStep(2);
+      hideNodeOverlay();
+      setCompromised('attacker', true);
+      // Hub mode — all traffic broadcast
+      const hubLinks = ['ws-a', 'ws-b', 'attacker', 'server-a'];
+      hubLinks.forEach((target, i) => {
+        scheduleStep(i * 200, () => {
+          if (!state.playing) return;
+          animatePacket('switch', target, { ...PACKET.attack, color: '#d29922', r: 3 });
+        });
+      });
+      addPacketRow('switch', 'ALL', 'ETH', 'hub mode \u2014 broadcast all', 'WARN');
+      setStatus('Switch in hub mode \u2014 all traffic visible');
+    });
+
+    // Step 4
+    scheduleStep(6500, () => {
+      highlightStep(3);
+      animatePacket('ws-a', 'switch', PACKET.normal, 'DATA', () => {
+        // Traffic goes to ALL ports including attacker
+        animatePacket('switch', 'server-a', PACKET.normal);
+        animatePacket('switch', 'attacker', { ...PACKET.mitm, color: '#f85149' }, 'SNIFF');
+      });
+      addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'also sent to attacker port', 'ATK');
+    });
+  }
+
+  // Scenario 3: SYN Flood
+  function playSYNFlood() {
+    setStatus('SYN Flood attack starting...');
+
+    // Step 1
+    highlightStep(0);
+    const spoofedIPs = ['172.16.99.1','10.255.0.42','203.0.113.7','198.51.100.3','192.0.2.99'];
+    for (let i = 0; i < 15; i++) {
+      scheduleStep(i * 100, () => {
+        if (!state.playing) return;
+        const ip = spoofedIPs[i % spoofedIPs.length];
+        animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 200 }, i === 0 ? 'SYN' : null, () => {
+          animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 200 }, null, () => {
+            animatePacket('router', 'server-a', { ...PACKET.attack, r: 3, speed: 200 });
+          });
+        });
+        if (i < 3) addPacketRow(ip, '10.0.0.10', 'TCP', `SYN seq=${Math.floor(Math.random()*99999)}`, 'ATK');
+      });
+    }
+
+    // Step 2
+    scheduleStep(3000, () => {
+      highlightStep(1);
+      setCompromised('server-a', true);
+      // Show progress bar on server-a
+      const serverNode = nodeMap['server-a'];
+      const progGroup = overlayGroup.append('g')
+        .attr('class', 'progress-overlay')
+        .attr('transform', `translate(${serverNode.px - 30}, ${serverNode.py - 40})`);
+      progGroup.append('rect').attr('class', 'progress-bg').attr('width', 60).attr('height', 8);
+      const fill = progGroup.append('rect').attr('class', 'progress-fill').attr('width', 0).attr('height', 8);
+      fill.transition().duration(2000 / state.speed).attr('width', 60);
+
+      progGroup.append('text')
+        .attr('x', 30).attr('y', -4)
+        .attr('text-anchor', 'middle')
+        .attr('font-family', 'var(--font-mono)')
+        .attr('font-size', '9px')
+        .attr('fill', '#f85149')
+        .text('QUEUE FULL');
+
+      addPacketRow('10.0.0.10', 'SYS', 'WARN', 'half-open queue 100%', 'WARN');
+      setStatus('Server queue saturated');
+    });
+
+    // Step 3
+    scheduleStep(5500, () => {
+      highlightStep(2);
+      // Legitimate SYN rejected
+      animatePacket('ws-a', 'switch', PACKET.normal, 'SYN', () => {
+        animatePacket('switch', 'router', PACKET.normal, null, () => {
+          const p = animatePacket('router', 'server-a', { ...PACKET.normal, color: '#f85149' }, 'RST');
+        });
+      });
+      addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'SYN \u2192 RST (rejected)', 'ATK');
+      setStatus('Legitimate traffic denied \u2014 DoS achieved');
+    });
+  }
+
+  // Scenario 4: DHCP Starvation + Rogue DHCP
+  function playDHCPStarve() {
+    setStatus('DHCP Starvation attack starting...');
+
+    // Step 1
+    highlightStep(0);
+    for (let i = 0; i < 12; i++) {
+      scheduleStep(i * 100, () => {
+        if (!state.playing) return;
+        animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 180 }, i === 0 ? 'DISCOVER' : null, () => {
+          animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 180 }, null, () => {
+            animatePacket('router', 'server-a', { ...PACKET.attack, r: 3, speed: 180 });
+          });
+        });
+        if (i < 2) addPacketRow(`rand:${Math.random().toString(16).slice(2,6)}`, '255.255.255.255', 'DHCP', 'DISCOVER', 'ATK');
+      });
+    }
+
+    // Step 2
+    scheduleStep(2500, () => {
+      highlightStep(1);
+      showNodeOverlay('server-a', 'DHCP Pool Exhausted<br>0/254 addresses available');
+      addPacketRow('10.0.0.10', 'SYS', 'DHCP', 'pool exhausted 0/254', 'WARN');
+      setStatus('DHCP pool exhausted');
+    });
+
+    // Step 3
+    scheduleStep(4500, () => {
+      highlightStep(2);
+      hideNodeOverlay();
+      setCompromised('attacker', true);
+      // WS-B sends DISCOVER, attacker responds
+      animatePacket('ws-b', 'switch', PACKET.normal, 'DISCOVER', () => {
+        // Rogue DHCP response from attacker
+        animatePacket('attacker', 'switch', PACKET.rogue, 'ROGUE DHCP', () => {
+          animatePacket('switch', 'ws-b', PACKET.rogue, 'OFFER');
+        });
+      });
+      addPacketRow('10.0.0.99', '10.0.0.21', 'DHCP', 'OFFER gw=10.0.0.99 (ROGUE)', 'ATK');
+    });
+
+    // Step 4
+    scheduleStep(7000, () => {
+      highlightStep(3);
+      setCompromised('ws-b', true);
+      // WS-B traffic now goes through attacker
+      animatePacket('ws-b', 'switch', PACKET.rogue, null, () => {
+        animatePacket('switch', 'attacker', PACKET.rogue, 'MITM');
+      });
+      addPacketRow('10.0.0.21', '10.0.0.99', 'ALL', 'gw=attacker \u2014 rerouted', 'ATK');
+      setStatus('WS-B traffic rerouted through rogue DHCP');
+    });
+  }
+
+  // Scenario 5: ICMP Redirect
+  function playICMPRedirect() {
+    setStatus('ICMP Redirect attack starting...');
+
+    // Step 1
+    highlightStep(0);
+    animatePacket('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 'ICMP Redirect', () => {
+      animatePacket('switch', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 'Type 5');
+    });
+    addPacketRow('10.0.0.99', '10.0.0.20', 'ICMP', 'Type 5 Redirect: use 10.0.0.99', 'ATK');
+
+    // Step 2
+    scheduleStep(2500, () => {
+      highlightStep(1);
+      showNodeOverlay('ws-a', 'Routing Table Updated<br>10.0.0.11/32 via 10.0.0.99');
+      addPacketRow('ws-a', 'SYS', 'ROUTE', '10.0.0.11 via 10.0.0.99', 'WARN');
+      setCompromised('attacker', true);
+    });
+
+    // Step 3
+    scheduleStep(5000, () => {
+      highlightStep(2);
+      hideNodeOverlay();
+      // WS-A -> Server-B traffic now goes through attacker
+      animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
+        animatePacket('switch', 'attacker', PACKET.mitm, 'REDIRECT', () => {
+          animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
+            animatePacket('switch', 'router', PACKET.mitm, null, () => {
+              animatePacket('router', 'server-b', PACKET.mitm);
+            });
+          });
+        });
+      });
+      addPacketRow('10.0.0.20', '10.0.0.11', 'TCP', 'via 10.0.0.99 (redirected)', 'ATK');
+      setStatus('Traffic to DB Server redirected through attacker');
+
+      // Continuous MITM
+      for (let i = 1; i < 3; i++) {
+        scheduleStep(i * 2000, () => {
+          if (!state.playing) return;
+          animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
+            animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
+              animatePacket('attacker', 'switch', PACKET.mitm, null, () => {
+                animatePacket('switch', 'router', PACKET.mitm, null, () => {
+                  animatePacket('router', 'server-b', PACKET.mitm);
+                });
+              });
+            });
+          });
+        });
+      }
+    });
+  }
+
+  // Scenario 6: Lateral Movement
+  function playLateralMove() {
+    setStatus('Lateral movement scenario...');
+
+    // Step 1
+    highlightStep(0);
+    setCompromised('ws-a', true);
+    addPacketRow('ws-a', 'SYS', 'INFO', 'persistent foothold established', 'ATK');
+
+    // Step 2
+    scheduleStep(2000, () => {
+      highlightStep(1);
+      const targets = ['switch', 'router', 'server-a', 'server-b', 'ws-b'];
+      targets.forEach((t, i) => {
+        scheduleStep(i * 200, () => {
+          if (!state.playing) return;
+          animatePacket('ws-a', 'switch', { ...PACKET.scan, speed: 300 }, i === 0 ? 'SCAN' : null, () => {
+            if (t === 'switch') return;
+            if (t === 'router') {
+              animatePacket('switch', 'router', PACKET.scan);
+            } else if (t === 'server-a' || t === 'server-b') {
+              animatePacket('switch', 'router', PACKET.scan, null, () => {
+                animatePacket('router', t, PACKET.scan);
+              });
+            } else {
+              animatePacket('switch', t, PACKET.scan);
+            }
+          });
+          if (i < 3) addPacketRow('10.0.0.20', nodeMap[t]?.ip || t, 'TCP', `SYN port ${[22,445,3389,80,443][i]}`, 'ATK');
+        });
+      });
+      setStatus('Internal port scan in progress');
+    });
+
+    // Step 3
+    scheduleStep(5000, () => {
+      highlightStep(2);
+      animatePacket('server-b', 'router', { ...PACKET.scan, color: '#3fb950' }, '445/open', () => {
+        animatePacket('router', 'switch', { ...PACKET.scan, color: '#3fb950' }, null, () => {
+          animatePacket('switch', 'ws-a', { ...PACKET.scan, color: '#3fb950' });
+        });
+      });
+      addPacketRow('10.0.0.11', '10.0.0.20', 'TCP', 'SYN-ACK port 445 (SMB)', 'WARN');
+
+      scheduleStep(1500, () => {
+        // Establish persistent connection
+        animatePacket('ws-a', 'switch', PACKET.mitm, 'SMB', () => {
+          animatePacket('switch', 'router', PACKET.mitm, null, () => {
+            animatePacket('router', 'server-b', PACKET.mitm, 'CONNECT');
+          });
+        });
+        addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'session setup request', 'ATK');
+      });
+    });
+
+    // Step 4
+    scheduleStep(8500, () => {
+      highlightStep(3);
+      setCompromised('server-b', true);
+      addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'auth success \u2014 COMPROMISED', 'ATK');
+      setStatus('DB Server compromised via lateral movement');
+
+      // Show data exfiltration
+      for (let i = 0; i < 3; i++) {
+        scheduleStep(i * 1200, () => {
+          if (!state.playing) return;
+          animatePacket('server-b', 'router', PACKET.mitm, i === 0 ? 'EXFIL' : null, () => {
+            animatePacket('router', 'switch', PACKET.mitm, null, () => {
+              animatePacket('switch', 'ws-a', PACKET.mitm);
+            });
+          });
+        });
+      }
+    });
+  }
+
+  const playFunctions = [playARPSpoof, playMACFlood, playSYNFlood, playDHCPStarve, playICMPRedirect, playLateralMove];
+
+  // ===== TRANSPORT CONTROLS =====
+  function play() {
+    if (state.playing) return;
+    state.playing = true;
+    updateControlState();
+    if (state.baselineTraffic) startBaselineTraffic();
+    playFunctions[state.currentAttack]();
+  }
+
+  function pause() {
+    state.playing = false;
+    updateControlState();
+    stopBaselineTraffic();
+  }
+
+  function reset() {
+    state.playing = false;
+    state.step = -1;
+    state.animationTimers.forEach(t => clearTimeout(t));
+    state.animationTimers = [];
+    state.packetAnimations.forEach(g => g.remove());
+    state.packetAnimations = [];
+    stopBaselineTraffic();
+    packetGroup.selectAll('*').remove();
+    overlayGroup.selectAll('*').remove();
+    state.compromised.forEach(id => setCompromised(id, false));
+    state.compromised.clear();
+    hideNodeOverlay();
+    clearPacketTable();
+    document.querySelectorAll('.step-item').forEach(el => {
+      el.classList.remove('active', 'completed');
+    });
+    updateControlState();
+    setStatus('Ready');
+  }
+
+  function selectAttack(idx) {
+    reset();
+    state.currentAttack = idx;
+    renderPanel(idx);
+
+    // Update tabs
+    document.querySelectorAll('.attack-tab').forEach((tab, i) => {
+      tab.classList.toggle('active', i === idx);
+    });
+
+    // Update mobile select
+    document.getElementById('mobileAttackSelect').value = idx;
+  }
+
+  function setSpeed(speed) {
+    state.speed = speed;
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
+    });
+  }
+
+  function updateControlState() {
+    document.getElementById('btnPlay').classList.toggle('active', state.playing);
+    document.getElementById('btnPause').classList.toggle('active', !state.playing && state.step >= 0);
+  }
+
+  function setStatus(text) {
+    document.getElementById('statusText').textContent = text;
+  }
+
+  // ===== BUILD UI =====
+  function buildTabs() {
+    const tabsEl = document.getElementById('attackTabs');
+    const selectEl = document.getElementById('mobileAttackSelect');
+    attacks.forEach((atk, i) => {
+      const tab = document.createElement('button');
+      tab.className = 'attack-tab' + (i === 0 ? ' active' : '');
+      tab.textContent = atk.short;
+      tab.addEventListener('click', () => selectAttack(i));
+      tabsEl.appendChild(tab);
+
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = atk.short;
+      selectEl.appendChild(opt);
+    });
+
+    selectEl.addEventListener('change', (e) => selectAttack(parseInt(e.target.value)));
+  }
+
+  function wireControls() {
+    document.getElementById('btnPlay').addEventListener('click', play);
+    document.getElementById('btnPause').addEventListener('click', pause);
+    document.getElementById('btnReset').addEventListener('click', reset);
+
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
+    });
+
+    document.getElementById('baselineToggle').addEventListener('change', (e) => {
+      state.baselineTraffic = e.target.checked;
+      if (state.playing && state.baselineTraffic) startBaselineTraffic();
+      if (!state.baselineTraffic) stopBaselineTraffic();
+    });
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      state.theme = next;
+      const icon = document.getElementById('themeIcon');
+      icon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+      lucide.createIcons();
+    });
+
+    // Mobile toggle
+    document.getElementById('mobileToggle').addEventListener('click', () => {
+      document.getElementById('detail-panel').classList.toggle('open');
+    });
+
+    // Resize
+    window.addEventListener('resize', () => {
+      renderGraph();
+    });
+
+    // Close tooltip on canvas click
+    document.getElementById('canvas-container').addEventListener('click', (e) => {
+      if (!e.target.closest('.node-group')) hideNodeTooltip();
+    });
+  }
+
+  // ===== INIT =====
+  function init() {
+    buildTabs();
+    wireControls();
+    renderGraph();
+    renderPanel(0);
+    lucide.createIcons();
+    setStatus('Ready \u2014 select an attack and press play');
+  }
+
+  // Wait for DOM and fonts
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>
