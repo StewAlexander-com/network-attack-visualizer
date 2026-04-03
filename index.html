@@ -1403,18 +1403,11 @@
     <div class="divider"></div>
 
     <div class="controls">
-      <button class="ctrl-btn" id="btnPlay" title="Play" aria-label="Play"><i data-lucide="play" style="width:16px;height:16px"></i></button>
-      <button class="ctrl-btn" id="btnPause" title="Pause" aria-label="Pause"><i data-lucide="pause" style="width:16px;height:16px"></i></button>
+      <button class="ctrl-btn" id="btnPrev" title="Previous step" aria-label="Previous step"><i data-lucide="chevron-left" style="width:16px;height:16px"></i></button>
+      <button class="ctrl-btn" id="btnNext" title="Next step" aria-label="Next step" style="background:var(--accent-blue);color:#0d1117;border-color:var(--accent-blue)"><i data-lucide="chevron-right" style="width:16px;height:16px"></i></button>
       <button class="ctrl-btn" id="btnReset" title="Reset" aria-label="Reset"><i data-lucide="rotate-ccw" style="width:16px;height:16px"></i></button>
 
       <div class="desktop-only">
-        <div class="divider"></div>
-        <div class="speed-group" id="speedGroup">
-          <button class="speed-btn" data-speed="0.5">0.5x</button>
-          <button class="speed-btn active" data-speed="1">1x</button>
-          <button class="speed-btn" data-speed="2">2x</button>
-          <button class="speed-btn" data-speed="3">3x</button>
-        </div>
         <div class="divider"></div>
         <label class="toggle-label">
           <input type="checkbox" id="baselineToggle"> Normal traffic
@@ -1474,15 +1467,6 @@
   <div class="mobile-settings-drawer" id="mobileSettingsDrawer">
     <div class="drawer-handle"></div>
     <div class="setting-row">
-      <span class="setting-label">Speed</span>
-      <div class="speed-group" id="mobileSpeedGroup">
-        <button class="speed-btn" data-speed="0.5">0.5x</button>
-        <button class="speed-btn active" data-speed="1">1x</button>
-        <button class="speed-btn" data-speed="2">2x</button>
-        <button class="speed-btn" data-speed="3">3x</button>
-      </div>
-    </div>
-    <div class="setting-row">
       <span class="setting-label">Normal traffic</span>
       <label class="toggle-label">
         <input type="checkbox" id="mobileBaselineToggle">
@@ -1498,14 +1482,9 @@
 
   <!-- Mobile bottom bar -->
   <div class="mobile-bottom-bar" id="mobileBottomBar">
-    <button class="ctrl-btn" id="mBtnPlay" title="Play" aria-label="Play"><i data-lucide="play" style="width:18px;height:18px"></i></button>
-    <button class="ctrl-btn" id="mBtnPause" title="Pause" aria-label="Pause"><i data-lucide="pause" style="width:18px;height:18px"></i></button>
+    <button class="ctrl-btn" id="mBtnPrev" title="Previous step" aria-label="Previous step"><i data-lucide="chevron-left" style="width:18px;height:18px"></i></button>
+    <button class="ctrl-btn" id="mBtnNext" title="Next step" aria-label="Next step" style="background:var(--accent-blue);color:#0d1117;border-color:var(--accent-blue)"><i data-lucide="chevron-right" style="width:18px;height:18px"></i></button>
     <button class="ctrl-btn" id="mBtnReset" title="Reset" aria-label="Reset"><i data-lucide="rotate-ccw" style="width:18px;height:18px"></i></button>
-    <div class="speed-group">
-      <button class="speed-btn mobile-speed-btn" data-speed="1">1x</button>
-      <button class="speed-btn mobile-speed-btn" data-speed="2">2x</button>
-      <button class="speed-btn mobile-speed-btn" data-speed="3">3x</button>
-    </div>
     <button class="mobile-settings-btn" id="mobileSettingsBtn" aria-label="Settings"><i data-lucide="settings" style="width:18px;height:18px"></i></button>
     <button class="help-btn" id="mobileHelpBtn" title="Guided tour" aria-label="Show guided tour" style="width:40px;height:40px;border-radius:8px;font-size: 1rem;">?</button>
     <button class="mobile-info-btn glow" id="mobileInfoBtn" aria-label="Attack details"><i data-lucide="info" style="width:18px;height:18px"></i></button>
@@ -1684,16 +1663,9 @@
   };
 
   // ===== PAGE VISIBILITY API =====
-  // Pause animations when tab is hidden to conserve resources
+  // Track visibility so packet animations can bail early when hidden
   document.addEventListener('visibilitychange', () => {
     state.visible = !document.hidden;
-    if (document.hidden && state.playing) {
-      pauseInternal();
-      state._wasPlayingBeforeHide = true;
-    } else if (!document.hidden && state._wasPlayingBeforeHide) {
-      state._wasPlayingBeforeHide = false;
-      // Don't auto-resume — user might not want that
-    }
   });
 
   // ===== DEBOUNCE UTILITY =====
@@ -2616,315 +2588,349 @@
     }
   }
 
-  // ===== ATTACK ANIMATIONS =====
-  // Pace multiplier: scales all step delays for a slower, more readable cadence
-  const PACE = 17.5;
+  // ===== ATTACK STEP FUNCTIONS =====
+  // Each attack is an array of functions. Each function plays one step's animation segment.
 
-  function scheduleStep(delay, fn) {
-    const timer = setTimeout(() => {
-      if (state.playing && state.visible) safeExec(fn, 'scheduled-step');
-    }, (delay * PACE) / state.speed);
-    state.animationTimers.push(timer);
-    return timer;
-  }
-
-  function playARPSpoof() {
-    setStatus('ARP Spoofing in progress...');
-    highlightStep(0);
-    addPacketRow('10.0.0.99', 'broadcast', 'ARP', 'who-has 10.0.0.20?', 'ATK');
-    animatePacketBurst('attacker', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 5, 'ARP Reply', 80);
-    animatePacketBurst('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 5, null, 80);
-
-    scheduleStep(1500, () => {
-      animatePacketBurst('switch', 'gateway', { ...PACKET.attack, color: '#d29922' }, 3, 'ARP', 80);
-      addPacketRow('10.0.0.99', '192.168.1.1', 'ARP', 'is-at 00:0c:29:at:tk:er', 'ATK');
-    });
-    scheduleStep(3000, () => {
-      highlightStep(1);
-      showNodeOverlay('ws-a', 'ARP Table Updated<br>192.168.1.1 \u2192 00:0c:29:at:tk:er');
-      addPacketRow('ws-a', 'ARP', 'TABLE', 'gw MAC \u2192 attacker', 'WARN');
-    });
-    scheduleStep(5000, () => {
-      highlightStep(2);
-      hideNodeOverlay();
-      setCompromised('attacker', true);
-      animatePacket('ws-a', 'switch', PACKET.mitm, 'MITM', () => {
-        animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
-          animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
-            animatePacket('switch', 'router', PACKET.mitm, null, () => {
-              animatePacket('router', 'gateway', PACKET.mitm);
-            });
-          });
-        });
-      });
-      addPacketRow('10.0.0.20', '192.168.1.1', 'TCP', 'via attacker (MITM)', 'ATK');
-    });
-    scheduleStep(8000, () => {
-      highlightStep(3);
-      addPacketRow('10.0.0.20', '10.0.0.99', 'HTTP', 'credentials visible', 'ATK');
-      for (let i = 0; i < 3; i++) {
-        scheduleStep(i * 1500, () => {
-          if (!state.playing) return;
-          animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
-            animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
-              animatePacket('attacker', 'switch', PACKET.mitm, null, () => {
-                animatePacket('switch', 'router', PACKET.mitm);
+  const attackStepFunctions = [
+    // Attack 0: ARP Spoofing
+    [
+      function() { // Step 0
+        setStatus('Step 1: Broadcasting fake ARP replies...');
+        highlightStep(0);
+        addPacketRow('10.0.0.99', 'broadcast', 'ARP', 'who-has 10.0.0.20?', 'ATK');
+        animatePacketBurst('attacker', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 5, 'ARP Reply', 120);
+        animatePacketBurst('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 5, null, 120);
+        setTimeout(() => {
+          animatePacketBurst('switch', 'gateway', { ...PACKET.attack, color: '#d29922' }, 3, 'ARP', 120);
+          addPacketRow('10.0.0.99', '192.168.1.1', 'ARP', 'is-at 00:0c:29:at:tk:er', 'ATK');
+        }, 1500);
+      },
+      function() { // Step 1
+        setStatus('Step 2: ARP tables poisoned...');
+        highlightStep(1);
+        showNodeOverlay('ws-a', 'ARP Table Updated<br>192.168.1.1 → 00:0c:29:at:tk:er');
+        addPacketRow('ws-a', 'ARP', 'TABLE', 'gw MAC → attacker', 'WARN');
+      },
+      function() { // Step 2
+        setStatus('Step 3: MITM position established...');
+        highlightStep(2);
+        hideNodeOverlay();
+        setCompromised('attacker', true);
+        animatePacket('ws-a', 'switch', PACKET.mitm, 'MITM', () => {
+          animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
+            animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
+              animatePacket('switch', 'router', PACKET.mitm, null, () => {
+                animatePacket('router', 'gateway', PACKET.mitm);
               });
             });
           });
         });
-      }
-      setStatus('MITM active \u2014 intercepting traffic');
-    });
-  }
-
-  function playMACFlood() {
-    setStatus('MAC Flood starting...');
-    highlightStep(0);
-    addPacketRow('RANDOM', 'switch', 'ETH', 'src=rand MAC', 'ATK');
-    for (let i = 0; i < 20; i++) {
-      scheduleStep(i * 60, () => {
-        if (!state.playing) return;
-        animatePacket('attacker', 'switch', { ...PACKET.attack, r: 2, speed: 150 });
-      });
-    }
-    scheduleStep(2000, () => {
-      highlightStep(1);
-      showNodeOverlay('switch', 'CAM OVERFLOW<br>8192/8192 \u2014 FULL');
-      addPacketRow('switch', 'ALL', 'WARN', 'CAM overflow', 'WARN');
-    });
-    scheduleStep(4000, () => {
-      highlightStep(2);
-      hideNodeOverlay();
-      setCompromised('attacker', true);
-      ['ws-a','ws-b','attacker','server-a'].forEach((t, i) => {
-        scheduleStep(i * 200, () => {
-          if (!state.playing) return;
-          animatePacket('switch', t, { ...PACKET.attack, color: '#d29922', r: 3 });
-        });
-      });
-      addPacketRow('switch', 'ALL', 'ETH', 'hub mode', 'WARN');
-      setStatus('Switch in hub mode');
-    });
-    scheduleStep(6500, () => {
-      highlightStep(3);
-      animatePacket('ws-a', 'switch', PACKET.normal, 'DATA', () => {
-        animatePacket('switch', 'server-a', PACKET.normal);
-        animatePacket('switch', 'attacker', { ...PACKET.mitm, color: '#f85149' }, 'SNIFF');
-      });
-      addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'also to attacker', 'ATK');
-    });
-  }
-
-  function playSYNFlood() {
-    setStatus('SYN Flood starting...');
-    highlightStep(0);
-    const ips = ['172.16.99.1','10.255.0.42','203.0.113.7','198.51.100.3','192.0.2.99'];
-    for (let i = 0; i < 15; i++) {
-      scheduleStep(i * 100, () => {
-        if (!state.playing) return;
-        animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 200 }, i === 0 ? 'SYN' : null, () => {
-          animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 200 }, null, () => {
-            animatePacket('router', 'server-a', { ...PACKET.attack, r: 3, speed: 200 });
-          });
-        });
-        if (i < 3) addPacketRow(ips[i], '10.0.0.10', 'TCP', `SYN seq=${Math.floor(Math.random()*99999)}`, 'ATK');
-      });
-    }
-    scheduleStep(3000, () => {
-      highlightStep(1);
-      setCompromised('server-a', true);
-      const sn = nodeMap['server-a'];
-      const pg = overlayGroup.append('g').attr('class','progress-overlay').attr('transform',`translate(${sn.px-30},${sn.py-40})`);
-      pg.append('rect').attr('class','progress-bg').attr('width',60).attr('height',8);
-      pg.append('rect').attr('class','progress-fill').attr('width',0).attr('height',8).transition().duration(2000/state.speed).attr('width',60);
-      pg.append('text').attr('x',30).attr('y',-4).attr('text-anchor','middle').attr('font-family','var(--font-mono)').attr('font-size','9px').attr('fill','#f85149').text('QUEUE FULL');
-      addPacketRow('10.0.0.10', 'SYS', 'WARN', 'queue 100%', 'WARN');
-      setStatus('Server queue saturated');
-    });
-    scheduleStep(5500, () => {
-      highlightStep(2);
-      animatePacket('ws-a', 'switch', PACKET.normal, 'SYN', () => {
-        animatePacket('switch', 'router', PACKET.normal, null, () => {
-          animatePacket('router', 'server-a', { ...PACKET.normal, color: '#f85149' }, 'RST');
-        });
-      });
-      addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'SYN \u2192 RST', 'ATK');
-      setStatus('Legitimate traffic denied');
-    });
-  }
-
-  function playDHCPStarve() {
-    setStatus('DHCP Starvation starting...');
-    highlightStep(0);
-    for (let i = 0; i < 12; i++) {
-      scheduleStep(i * 100, () => {
-        if (!state.playing) return;
-        animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 180 }, i === 0 ? 'DISCOVER' : null, () => {
-          animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 180 }, null, () => {
-            animatePacket('router', 'server-a', { ...PACKET.attack, r: 3, speed: 180 });
-          });
-        });
-        if (i < 2) addPacketRow(`rand:${Math.random().toString(16).slice(2,6)}`, '255.255.255.255', 'DHCP', 'DISCOVER', 'ATK');
-      });
-    }
-    scheduleStep(2500, () => {
-      highlightStep(1);
-      showNodeOverlay('server-a', 'DHCP Pool Exhausted<br>0/254 available');
-      addPacketRow('10.0.0.10', 'SYS', 'DHCP', 'pool exhausted', 'WARN');
-    });
-    scheduleStep(4500, () => {
-      highlightStep(2);
-      hideNodeOverlay();
-      setCompromised('attacker', true);
-      animatePacket('ws-b', 'switch', PACKET.normal, 'DISCOVER', () => {
-        animatePacket('attacker', 'switch', PACKET.rogue, 'ROGUE DHCP', () => {
-          animatePacket('switch', 'ws-b', PACKET.rogue, 'OFFER');
-        });
-      });
-      addPacketRow('10.0.0.99', '10.0.0.21', 'DHCP', 'OFFER gw=attacker', 'ATK');
-    });
-    scheduleStep(7000, () => {
-      highlightStep(3);
-      setCompromised('ws-b', true);
-      animatePacket('ws-b', 'switch', PACKET.rogue, null, () => {
-        animatePacket('switch', 'attacker', PACKET.rogue, 'MITM');
-      });
-      addPacketRow('10.0.0.21', '10.0.0.99', 'ALL', 'gw=attacker', 'ATK');
-      setStatus('WS-B rerouted through rogue DHCP');
-    });
-  }
-
-  function playICMPRedirect() {
-    setStatus('ICMP Redirect starting...');
-    highlightStep(0);
-    animatePacket('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 'ICMP Redirect', () => {
-      animatePacket('switch', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 'Type 5');
-    });
-    addPacketRow('10.0.0.99', '10.0.0.20', 'ICMP', 'Type 5 Redirect', 'ATK');
-    scheduleStep(2500, () => {
-      highlightStep(1);
-      showNodeOverlay('ws-a', 'Route Updated<br>10.0.0.11 via 10.0.0.99');
-      addPacketRow('ws-a', 'SYS', 'ROUTE', '10.0.0.11 via attacker', 'WARN');
-      setCompromised('attacker', true);
-    });
-    scheduleStep(5000, () => {
-      highlightStep(2);
-      hideNodeOverlay();
-      animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
-        animatePacket('switch', 'attacker', PACKET.mitm, 'REDIRECT', () => {
-          animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
-            animatePacket('switch', 'router', PACKET.mitm, null, () => {
-              animatePacket('router', 'server-b', PACKET.mitm);
-            });
-          });
-        });
-      });
-      addPacketRow('10.0.0.20', '10.0.0.11', 'TCP', 'via attacker', 'ATK');
-      setStatus('Traffic redirected through attacker');
-      for (let i = 1; i < 3; i++) {
-        scheduleStep(i * 2000, () => {
-          if (!state.playing) return;
-          animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
-            animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
-              animatePacket('attacker', 'switch', PACKET.mitm, null, () => {
-                animatePacket('switch', 'router', PACKET.mitm, null, () => {
-                  animatePacket('router', 'server-b', PACKET.mitm);
+        addPacketRow('10.0.0.20', '192.168.1.1', 'TCP', 'via attacker (MITM)', 'ATK');
+      },
+      function() { // Step 3
+        setStatus('Step 4: Credentials intercepted');
+        highlightStep(3);
+        addPacketRow('10.0.0.20', '10.0.0.99', 'HTTP', 'credentials visible', 'ATK');
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            if (!state.playing) return;
+            animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
+              animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
+                animatePacket('attacker', 'switch', PACKET.mitm, null, () => {
+                  animatePacket('switch', 'router', PACKET.mitm);
                 });
               });
             });
-          });
-        });
+          }, i * 2000);
+        }
       }
-    });
-  }
+    ],
 
-  function playLateralMove() {
-    setStatus('Lateral movement...');
-    highlightStep(0);
-    setCompromised('ws-a', true);
-    addPacketRow('ws-a', 'SYS', 'INFO', 'foothold established', 'ATK');
-    scheduleStep(2000, () => {
-      highlightStep(1);
-      const targets = ['switch','router','server-a','server-b','ws-b'];
-      targets.forEach((t, i) => {
-        scheduleStep(i * 200, () => {
-          if (!state.playing) return;
-          animatePacket('ws-a', 'switch', { ...PACKET.scan, speed: 300 }, i === 0 ? 'SCAN' : null, () => {
-            if (t === 'switch') return;
-            if (t === 'router') animatePacket('switch', 'router', PACKET.scan);
-            else if (t === 'server-a' || t === 'server-b') {
-              animatePacket('switch', 'router', PACKET.scan, null, () => animatePacket('router', t, PACKET.scan));
-            } else animatePacket('switch', t, PACKET.scan);
+    // Attack 1: MAC Flooding
+    [
+      function() {
+        setStatus('Step 1: Flooding switch with random MACs...');
+        highlightStep(0);
+        addPacketRow('RANDOM', 'switch', 'ETH', 'src=rand MAC', 'ATK');
+        for (let i = 0; i < 20; i++) {
+          setTimeout(() => {
+            if (!state.playing) return;
+            animatePacket('attacker', 'switch', { ...PACKET.attack, r: 2, speed: 300 });
+          }, i * 100);
+        }
+      },
+      function() {
+        setStatus('Step 2: CAM table overflow...');
+        highlightStep(1);
+        showNodeOverlay('switch', 'CAM OVERFLOW<br>8192/8192 — FULL');
+        addPacketRow('switch', 'ALL', 'WARN', 'CAM overflow', 'WARN');
+      },
+      function() {
+        setStatus('Step 3: Switch in hub mode...');
+        highlightStep(2);
+        hideNodeOverlay();
+        setCompromised('attacker', true);
+        ['ws-a','ws-b','attacker','server-a'].forEach((t, i) => {
+          setTimeout(() => {
+            if (!state.playing) return;
+            animatePacket('switch', t, { ...PACKET.attack, color: '#d29922', r: 3 });
+          }, i * 300);
+        });
+        addPacketRow('switch', 'ALL', 'ETH', 'hub mode', 'WARN');
+      },
+      function() {
+        setStatus('Step 4: Sniffing all traffic...');
+        highlightStep(3);
+        animatePacket('ws-a', 'switch', PACKET.normal, 'DATA', () => {
+          animatePacket('switch', 'server-a', PACKET.normal);
+          animatePacket('switch', 'attacker', { ...PACKET.mitm, color: '#f85149' }, 'SNIFF');
+        });
+        addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'also to attacker', 'ATK');
+      }
+    ],
+
+    // Attack 2: SYN Flood
+    [
+      function() {
+        setStatus('Step 1: SYN flood with spoofed IPs...');
+        highlightStep(0);
+        const ips = ['172.16.99.1','10.255.0.42','203.0.113.7','198.51.100.3','192.0.2.99'];
+        for (let i = 0; i < 15; i++) {
+          setTimeout(() => {
+            if (!state.playing) return;
+            animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 400 }, i === 0 ? 'SYN' : null, () => {
+              animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 400 }, null, () => {
+                animatePacket('router', 'server-a', { ...PACKET.attack, r: 3, speed: 400 });
+              });
+            });
+            if (i < 3) addPacketRow(ips[i], '10.0.0.10', 'TCP', 'SYN seq=' + Math.floor(Math.random()*99999), 'ATK');
+          }, i * 200);
+        }
+      },
+      function() {
+        setStatus('Step 2: Server queue saturated...');
+        highlightStep(1);
+        setCompromised('server-a', true);
+        const sn = nodeMap['server-a'];
+        const pg = overlayGroup.append('g').attr('class','progress-overlay').attr('transform','translate('+(sn.px-30)+','+(sn.py-40)+')');
+        pg.append('rect').attr('class','progress-bg').attr('width',60).attr('height',8);
+        pg.append('rect').attr('class','progress-fill').attr('width',0).attr('height',8).transition().duration(3000).attr('width',60);
+        pg.append('text').attr('x',30).attr('y',-4).attr('text-anchor','middle').attr('font-family','var(--font-mono)').attr('font-size','9px').attr('fill','#f85149').text('QUEUE FULL');
+        addPacketRow('10.0.0.10', 'SYS', 'WARN', 'queue 100%', 'WARN');
+      },
+      function() {
+        setStatus('Step 3: Legitimate traffic denied');
+        highlightStep(2);
+        animatePacket('ws-a', 'switch', PACKET.normal, 'SYN', () => {
+          animatePacket('switch', 'router', PACKET.normal, null, () => {
+            animatePacket('router', 'server-a', { ...PACKET.normal, color: '#f85149' }, 'RST');
           });
-          if (i < 3) addPacketRow('10.0.0.20', nodeMap[t]?.ip || t, 'TCP', `SYN port ${[22,445,3389,80,443][i]}`, 'ATK');
         });
-      });
-      setStatus('Port scan in progress');
-    });
-    scheduleStep(5000, () => {
-      highlightStep(2);
-      animatePacket('server-b', 'router', { ...PACKET.scan, color: '#3fb950' }, '445/open', () => {
-        animatePacket('router', 'switch', { ...PACKET.scan, color: '#3fb950' }, null, () => {
-          animatePacket('switch', 'ws-a', { ...PACKET.scan, color: '#3fb950' });
-        });
-      });
-      addPacketRow('10.0.0.11', '10.0.0.20', 'TCP', 'SYN-ACK 445 (SMB)', 'WARN');
-      scheduleStep(1500, () => {
-        animatePacket('ws-a', 'switch', PACKET.mitm, 'SMB', () => {
-          animatePacket('switch', 'router', PACKET.mitm, null, () => {
-            animatePacket('router', 'server-b', PACKET.mitm, 'CONNECT');
+        addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'SYN → RST', 'ATK');
+      }
+    ],
+
+    // Attack 3: DHCP Starvation
+    [
+      function() {
+        setStatus('Step 1: Exhausting DHCP pool...');
+        highlightStep(0);
+        for (let i = 0; i < 12; i++) {
+          setTimeout(() => {
+            if (!state.playing) return;
+            animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 360 }, i === 0 ? 'DISCOVER' : null, () => {
+              animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 360 }, null, () => {
+                animatePacket('router', 'server-a', { ...PACKET.attack, r: 3, speed: 360 });
+              });
+            });
+            if (i < 2) addPacketRow('rand:'+Math.random().toString(16).slice(2,6), '255.255.255.255', 'DHCP', 'DISCOVER', 'ATK');
+          }, i * 200);
+        }
+      },
+      function() {
+        setStatus('Step 2: DHCP pool exhausted...');
+        highlightStep(1);
+        showNodeOverlay('server-a', 'DHCP Pool Exhausted<br>0/254 available');
+        addPacketRow('10.0.0.10', 'SYS', 'DHCP', 'pool exhausted', 'WARN');
+      },
+      function() {
+        setStatus('Step 3: Rogue DHCP responding...');
+        highlightStep(2);
+        hideNodeOverlay();
+        setCompromised('attacker', true);
+        animatePacket('ws-b', 'switch', PACKET.normal, 'DISCOVER', () => {
+          animatePacket('attacker', 'switch', PACKET.rogue, 'ROGUE DHCP', () => {
+            animatePacket('switch', 'ws-b', PACKET.rogue, 'OFFER');
           });
         });
-        addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'session setup', 'ATK');
-      });
-    });
-    scheduleStep(8500, () => {
-      highlightStep(3);
-      setCompromised('server-b', true);
-      addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'COMPROMISED', 'ATK');
-      setStatus('DB Server compromised');
-      for (let i = 0; i < 3; i++) {
-        scheduleStep(i * 1200, () => {
-          if (!state.playing) return;
-          animatePacket('server-b', 'router', PACKET.mitm, i === 0 ? 'EXFIL' : null, () => {
-            animatePacket('router', 'switch', PACKET.mitm, null, () => {
-              animatePacket('switch', 'ws-a', PACKET.mitm);
+        addPacketRow('10.0.0.99', '10.0.0.21', 'DHCP', 'OFFER gw=attacker', 'ATK');
+      },
+      function() {
+        setStatus('Step 4: Traffic rerouted through attacker');
+        highlightStep(3);
+        setCompromised('ws-b', true);
+        animatePacket('ws-b', 'switch', PACKET.rogue, null, () => {
+          animatePacket('switch', 'attacker', PACKET.rogue, 'MITM');
+        });
+        addPacketRow('10.0.0.21', '10.0.0.99', 'ALL', 'gw=attacker', 'ATK');
+      }
+    ],
+
+    // Attack 4: ICMP Redirect
+    [
+      function() {
+        setStatus('Step 1: Sending ICMP Redirect...');
+        highlightStep(0);
+        animatePacket('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 'ICMP Redirect', () => {
+          animatePacket('switch', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 'Type 5');
+        });
+        addPacketRow('10.0.0.99', '10.0.0.20', 'ICMP', 'Type 5 Redirect', 'ATK');
+      },
+      function() {
+        setStatus('Step 2: Routing table poisoned...');
+        highlightStep(1);
+        showNodeOverlay('ws-a', 'Route Updated<br>10.0.0.11 via 10.0.0.99');
+        addPacketRow('ws-a', 'SYS', 'ROUTE', '10.0.0.11 via attacker', 'WARN');
+        setCompromised('attacker', true);
+      },
+      function() {
+        setStatus('Step 3: Traffic redirected through attacker');
+        highlightStep(2);
+        hideNodeOverlay();
+        animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
+          animatePacket('switch', 'attacker', PACKET.mitm, 'REDIRECT', () => {
+            animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
+              animatePacket('switch', 'router', PACKET.mitm, null, () => {
+                animatePacket('router', 'server-b', PACKET.mitm);
+              });
             });
           });
         });
+        addPacketRow('10.0.0.20', '10.0.0.11', 'TCP', 'via attacker', 'ATK');
       }
-    });
-  }
+    ],
 
-  const playFunctions = [playARPSpoof, playMACFlood, playSYNFlood, playDHCPStarve, playICMPRedirect, playLateralMove];
+    // Attack 5: Lateral Movement
+    [
+      function() {
+        setStatus('Step 1: Compromised foothold on WS-A...');
+        highlightStep(0);
+        setCompromised('ws-a', true);
+        addPacketRow('ws-a', 'SYS', 'INFO', 'foothold established', 'ATK');
+      },
+      function() {
+        setStatus('Step 2: Internal port scan...');
+        highlightStep(1);
+        const targets = ['switch','router','server-a','server-b','ws-b'];
+        targets.forEach((t, i) => {
+          setTimeout(() => {
+            if (!state.playing) return;
+            animatePacket('ws-a', 'switch', { ...PACKET.scan, speed: 500 }, i === 0 ? 'SCAN' : null, () => {
+              if (t === 'switch') return;
+              if (t === 'router') animatePacket('switch', 'router', PACKET.scan);
+              else if (t === 'server-a' || t === 'server-b') {
+                animatePacket('switch', 'router', PACKET.scan, null, () => animatePacket('router', t, PACKET.scan));
+              } else animatePacket('switch', t, PACKET.scan);
+            });
+            if (i < 3) addPacketRow('10.0.0.20', nodeMap[t]?.ip || t, 'TCP', 'SYN port '+[22,445,3389,80,443][i], 'ATK');
+          }, i * 400);
+        });
+      },
+      function() {
+        setStatus('Step 3: SMB connection established...');
+        highlightStep(2);
+        animatePacket('server-b', 'router', { ...PACKET.scan, color: '#3fb950' }, '445/open', () => {
+          animatePacket('router', 'switch', { ...PACKET.scan, color: '#3fb950' }, null, () => {
+            animatePacket('switch', 'ws-a', { ...PACKET.scan, color: '#3fb950' });
+          });
+        });
+        addPacketRow('10.0.0.11', '10.0.0.20', 'TCP', 'SYN-ACK 445 (SMB)', 'WARN');
+        setTimeout(() => {
+          animatePacket('ws-a', 'switch', PACKET.mitm, 'SMB', () => {
+            animatePacket('switch', 'router', PACKET.mitm, null, () => {
+              animatePacket('router', 'server-b', PACKET.mitm, 'CONNECT');
+            });
+          });
+          addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'session setup', 'ATK');
+        }, 2000);
+      },
+      function() {
+        setStatus('Step 4: DB Server compromised');
+        highlightStep(3);
+        setCompromised('server-b', true);
+        addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'COMPROMISED', 'ATK');
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            if (!state.playing) return;
+            animatePacket('server-b', 'router', PACKET.mitm, i === 0 ? 'EXFIL' : null, () => {
+              animatePacket('router', 'switch', PACKET.mitm, null, () => {
+                animatePacket('switch', 'ws-a', PACKET.mitm);
+              });
+            });
+          }, i * 1800);
+        }
+      }
+    ]
+  ];
 
   // ===== TRANSPORT CONTROLS =====
-  function play() {
-    if (state.playing) return;
-    state.playing = true;
-    updateControlState();
-    if (state.baselineTraffic) startBaselineTraffic();
+  function replayUpToStep(targetStep) {
+    // Reset visual state
+    state.animationTimers.forEach(t => clearTimeout(t));
+    state.animationTimers = [];
+    state.packetAnimations.forEach(g => { try { g.remove(); } catch(e) {} });
+    state.packetAnimations = [];
+    packetGroup.selectAll('*').remove();
+    overlayGroup.selectAll('*').remove();
+    state.compromised.forEach(id => setCompromised(id, false));
+    state.compromised.clear();
+    hideNodeOverlay();
+    hideNodeTooltip();
+    clearPacketTable();
 
-    // On mobile: auto-open the detail drawer so user sees the walkthrough
-    if (isMobile() && !state.drawerOpen) {
+    const panelResult = document.getElementById('panelResult');
+    if (panelResult) { panelResult.innerHTML = ''; panelResult.classList.remove('visible'); }
+
+    // Replay all steps up to and including targetStep
+    const steps = attackStepFunctions[state.currentAttack];
+    state.step = -1;
+    state.playing = true;
+    for (let i = 0; i <= targetStep; i++) {
+      state.step = i;
+      safeExec(() => steps[i](), 'replay-step-' + i);
+    }
+    updateControlState();
+  }
+
+  function stepNext() {
+    const steps = attackStepFunctions[state.currentAttack];
+    if (!steps) return;
+
+    if (state.step >= steps.length - 1) return; // Already at end
+
+    const nextStep = state.step + 1;
+
+    // Clear animations from current step
+    packetGroup.selectAll('*').remove();
+    overlayGroup.selectAll('.progress-overlay').remove();
+
+    state.step = nextStep;
+    state.playing = true;
+
+    // On mobile: auto-open the detail drawer on first step
+    if (nextStep === 0 && isMobile() && !state.drawerOpen) {
       openDrawer();
-      // Stop the info button glow — user has seen the panel
       const infoBtn = document.getElementById('mobileInfoBtn');
       if (infoBtn) infoBtn.classList.remove('glow');
     }
 
-    safeExec(() => playFunctions[state.currentAttack](), 'play-attack');
-  }
-
-  function pauseInternal() {
-    state.playing = false;
-    stopBaselineTraffic();
-  }
-
-  function pause() {
-    pauseInternal();
+    safeExec(() => steps[state.step](), 'step-' + state.step);
     updateControlState();
+  }
+
+  function stepPrev() {
+    if (state.step <= 0) return;
+    replayUpToStep(state.step - 1);
   }
 
   function reset() {
@@ -2946,7 +2952,7 @@
     const panelResult = document.getElementById('panelResult');
     if (panelResult) { panelResult.innerHTML = ''; panelResult.classList.remove('visible'); }
     updateControlState();
-    setStatus('Ready');
+    setStatus('Ready — press Next to begin');
   }
 
   function selectAttack(idx) {
@@ -2955,14 +2961,6 @@
     renderPanel(idx);
     document.querySelectorAll('.attack-tab').forEach((tab, i) => tab.classList.toggle('active', i === idx));
     document.getElementById('mobileAttackSelect').value = idx;
-  }
-
-  function setSpeed(speed) {
-    state.speed = speed;
-    // Update all speed button groups
-    document.querySelectorAll('.speed-btn').forEach(btn => {
-      btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
-    });
   }
 
   function setBaselineTraffic(enabled) {
@@ -2975,12 +2973,38 @@
   }
 
   function updateControlState() {
-    document.getElementById('btnPlay').classList.toggle('active', state.playing);
-    document.getElementById('btnPause').classList.toggle('active', !state.playing && state.step >= 0);
-    const mp = document.getElementById('mBtnPlay');
-    const mpa = document.getElementById('mBtnPause');
-    if (mp) mp.classList.toggle('active', state.playing);
-    if (mpa) mpa.classList.toggle('active', !state.playing && state.step >= 0);
+    const steps = attackStepFunctions[state.currentAttack];
+    const atEnd = steps && state.step >= steps.length - 1;
+    const atStart = state.step <= 0;
+
+    // Disable prev at start
+    ['btnPrev', 'mBtnPrev'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.opacity = (state.step <= 0) ? '0.3' : '1';
+        el.style.pointerEvents = (state.step <= 0) ? 'none' : 'auto';
+      }
+    });
+
+    // Disable next at end
+    ['btnNext', 'mBtnNext'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.opacity = atEnd ? '0.3' : '1';
+        el.style.pointerEvents = atEnd ? 'none' : 'auto';
+      }
+    });
+
+    // Status
+    if (steps) {
+      const stepNum = Math.max(0, state.step + 1);
+      const total = steps.length;
+      if (state.step < 0) {
+        setStatus('Ready — press Next to begin');
+      } else {
+        setStatus('Step ' + stepNum + ' of ' + total + (atEnd ? ' — Complete' : ''));
+      }
+    }
   }
 
   function setStatus(text) {
@@ -3046,19 +3070,14 @@
   // ===== WIRE CONTROLS =====
   function wireControls() {
     // Desktop transport
-    document.getElementById('btnPlay').addEventListener('click', play);
-    document.getElementById('btnPause').addEventListener('click', pause);
+    document.getElementById('btnPrev').addEventListener('click', stepPrev);
+    document.getElementById('btnNext').addEventListener('click', stepNext);
     document.getElementById('btnReset').addEventListener('click', reset);
 
     // Mobile transport
-    document.getElementById('mBtnPlay').addEventListener('click', play);
-    document.getElementById('mBtnPause').addEventListener('click', pause);
+    document.getElementById('mBtnPrev').addEventListener('click', stepPrev);
+    document.getElementById('mBtnNext').addEventListener('click', stepNext);
     document.getElementById('mBtnReset').addEventListener('click', reset);
-
-    // All speed buttons (desktop + mobile)
-    document.querySelectorAll('.speed-btn').forEach(btn => {
-      btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
-    });
 
     // Baseline toggles
     document.getElementById('baselineToggle').addEventListener('change', (e) => setBaselineTraffic(e.target.checked));
@@ -3161,7 +3180,7 @@
     safeExec(renderGraph, 'renderGraph');
     safeExec(() => renderPanel(0), 'renderPanel');
     try { lucide.createIcons(); } catch(e) {}
-    setStatus('Ready \u2014 select an attack and press play');
+    setStatus('Ready \u2014 press Next to begin');
   }
 
   if (document.readyState === 'loading') {
@@ -3201,19 +3220,15 @@
         arrow: 'bottom',
       },
       {
-        targetFn: () => document.getElementById('btnPlay') || document.getElementById('mBtnPlay'),
-        title: 'Play Controls',
-        desc: 'Press Play to watch the attack unfold in real time. Pause to freeze the action. Reset to start over.',
+        targetFn: () => document.getElementById('btnNext') || document.getElementById('mBtnNext'),
+        title: 'Step Controls',
+        desc: 'Press Next to advance through the attack one step at a time. Press Previous to go back. Reset returns to the beginning.',
         arrow: 'bottom',
       },
       {
-        targetFn: () => isMobile()
-          ? document.getElementById('mobileSettingsBtn')
-          : document.getElementById('speedGroup'),
-        title: 'Speed Controls',
-        desc: isMobile()
-          ? 'Open Settings to adjust speed — slow down to 0.5x to study packet flow, or speed up to 3x for a quick overview.'
-          : 'Slow it down to 0.5x to study the packet flow, or speed up to 3x for a quick overview.',
+        targetFn: () => document.getElementById('statusbar') || document.getElementById('mobileBottomBar'),
+        title: 'Step Counter',
+        desc: 'The status bar shows which step you\'re on. Each step pauses so you can read the details before advancing.',
         arrow: 'bottom',
       },
       {
