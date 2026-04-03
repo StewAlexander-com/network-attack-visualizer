@@ -936,15 +936,15 @@
       background: linear-gradient(to top, rgba(255,255,255,0.95) 30%, transparent 100%);
     }
     .scroll-chevron {
-      width: 32px;
-      height: 32px;
-      color: var(--accent-blue);
-      filter: drop-shadow(0 0 6px rgba(88,166,255,0.5));
+      width: 36px;
+      height: 36px;
+      color: #f5e6a3;
+      filter: drop-shadow(0 0 8px rgba(245,230,163,0.6));
       animation: chevron-bob 1.2s ease-in-out infinite;
     }
     .scroll-indicator:active .scroll-chevron {
       transform: scale(0.85);
-      color: #79c0ff;
+      color: #fff1b8;
     }
     .scroll-indicator-up .scroll-chevron { animation-name: chevron-bob-up; }
     @keyframes chevron-bob {
@@ -2593,8 +2593,7 @@
       if (i < stepIdx) el.classList.add('completed');
       if (i === stepIdx) {
         el.classList.add('active');
-        // Delay the scroll slightly so the CSS transition (step expansion) has time to start
-        setTimeout(() => smoothScrollToStep(el), 200);
+        // Auto-scroll removed — let the user control their own reading position
       }
     });
 
