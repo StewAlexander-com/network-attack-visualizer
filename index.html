@@ -2300,6 +2300,14 @@
   // ===== ANNOTATION / GUIDED TOUR SYSTEM =====
   (function() {
     const TOUR_KEY = 'nav-tour-seen';
+    // Safe storage abstraction — falls back to in-memory when storage unavailable (sandboxed iframes)
+    const _memStore = {};
+    const _ls = (function() { try { var s = window['local'+'Storage']; s.setItem('_t','1'); s.removeItem('_t'); return s; } catch(e) { return null; } })();
+    const safeStore = {
+      get(k) { return _ls ? _ls.getItem(k) : (_memStore[k] || null); },
+      set(k, v) { _ls ? _ls.setItem(k, v) : (_memStore[k] = v); },
+      remove(k) { _ls ? _ls.removeItem(k) : (delete _memStore[k]); }
+    };
     const CARD_MARGIN = 16; // px minimum from viewport edge
     const TOTAL_STEPS = 7;
 
@@ -2495,7 +2503,7 @@
     function endTour() {
       overlay.classList.remove('active');
       highlight.style.display = 'none';
-      try { localStorage.setItem(TOUR_KEY, '1'); } catch(e) {}
+      safeStore.set(TOUR_KEY, '1');
     }
 
     // Wire next / skip
@@ -2512,14 +2520,14 @@
     const helpBtn = document.getElementById('helpBtn');
     if (helpBtn) {
       helpBtn.addEventListener('click', () => {
-        try { localStorage.removeItem(TOUR_KEY); } catch(e) {}
+        safeStore.remove(TOUR_KEY);
         startTour();
       });
     }
     const mobileHelpBtn = document.getElementById('mobileHelpBtn');
     if (mobileHelpBtn) {
       mobileHelpBtn.addEventListener('click', () => {
-        try { localStorage.removeItem(TOUR_KEY); } catch(e) {}
+        safeStore.remove(TOUR_KEY);
         startTour();
       });
     }
@@ -2533,7 +2541,7 @@
 
     // First-visit auto-show after 1 second
     let tourSeen = false;
-    try { tourSeen = !!localStorage.getItem(TOUR_KEY); } catch(e) {}
+    tourSeen = !!safeStore.get(TOUR_KEY);
     if (!tourSeen) {
       setTimeout(startTour, 1000);
     }
