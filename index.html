@@ -2741,10 +2741,12 @@
     const panel = document.getElementById('detail-panel');
     if (!panel || !scrollUpEl || !scrollDownEl) return;
     const tolerance = 8;
+    // Only show chevrons when the drawer is actually open on mobile (or always on desktop)
+    const drawerVisible = !isMobile() || state.drawerOpen;
     const canScrollUp = panel.scrollTop > tolerance;
     const canScrollDown = (panel.scrollHeight - panel.scrollTop - panel.clientHeight) > tolerance;
-    scrollUpEl.classList.toggle('visible', canScrollUp);
-    scrollDownEl.classList.toggle('visible', canScrollDown);
+    scrollUpEl.classList.toggle('visible', drawerVisible && canScrollUp);
+    scrollDownEl.classList.toggle('visible', drawerVisible && canScrollDown);
 
     // Position the chevrons over the panel
     const rect = panel.getBoundingClientRect();
@@ -3198,6 +3200,9 @@
     const panelResult = document.getElementById('panelResult');
     if (panelResult) { panelResult.innerHTML = ''; panelResult.classList.remove('visible'); }
     updateControlState();
+    hideChevrons();
+    // Close drawer on reset (mobile)
+    if (isMobile() && state.drawerOpen) closeDrawer();
     setStatus('Ready — press Next to begin');
   }
 
@@ -3286,11 +3291,17 @@
     setTimeout(updateScrollIndicators, 350);
   }
 
+  function hideChevrons() {
+    if (scrollUpEl) scrollUpEl.classList.remove('visible');
+    if (scrollDownEl) scrollDownEl.classList.remove('visible');
+  }
+
   function closeDrawer() {
     state.drawerOpen = false;
     document.getElementById('detail-panel').classList.remove('open');
     document.getElementById('drawerBackdrop').classList.remove('visible');
     setTimeout(() => document.getElementById('drawerBackdrop').style.display = 'none', 300);
+    hideChevrons();
   }
 
   function openSettings() {
