@@ -279,6 +279,7 @@
       flex-shrink: 0;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
+      scroll-behavior: smooth;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
@@ -899,6 +900,55 @@
       .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
     }
 
+    /* ===== SCROLL INDICATOR CHEVRONS ===== */
+    .scroll-indicator {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .scroll-indicator.visible { opacity: 1; }
+    .scroll-indicator-up {
+      top: 0;
+      background: linear-gradient(to bottom, var(--surface) 0%, transparent 100%);
+    }
+    .scroll-indicator-down {
+      bottom: 0;
+      background: linear-gradient(to top, var(--surface) 0%, transparent 100%);
+    }
+    .scroll-chevron {
+      width: 28px;
+      height: 28px;
+      color: var(--accent-blue);
+      opacity: 0.7;
+      filter: drop-shadow(0 0 4px rgba(88,166,255,0.4));
+      animation: chevron-bob 1.5s ease-in-out infinite;
+    }
+    .scroll-indicator-up .scroll-chevron { animation-name: chevron-bob-up; }
+    @keyframes chevron-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(4px); }
+    }
+    @keyframes chevron-bob-up {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* Position the detail panel as relative anchor for chevrons */
+    @media (max-width: 768px) {
+      #detail-panel { position: fixed; } /* already set, but ensure scroll indicators anchor correctly */
+    }
+    @media (min-width: 769px) {
+      #detail-panel { position: relative; }
+    }
+
     /* ===== CDN FALLBACK NOTICE ===== */
     .cdn-fallback-notice {
       position: fixed;
@@ -1370,6 +1420,12 @@
       <div class="node-overlay" id="nodeOverlay"></div>
     </div>
     <aside id="detail-panel" aria-label="Attack detail panel">
+      <div class="scroll-indicator scroll-indicator-up" id="scrollUp">
+        <svg class="scroll-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      </div>
+      <div class="scroll-indicator scroll-indicator-down" id="scrollDown">
+        <svg class="scroll-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
       <div class="drawer-handle"></div>
       <div class="panel-section" id="panelHeader"></div>
       <div class="panel-section" id="panelSteps">
@@ -2043,11 +2099,11 @@
 
   // ===== PACKET SPECS =====
   const PACKET = {
-    normal:  { r: 3, color: '#58a6ff', opacity: 0.5, speed: 2000 },
-    attack:  { r: 5, color: '#f85149', opacity: 1.0, speed: 250 },
-    mitm:    { r: 4, color: '#bc8cff', opacity: 0.9, speed: 600 },
-    rogue:   { r: 4, color: '#d29922', opacity: 0.9, speed: 400 },
-    scan:    { r: 3, color: '#58a6ff', opacity: 0.7, speed: 100 },
+    normal:  { r: 3, color: '#58a6ff', opacity: 0.5, speed: 3000 },
+    attack:  { r: 5, color: '#f85149', opacity: 1.0, speed: 500 },
+    mitm:    { r: 4, color: '#bc8cff', opacity: 0.9, speed: 1000 },
+    rogue:   { r: 4, color: '#d29922', opacity: 0.9, speed: 800 },
+    scan:    { r: 3, color: '#58a6ff', opacity: 0.7, speed: 200 },
   };
 
   // ===== D3 SETUP =====
@@ -2459,6 +2515,47 @@
     try { lucide.createIcons(); } catch(e) {}
   }
 
+  // ===== SMOOTH SCROLL + SCROLL INDICATORS =====
+  const scrollUpEl = document.getElementById('scrollUp');
+  const scrollDownEl = document.getElementById('scrollDown');
+
+  function updateScrollIndicators() {
+    const panel = document.getElementById('detail-panel');
+    if (!panel || !scrollUpEl || !scrollDownEl) return;
+    const tolerance = 8;
+    const canScrollUp = panel.scrollTop > tolerance;
+    const canScrollDown = (panel.scrollHeight - panel.scrollTop - panel.clientHeight) > tolerance;
+    scrollUpEl.classList.toggle('visible', canScrollUp);
+    scrollDownEl.classList.toggle('visible', canScrollDown);
+  }
+
+  // Listen for scroll on the panel to update chevrons in real time
+  const detailPanel = document.getElementById('detail-panel');
+  if (detailPanel) {
+    detailPanel.addEventListener('scroll', debounce(updateScrollIndicators, 60), { passive: true });
+  }
+
+  // Smooth scroll that centers the target element within the panel
+  function smoothScrollToStep(el) {
+    const panel = document.getElementById('detail-panel');
+    if (!panel || !el) return;
+    const panelRect = panel.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    // Calculate offset to center the element in the visible panel area
+    const elCenter = elRect.top + elRect.height / 2;
+    const panelCenter = panelRect.top + panelRect.height / 2;
+    const scrollDelta = elCenter - panelCenter;
+    // Only scroll if the element is not already mostly visible and centered
+    if (Math.abs(scrollDelta) > panelRect.height * 0.2) {
+      panel.scrollTo({
+        top: panel.scrollTop + scrollDelta,
+        behavior: 'smooth'
+      });
+    }
+    // Update indicators after scroll settles
+    setTimeout(updateScrollIndicators, 400);
+  }
+
   function highlightStep(stepIdx) {
     state.step = stepIdx;
     const stepEls = document.querySelectorAll('.step-item');
@@ -2467,16 +2564,8 @@
       if (i < stepIdx) el.classList.add('completed');
       if (i === stepIdx) {
         el.classList.add('active');
-        // Auto-scroll: on mobile scroll inside the drawer panel; on desktop scroll within sidebar
-        const panel = document.getElementById('detail-panel');
-        if (panel && el) {
-          // Scroll the step into the visible area of the panel
-          const panelRect = panel.getBoundingClientRect();
-          const elRect = el.getBoundingClientRect();
-          if (elRect.top < panelRect.top || elRect.bottom > panelRect.bottom) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
+        // Delay the scroll slightly so the CSS transition (step expansion) has time to start
+        setTimeout(() => smoothScrollToStep(el), 200);
       }
     });
 
@@ -2502,10 +2591,13 @@
   }
 
   // ===== ATTACK ANIMATIONS =====
+  // Pace multiplier: scales all step delays for a slower, more readable cadence
+  const PACE = 1.8;
+
   function scheduleStep(delay, fn) {
     const timer = setTimeout(() => {
       if (state.playing && state.visible) safeExec(fn, 'scheduled-step');
-    }, delay / state.speed);
+    }, (delay * PACE) / state.speed);
     state.animationTimers.push(timer);
     return timer;
   }
@@ -2894,6 +2986,8 @@
     // Stop the glow once the user has seen the panel
     const infoBtn = document.getElementById('mobileInfoBtn');
     if (infoBtn) infoBtn.classList.remove('glow');
+    // Update scroll indicators after drawer animation completes
+    setTimeout(updateScrollIndicators, 350);
   }
 
   function closeDrawer() {
