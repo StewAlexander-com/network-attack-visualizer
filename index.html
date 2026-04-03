@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d1117" id="metaThemeColor">
@@ -266,7 +266,7 @@
       width: 100%;
       height: 100%;
       display: block;
-      touch-action: none; /* prevent browser gestures on the SVG canvas */
+      touch-action: pan-x pan-y; /* allow scroll/pan but let browser handle pinch zoom */
     }
 
     /* ===== SIDEBAR ===== */
@@ -3354,7 +3354,7 @@
     });
 
     // Prevent pinch zoom on SVG (iOS Safari)
-    document.getElementById('network-svg').addEventListener('gesturestart', (e) => e.preventDefault());
+    // gesturestart prevention removed — allow pinch-to-zoom everywhere
   }
 
   // ===== BUILD UI =====
