@@ -1444,6 +1444,34 @@
       margin-bottom: 3px;
     }
     .swot-text { }
+    /* Mobile: collapsible SWOT cards */
+    @media (max-width: 768px) {
+      .swot-cell { padding: 0; overflow: hidden; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      .swot-label {
+        padding: 10px 12px;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .swot-label::after {
+        content: '\25BE';
+        font-size: 1em;
+        opacity: 0.5;
+        transition: transform 0.2s ease;
+      }
+      .swot-cell.open .swot-label::after { transform: rotate(180deg); }
+      .swot-text {
+        max-height: 0;
+        overflow: hidden;
+        padding: 0 12px;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+      }
+      .swot-cell.open .swot-text {
+        max-height: 300px;
+        padding: 0 12px 10px;
+      }
+    }
     .swot-s { background: rgba(63,185,80,0.06); border: 1px solid rgba(63,185,80,0.15); }
     .swot-s .swot-label { color: var(--accent-green); }
     .swot-s .swot-text { color: var(--text-muted); }
@@ -3381,8 +3409,13 @@
       if (!e.target.closest('.node-group')) hideNodeTooltip();
     });
 
-    // Prevent pinch zoom on SVG (iOS Safari)
-    // gesturestart prevention removed — allow pinch-to-zoom everywhere
+    // SWOT card collapse/expand on mobile (event delegation)
+    document.getElementById('detail-panel').addEventListener('click', (e) => {
+      const cell = e.target.closest('.swot-cell');
+      if (cell && isMobile()) {
+        cell.classList.toggle('open');
+      }
+    });
   }
 
   // ===== BUILD UI =====
