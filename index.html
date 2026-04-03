@@ -2,7 +2,10 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d1117" id="metaThemeColor">
   <title>Network Attack Visualizer</title>
   <meta name="description" content="Interactive Layer 2/3 network attack visualization — ARP Spoofing, MAC Flooding, SYN Flood, DHCP Starvation, ICMP Redirect, Lateral Movement. Built with D3.js.">
 
@@ -10,12 +13,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-  <!-- D3.js v7 -->
-  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-
-  <!-- Lucide Icons -->
-  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 
   <style>
     /* ===== CSS VARIABLES ===== */
@@ -32,11 +29,15 @@
       --accent-red: #f85149;
       --accent-orange: #d29922;
       --accent-purple: #bc8cff;
-      --font-ui: 'Space Grotesk', system-ui, sans-serif;
-      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --font-ui: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
       --sidebar-width: 340px;
       --topbar-height: 52px;
       --footer-height: 36px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
     }
 
     [data-theme="light"] {
@@ -51,7 +52,12 @@
 
     /* ===== RESET ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; overflow: hidden; }
+    html, body {
+      height: 100%;
+      height: 100dvh; /* dynamic viewport height — handles mobile browser chrome */
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
     body {
       font-family: var(--font-ui);
       background: var(--bg);
@@ -59,31 +65,47 @@
       display: flex;
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation; /* kill 300ms tap delay globally */
+      padding-top: var(--safe-top);
+      padding-left: var(--safe-left);
+      padding-right: var(--safe-right);
+    }
+
+    /* ===== REDUCED MOTION ===== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
 
     /* ===== TOPBAR ===== */
     #topbar {
       height: var(--topbar-height);
+      min-height: var(--topbar-height);
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 12px;
+      padding: 0 12px;
+      gap: 8px;
       flex-shrink: 0;
       z-index: 100;
+      overflow: hidden;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-shrink: 0;
     }
-    .logo svg { width: 28px; height: 28px; }
+    .logo svg { width: 24px; height: 24px; flex-shrink: 0; }
     .logo-text {
       font-weight: 600;
-      font-size: 15px;
+      font-size: 14px;
       letter-spacing: -0.02em;
       white-space: nowrap;
     }
@@ -96,19 +118,19 @@
       flex-shrink: 0;
     }
 
-    /* Attack Tabs */
+    /* Attack Tabs — desktop */
     .attack-tabs {
       display: flex;
       gap: 2px;
       overflow-x: auto;
-      flex-shrink: 1;
+      flex: 1;
       min-width: 0;
       scrollbar-width: none;
     }
     .attack-tabs::-webkit-scrollbar { display: none; }
 
     .attack-tab {
-      padding: 6px 12px;
+      padding: 6px 10px;
       font-size: 12px;
       font-weight: 500;
       font-family: var(--font-ui);
@@ -119,6 +141,7 @@
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
     }
     .attack-tab:hover { color: var(--text); background: var(--surface-2); }
     .attack-tab.active {
@@ -131,14 +154,14 @@
     .controls {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       flex-shrink: 0;
       margin-left: auto;
     }
 
     .ctrl-btn {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -148,8 +171,11 @@
       color: var(--text-muted);
       cursor: pointer;
       transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .ctrl-btn:hover { color: var(--text); background: var(--surface-2); }
+    .ctrl-btn:active { background: var(--surface-2); }
     .ctrl-btn.active { color: var(--accent-blue); border-color: var(--accent-blue); }
 
     .speed-group {
@@ -167,6 +193,7 @@
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
     }
     .speed-btn:hover { color: var(--text-muted); }
     .speed-btn.active {
@@ -183,12 +210,18 @@
       color: var(--text-muted);
       cursor: pointer;
       white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
     }
-    .toggle-label input { accent-color: var(--accent-blue); cursor: pointer; }
+    .toggle-label input {
+      accent-color: var(--accent-blue);
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
 
     .theme-toggle {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -198,15 +231,19 @@
       color: var(--text-muted);
       cursor: pointer;
       transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
     }
     .theme-toggle:hover { color: var(--text); background: var(--surface-2); }
+
+    /* Desktop-only controls in topbar */
+    .desktop-only { display: flex; align-items: center; gap: 4px; }
 
     /* ===== MAIN LAYOUT ===== */
     #app {
       display: flex;
       flex: 1;
       overflow: hidden;
-      height: calc(100vh - var(--topbar-height) - var(--footer-height));
+      min-height: 0;
     }
 
     #canvas-container {
@@ -220,6 +257,7 @@
       width: 100%;
       height: 100%;
       display: block;
+      touch-action: none; /* prevent browser gestures on the SVG canvas */
     }
 
     /* ===== SIDEBAR ===== */
@@ -228,7 +266,10 @@
       background: var(--surface);
       border-left: 1px solid var(--border);
       overflow-y: auto;
+      overflow-x: hidden;
       flex-shrink: 0;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
@@ -237,13 +278,13 @@
     #detail-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
     .panel-section {
-      padding: 16px;
+      padding: 14px;
       border-bottom: 1px solid var(--border);
     }
     .panel-section:last-child { border-bottom: none; }
 
     .attack-title {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       line-height: 1.3;
       margin-bottom: 8px;
@@ -322,9 +363,7 @@
       color: #fff;
       background: var(--accent-red);
     }
-    .step-item.completed {
-      color: var(--text);
-    }
+    .step-item.completed { color: var(--text); }
     .step-item.completed::before {
       color: #fff;
       background: var(--accent-green);
@@ -333,16 +372,18 @@
     /* Packet Table */
     .packet-table-wrap {
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .packet-table {
       width: 100%;
       border-collapse: collapse;
       font-family: var(--font-mono);
       font-size: 11px;
+      table-layout: fixed;
     }
     .packet-table th {
       text-align: left;
-      padding: 6px 6px;
+      padding: 6px 5px;
       color: var(--text-faint);
       font-weight: 500;
       font-size: 10px;
@@ -351,18 +392,18 @@
       border-bottom: 1px solid var(--border);
       white-space: nowrap;
     }
+    .packet-table colgroup .col-src { width: 22%; }
+    .packet-table colgroup .col-dst { width: 22%; }
+    .packet-table colgroup .col-proto { width: 14%; }
+    .packet-table colgroup .col-info { width: 28%; }
+    .packet-table colgroup .col-flag { width: 14%; }
     .packet-table td {
-      padding: 5px 6px;
+      padding: 4px 5px;
       color: var(--text-muted);
       border-bottom: 1px solid rgba(48,54,61,0.5);
       white-space: nowrap;
-      max-width: 80px;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-    .packet-table td:last-child {
-      max-width: 40px;
-      overflow: visible;
     }
     .packet-table tr { transition: opacity 0.2s ease; }
     .packet-table tr.new-row { animation: slideIn 0.3s ease; }
@@ -370,9 +411,9 @@
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .packet-table .flag-atk { color: var(--accent-red); }
+    .packet-table .flag-atk { color: var(--accent-red); font-weight: 500; }
     .packet-table .flag-norm { color: var(--accent-blue); }
-    .packet-table .flag-warn { color: var(--accent-orange); }
+    .packet-table .flag-warn { color: var(--accent-orange); font-weight: 500; }
 
     /* Callout boxes */
     .callout {
@@ -383,12 +424,7 @@
       display: flex;
       gap: 10px;
     }
-    .callout-icon {
-      flex-shrink: 0;
-      width: 18px;
-      height: 18px;
-      margin-top: 1px;
-    }
+    .callout-icon { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; }
     .callout-detect {
       background: rgba(139,148,158,0.06);
       border: 1px solid rgba(139,148,158,0.15);
@@ -410,7 +446,6 @@
     .callout-mitigate .callout-title { color: var(--accent-green); }
     .callout-text { color: var(--text-muted); }
 
-    /* Section header */
     .section-label {
       font-size: 10px;
       font-weight: 600;
@@ -423,37 +458,53 @@
     /* ===== FOOTER ===== */
     #statusbar {
       height: var(--footer-height);
+      min-height: var(--footer-height);
       background: var(--surface);
       border-top: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
+      padding: 0 12px;
+      padding-bottom: var(--safe-bottom);
       font-size: 11px;
       color: var(--text-faint);
       flex-shrink: 0;
+      gap: 8px;
+      overflow: hidden;
     }
     .footer-left, .footer-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
+      min-width: 0;
+    }
+    .footer-right {
+      flex-shrink: 0;
     }
     .footer-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 2px 8px;
+      padding: 2px 6px;
       font-size: 10px;
       font-weight: 500;
       border: 1px solid var(--border);
       border-radius: 4px;
+      white-space: nowrap;
     }
     .footer-link {
       color: var(--text-faint);
       text-decoration: none;
       transition: color 0.15s ease;
+      display: flex;
+      align-items: center;
     }
     .footer-link:hover { color: var(--accent-blue); }
+    #statusText {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     /* ===== SVG NETWORK GRAPH ===== */
     .node-group { cursor: pointer; }
@@ -468,6 +519,7 @@
       fill: var(--text);
       text-anchor: middle;
       pointer-events: none;
+      user-select: none;
     }
     .node-ip {
       font-family: var(--font-mono);
@@ -475,19 +527,14 @@
       fill: var(--text-faint);
       text-anchor: middle;
       pointer-events: none;
+      user-select: none;
     }
-    .node-icon {
-      pointer-events: none;
-    }
+    .node-icon { pointer-events: none; user-select: none; }
 
     .link-line {
       stroke: var(--border);
       stroke-width: 1.5;
       stroke-opacity: 0.6;
-    }
-    .link-line.active {
-      stroke: var(--accent-blue);
-      stroke-opacity: 0.4;
     }
 
     .node-compromised .node-shape {
@@ -512,29 +559,24 @@
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.15s ease;
-      min-width: 200px;
+      min-width: 180px;
+      max-width: 260px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
-    .node-tooltip.visible { opacity: 1; }
-    .node-tooltip .tt-label {
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 6px;
-    }
+    .node-tooltip.visible { opacity: 1; pointer-events: auto; }
+    .node-tooltip .tt-label { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
     .node-tooltip .tt-row {
       display: flex;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
       padding: 2px 0;
     }
-    .node-tooltip .tt-key {
-      color: var(--text-faint);
-      font-size: 11px;
-    }
+    .node-tooltip .tt-key { color: var(--text-faint); font-size: 11px; }
     .node-tooltip .tt-val {
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--text-muted);
+      word-break: break-all;
     }
     .node-tooltip .tt-status {
       margin-top: 6px;
@@ -547,26 +589,14 @@
     .tt-status.compromised { color: var(--accent-red); }
 
     /* Packets */
-    .packet-dot {
-      pointer-events: none;
-    }
+    .packet-dot { pointer-events: none; }
     .packet-label {
       font-family: var(--font-mono);
       font-size: 8px;
       font-weight: 500;
       pointer-events: none;
+      user-select: none;
     }
-
-    /* Overlay labels on edges */
-    .edge-label {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      font-weight: 500;
-      fill: var(--accent-purple);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    .edge-label.visible { opacity: 1; }
 
     /* CAM table / routing overlay on nodes */
     .node-overlay {
@@ -583,89 +613,195 @@
       opacity: 0;
       transition: opacity 0.3s ease;
       white-space: nowrap;
+      max-width: calc(100vw - 32px);
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .node-overlay.visible { opacity: 1; }
 
     /* Progress bar overlay on nodes */
-    .progress-overlay {
-      pointer-events: none;
-    }
-    .progress-bg {
-      fill: var(--surface-2);
-      rx: 2;
-    }
-    .progress-fill {
-      fill: var(--accent-red);
-      rx: 2;
-      transition: width 0.5s ease;
-    }
+    .progress-overlay { pointer-events: none; }
+    .progress-bg { fill: var(--surface-2); rx: 2; }
+    .progress-fill { fill: var(--accent-red); rx: 2; transition: width 0.5s ease; }
 
-    /* Hub mode animation */
-    @keyframes hub-flash {
-      0%, 100% { stroke-opacity: 0.3; }
-      50% { stroke-opacity: 0.9; }
-    }
-    .hub-mode .link-line {
-      stroke: var(--accent-orange);
-      animation: hub-flash 0.5s ease-in-out infinite;
-    }
-
-    /* ===== MOBILE ===== */
-    .mobile-toggle {
+    /* ===== MOBILE CONTROLS BOTTOM BAR ===== */
+    .mobile-bottom-bar {
       display: none;
       position: fixed;
-      bottom: 56px;
-      right: 16px;
-      width: 44px;
-      height: 44px;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 0 12px;
+      padding-bottom: var(--safe-bottom);
+      z-index: 250;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .mobile-bottom-bar .ctrl-btn {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+    }
+    .mobile-bottom-bar .speed-group { display: flex; gap: 1px; }
+    .mobile-bottom-bar .speed-btn {
+      padding: 6px 8px;
+      font-size: 12px;
+      min-height: 36px;
+    }
+    .mobile-bottom-bar .mobile-info-btn {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: var(--accent-blue);
       color: #fff;
       border: none;
-      border-radius: 50%;
-      z-index: 300;
+      border-radius: 8px;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-bottom-bar .mobile-settings-btn {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
 
+    /* Drawer backdrop */
+    .drawer-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 190;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .drawer-backdrop.visible { opacity: 1; }
+
+    /* Drawer handle */
+    .drawer-handle {
+      display: none;
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 8px auto 4px;
+    }
+
+    /* Mobile settings panel */
+    .mobile-settings-drawer {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-radius: 16px 16px 0 0;
+      padding: 8px 16px;
+      padding-bottom: calc(64px + var(--safe-bottom));
+      z-index: 260;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+    .mobile-settings-drawer.open { transform: translateY(0); }
+    .mobile-settings-drawer .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
+    }
+    .mobile-settings-drawer .setting-row:last-child { border-bottom: none; }
+    .mobile-settings-drawer .setting-label { color: var(--text-muted); font-size: 12px; }
+
+    /* ===== MOBILE BREAKPOINT ===== */
     @media (max-width: 768px) {
+      :root {
+        --topbar-height: 48px;
+        --footer-height: 0px; /* footer hidden on mobile */
+      }
+
       .attack-tabs { display: none; }
-      .controls .speed-group,
-      .controls .toggle-label,
-      .controls .divider { display: none; }
+      .desktop-only { display: none !important; }
+      .divider { display: none; }
+
+      #topbar {
+        padding: 0 10px;
+        gap: 6px;
+      }
+      .logo svg { width: 22px; height: 22px; }
+      .logo-text { font-size: 13px; }
+
+      /* Mobile: only show attack select + play/pause/reset + theme in topbar */
+      .controls {
+        gap: 3px;
+      }
 
       #app { flex-direction: column; }
 
+      #canvas-container {
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* Footer hidden on mobile — controls move to bottom bar */
+      #statusbar { display: none; }
+
+      /* Mobile bottom control bar */
+      .mobile-bottom-bar { display: flex; }
+
+      /* Detail panel — bottom drawer */
       #detail-panel {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
         width: 100%;
-        max-height: 60vh;
+        max-height: 65vh;
         border-left: none;
         border-top: 1px solid var(--border);
         transform: translateY(100%);
-        transition: transform 0.3s ease;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 200;
         border-radius: 16px 16px 0 0;
+        padding-bottom: calc(56px + var(--safe-bottom));
+        overscroll-behavior-y: contain;
       }
       #detail-panel.open { transform: translateY(0); }
 
-      .mobile-toggle { display: flex; }
+      .drawer-handle { display: block; }
 
-      #canvas-container { height: calc(100vh - var(--topbar-height) - var(--footer-height)); }
-    }
+      .panel-section { padding: 12px; }
+      .attack-title { font-size: 16px; }
+      .step-item { font-size: 12px; padding: 8px 10px 8px 32px; }
+      .step-item::before { left: 8px; top: 8px; width: 16px; height: 16px; font-size: 9px; }
+      .callout { font-size: 12px; padding: 10px 12px; }
 
-    /* Mobile attack select dropdown */
-    .mobile-attack-select {
-      display: none;
-    }
-    @media (max-width: 768px) {
+      /* Mobile attack select */
       .mobile-attack-select {
         display: block;
-        padding: 6px 10px;
+        flex: 1;
+        min-width: 0;
+        padding: 6px 28px 6px 10px;
         font-family: var(--font-ui);
         font-size: 12px;
         font-weight: 500;
@@ -674,7 +810,70 @@
         border: 1px solid var(--border);
         border-radius: 6px;
         cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%238b949e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
       }
+
+      /* Smaller node labels on mobile */
+      .node-label { font-size: 9px; }
+      .node-ip { font-size: 7px; }
+      .packet-label { font-size: 7px; }
+    }
+
+    /* Desktop: hide mobile elements */
+    @media (min-width: 769px) {
+      .mobile-attack-select { display: none; }
+      .mobile-bottom-bar { display: none; }
+      .drawer-backdrop { display: none !important; }
+      .drawer-handle { display: none; }
+      .mobile-settings-drawer { display: none !important; }
+    }
+
+    /* ===== VERY SMALL SCREENS (iPhone SE, 320px) ===== */
+    @media (max-width: 374px) {
+      .logo-text { display: none; }
+      .ctrl-btn { width: 36px; height: 36px; }
+      .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
+      .mobile-bottom-bar .speed-btn { padding: 6px 6px; font-size: 11px; }
+      .mobile-bottom-bar .mobile-info-btn,
+      .mobile-bottom-bar .mobile-settings-btn { width: 36px; height: 36px; min-width: 36px; }
+      .node-label { font-size: 8px; }
+      .node-ip { display: none; }
+    }
+
+    /* ===== TABLET (iPad) ===== */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      :root { --sidebar-width: 300px; }
+      .attack-tab { padding: 6px 8px; font-size: 11px; }
+    }
+
+    /* ===== LANDSCAPE MOBILE ===== */
+    @media (max-width: 768px) and (orientation: landscape) {
+      :root { --topbar-height: 40px; }
+      #detail-panel { max-height: 50vh; }
+      .mobile-bottom-bar { height: 44px; }
+      .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
+    }
+
+    /* ===== CDN FALLBACK NOTICE ===== */
+    .cdn-fallback-notice {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(210,153,34,0.15);
+      border: 1px solid var(--accent-orange);
+      color: var(--accent-orange);
+      font-size: 12px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      z-index: 9999;
+      display: none;
+      text-align: center;
+      max-width: 90vw;
     }
 
     /* ===== ANIMATIONS ===== */
@@ -686,10 +885,12 @@
 </head>
 <body>
 
+  <div class="cdn-fallback-notice" id="cdnNotice"></div>
+
   <!-- ===== TOPBAR ===== -->
   <header id="topbar">
     <div class="logo">
-      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="NetAttack.viz logo">
         <path d="M14 2L3 8v12l11 6 11-6V8L14 2z" stroke="var(--accent-blue)" stroke-width="1.5" fill="none"/>
         <circle cx="14" cy="10" r="2" fill="var(--accent-blue)"/>
         <circle cx="9" cy="17" r="1.5" fill="var(--accent-blue)" opacity="0.7"/>
@@ -704,32 +905,30 @@
     <div class="divider"></div>
 
     <div class="attack-tabs" id="attackTabs"></div>
-
-    <select class="mobile-attack-select" id="mobileAttackSelect"></select>
+    <select class="mobile-attack-select" id="mobileAttackSelect" aria-label="Select attack scenario"></select>
 
     <div class="divider"></div>
 
     <div class="controls">
-      <button class="ctrl-btn" id="btnPlay" title="Play"><i data-lucide="play" style="width:16px;height:16px"></i></button>
-      <button class="ctrl-btn" id="btnPause" title="Pause"><i data-lucide="pause" style="width:16px;height:16px"></i></button>
-      <button class="ctrl-btn" id="btnReset" title="Reset"><i data-lucide="rotate-ccw" style="width:16px;height:16px"></i></button>
+      <button class="ctrl-btn" id="btnPlay" title="Play" aria-label="Play"><i data-lucide="play" style="width:16px;height:16px"></i></button>
+      <button class="ctrl-btn" id="btnPause" title="Pause" aria-label="Pause"><i data-lucide="pause" style="width:16px;height:16px"></i></button>
+      <button class="ctrl-btn" id="btnReset" title="Reset" aria-label="Reset"><i data-lucide="rotate-ccw" style="width:16px;height:16px"></i></button>
 
-      <div class="divider"></div>
-
-      <div class="speed-group" id="speedGroup">
-        <button class="speed-btn" data-speed="0.5">0.5x</button>
-        <button class="speed-btn active" data-speed="1">1x</button>
-        <button class="speed-btn" data-speed="2">2x</button>
-        <button class="speed-btn" data-speed="3">3x</button>
+      <div class="desktop-only">
+        <div class="divider"></div>
+        <div class="speed-group" id="speedGroup">
+          <button class="speed-btn" data-speed="0.5">0.5x</button>
+          <button class="speed-btn active" data-speed="1">1x</button>
+          <button class="speed-btn" data-speed="2">2x</button>
+          <button class="speed-btn" data-speed="3">3x</button>
+        </div>
+        <div class="divider"></div>
+        <label class="toggle-label">
+          <input type="checkbox" id="baselineToggle"> Normal traffic
+        </label>
       </div>
 
-      <div class="divider"></div>
-
-      <label class="toggle-label">
-        <input type="checkbox" id="baselineToggle"> Normal traffic
-      </label>
-
-      <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode">
         <i data-lucide="moon" style="width:16px;height:16px" id="themeIcon"></i>
       </button>
     </div>
@@ -742,7 +941,8 @@
       <div class="node-tooltip" id="nodeTooltip"></div>
       <div class="node-overlay" id="nodeOverlay"></div>
     </div>
-    <aside id="detail-panel">
+    <aside id="detail-panel" aria-label="Attack detail panel">
+      <div class="drawer-handle"></div>
       <div class="panel-section" id="panelHeader"></div>
       <div class="panel-section" id="panelSteps">
         <div class="section-label">Attack Progression</div>
@@ -752,6 +952,9 @@
         <div class="section-label">Live Packet Capture</div>
         <div class="packet-table-wrap">
           <table class="packet-table">
+            <colgroup>
+              <col class="col-src"><col class="col-dst"><col class="col-proto"><col class="col-info"><col class="col-flag">
+            </colgroup>
             <thead>
               <tr><th>Src</th><th>Dst</th><th>Proto</th><th>Info</th><th>Flag</th></tr>
             </thead>
@@ -764,11 +967,50 @@
     </aside>
   </main>
 
-  <button class="mobile-toggle" id="mobileToggle">
-    <i data-lucide="info" style="width:20px;height:20px"></i>
-  </button>
+  <!-- Drawer backdrop -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
 
-  <!-- ===== FOOTER ===== -->
+  <!-- Mobile settings drawer -->
+  <div class="mobile-settings-drawer" id="mobileSettingsDrawer">
+    <div class="drawer-handle"></div>
+    <div class="setting-row">
+      <span class="setting-label">Speed</span>
+      <div class="speed-group" id="mobileSpeedGroup">
+        <button class="speed-btn" data-speed="0.5">0.5x</button>
+        <button class="speed-btn active" data-speed="1">1x</button>
+        <button class="speed-btn" data-speed="2">2x</button>
+        <button class="speed-btn" data-speed="3">3x</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Normal traffic</span>
+      <label class="toggle-label">
+        <input type="checkbox" id="mobileBaselineToggle">
+      </label>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Theme</span>
+      <button class="ctrl-btn" id="mobileThemeToggle" aria-label="Toggle theme">
+        <i data-lucide="moon" style="width:16px;height:16px" id="mobileThemeIcon"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile bottom bar -->
+  <div class="mobile-bottom-bar" id="mobileBottomBar">
+    <button class="ctrl-btn" id="mBtnPlay" title="Play" aria-label="Play"><i data-lucide="play" style="width:18px;height:18px"></i></button>
+    <button class="ctrl-btn" id="mBtnPause" title="Pause" aria-label="Pause"><i data-lucide="pause" style="width:18px;height:18px"></i></button>
+    <button class="ctrl-btn" id="mBtnReset" title="Reset" aria-label="Reset"><i data-lucide="rotate-ccw" style="width:18px;height:18px"></i></button>
+    <div class="speed-group">
+      <button class="speed-btn mobile-speed-btn" data-speed="1">1x</button>
+      <button class="speed-btn mobile-speed-btn" data-speed="2">2x</button>
+      <button class="speed-btn mobile-speed-btn" data-speed="3">3x</button>
+    </div>
+    <button class="mobile-settings-btn" id="mobileSettingsBtn" aria-label="Settings"><i data-lucide="settings" style="width:18px;height:18px"></i></button>
+    <button class="mobile-info-btn" id="mobileInfoBtn" aria-label="Attack details"><i data-lucide="info" style="width:18px;height:18px"></i></button>
+  </div>
+
+  <!-- ===== FOOTER (desktop only) ===== -->
   <footer id="statusbar">
     <div class="footer-left">
       <a class="footer-badge" href="https://attack.mitre.org" target="_blank" rel="noopener" style="color:var(--accent-red);text-decoration:none">
@@ -788,13 +1030,47 @@
     </div>
   </footer>
 
+<!-- CDN: D3.js with fallback -->
+<script>
+  // CDN resilience: try primary, then fallback, then degrade gracefully
+  window._cdnStatus = { d3: false, lucide: false };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"
+  onerror="document.write('<script src=\'https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js\' onerror=\'window._cdnStatus.d3=false\'><\/script>')"
+  onload="window._cdnStatus.d3=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"
+  onerror="document.write('<script src=\'https://unpkg.com/lucide@latest/dist/umd/lucide.min.js\' onerror=\'window._cdnStatus.lucide=false\'><\/script>')"
+  onload="window._cdnStatus.lucide=true"></script>
+
 <script>
 // ============================================================
 // NETWORK ATTACK VISUALIZER — Core Application
+// Production build with HA, fault tolerance, mobile resilience
 // ============================================================
 
 (function() {
   'use strict';
+
+  // ===== CDN HEALTH CHECK =====
+  const haD3 = typeof d3 !== 'undefined';
+  const hasLucide = typeof lucide !== 'undefined';
+
+  if (!haD3) {
+    document.getElementById('cdnNotice').textContent = 'D3.js failed to load. Animations unavailable. Try refreshing.';
+    document.getElementById('cdnNotice').style.display = 'block';
+    return; // Cannot run without D3
+  }
+
+  if (!hasLucide) {
+    // Graceful fallback: icons won't render but app still works
+    document.getElementById('cdnNotice').textContent = 'Icon library unavailable — app will work without icons.';
+    document.getElementById('cdnNotice').style.display = 'block';
+    window.lucide = { createIcons: function() {} }; // noop stub
+  }
+
+  // ===== DEVICE DETECTION =====
+  const isMobile = () => window.innerWidth <= 768;
+  const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
   // ===== STATE =====
   const state = {
@@ -807,20 +1083,54 @@
     animationTimers: [],
     packetAnimations: [],
     baselineInterval: null,
-    theme: 'dark'
+    theme: 'dark',
+    visible: true, // page visibility
+    drawerOpen: false,
+    settingsOpen: false,
   };
+
+  // ===== PAGE VISIBILITY API =====
+  // Pause animations when tab is hidden to conserve resources
+  document.addEventListener('visibilitychange', () => {
+    state.visible = !document.hidden;
+    if (document.hidden && state.playing) {
+      pauseInternal();
+      state._wasPlayingBeforeHide = true;
+    } else if (!document.hidden && state._wasPlayingBeforeHide) {
+      state._wasPlayingBeforeHide = false;
+      // Don't auto-resume — user might not want that
+    }
+  });
+
+  // ===== DEBOUNCE UTILITY =====
+  function debounce(fn, delay) {
+    let timer;
+    return function(...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+  }
+
+  // ===== SAFE EXEC (fault tolerance) =====
+  function safeExec(fn, label) {
+    try {
+      fn();
+    } catch (e) {
+      console.warn('[NetAttack.viz] Error in ' + (label || 'unknown') + ':', e.message);
+    }
+  }
 
   // ===== NODES =====
   const nodes = [
-    { id: 'internet',  label: 'Internet',       type: 'cloud',       ip: null,         mac: null,               x: 0.08, y: 0.5 },
-    { id: 'gateway',   label: 'Gateway',         type: 'router',      ip: '192.168.1.1',mac: 'aa:bb:cc:00:00:01', x: 0.28, y: 0.5 },
-    { id: 'router',    label: 'Core Router',     type: 'router',      ip: '10.0.0.1',   mac: 'aa:bb:cc:00:00:02', x: 0.50, y: 0.5 },
-    { id: 'switch',    label: 'L2 Switch',       type: 'switch',      ip: null,         mac: null,               x: 0.42, y: 0.78 },
-    { id: 'server-a',  label: 'Web Server',      type: 'server',      ip: '10.0.0.10',  mac: 'de:ad:be:ef:00:01', x: 0.72, y: 0.35 },
-    { id: 'server-b',  label: 'DB Server',       type: 'server',      ip: '10.0.0.11',  mac: 'de:ad:be:ef:00:02', x: 0.72, y: 0.65 },
-    { id: 'ws-a',      label: 'Workstation A',   type: 'workstation', ip: '10.0.0.20',  mac: 'ca:fe:ba:be:00:01', x: 0.28, y: 0.85 },
-    { id: 'ws-b',      label: 'Workstation B',   type: 'workstation', ip: '10.0.0.21',  mac: 'ca:fe:ba:be:00:02', x: 0.50, y: 0.92 },
-    { id: 'attacker',  label: 'Attacker (Kali)', type: 'attacker',    ip: '10.0.0.99',  mac: '00:0c:29:at:tk:er', x: 0.60, y: 0.85 }
+    { id: 'internet',  label: 'Internet',       type: 'cloud',       ip: null,         mac: null,               x: 0.08, y: 0.45 },
+    { id: 'gateway',   label: 'Gateway',         type: 'router',      ip: '192.168.1.1',mac: 'aa:bb:cc:00:00:01', x: 0.28, y: 0.45 },
+    { id: 'router',    label: 'Core Router',     type: 'router',      ip: '10.0.0.1',   mac: 'aa:bb:cc:00:00:02', x: 0.50, y: 0.45 },
+    { id: 'switch',    label: 'L2 Switch',       type: 'switch',      ip: null,         mac: null,               x: 0.42, y: 0.72 },
+    { id: 'server-a',  label: 'Web Server',      type: 'server',      ip: '10.0.0.10',  mac: 'de:ad:be:ef:00:01', x: 0.74, y: 0.30 },
+    { id: 'server-b',  label: 'DB Server',       type: 'server',      ip: '10.0.0.11',  mac: 'de:ad:be:ef:00:02', x: 0.74, y: 0.60 },
+    { id: 'ws-a',      label: 'WS-A',            type: 'workstation', ip: '10.0.0.20',  mac: 'ca:fe:ba:be:00:01', x: 0.24, y: 0.82 },
+    { id: 'ws-b',      label: 'WS-B',            type: 'workstation', ip: '10.0.0.21',  mac: 'ca:fe:ba:be:00:02', x: 0.48, y: 0.88 },
+    { id: 'attacker',  label: 'Attacker',        type: 'attacker',    ip: '10.0.0.99',  mac: '00:0c:29:at:tk:er', x: 0.62, y: 0.82 }
   ];
 
   const links = [
@@ -945,10 +1255,8 @@
   let width, height;
 
   const defs = svg.append('defs');
-
-  // Glow filter
-  const glowFilter = defs.append('filter').attr('id', 'glow');
-  glowFilter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'blur');
+  const glowFilter = defs.append('filter').attr('id', 'glow').attr('width', '200%').attr('height', '200%').attr('x', '-50%').attr('y', '-50%');
+  glowFilter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'blur');
   const glowMerge = glowFilter.append('feMerge');
   glowMerge.append('feMergeNode').attr('in', 'blur');
   glowMerge.append('feMergeNode').attr('in', 'SourceGraphic');
@@ -960,26 +1268,28 @@
 
   // ===== NODE SHAPES =====
   function getNodeShape(type) {
+    const m = isMobile();
+    const scale = m ? 0.8 : 1;
     switch(type) {
-      case 'cloud': return { shape: 'circle', r: 24, fill: 'rgba(88,166,255,0.1)', stroke: '#58a6ff' };
-      case 'router': return { shape: 'circle', r: 22, fill: 'rgba(63,185,80,0.1)', stroke: '#3fb950' };
-      case 'switch': return { shape: 'rect', w: 50, h: 30, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
-      case 'server': return { shape: 'rect', w: 44, h: 34, fill: 'rgba(88,166,255,0.1)', stroke: '#58a6ff' };
-      case 'workstation': return { shape: 'rect', w: 44, h: 30, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
-      case 'attacker': return { shape: 'circle', r: 22, fill: 'rgba(248,81,73,0.1)', stroke: '#f85149' };
-      default: return { shape: 'circle', r: 20, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
+      case 'cloud': return { shape: 'circle', r: 24*scale, fill: 'rgba(88,166,255,0.1)', stroke: '#58a6ff' };
+      case 'router': return { shape: 'circle', r: 22*scale, fill: 'rgba(63,185,80,0.1)', stroke: '#3fb950' };
+      case 'switch': return { shape: 'rect', w: 50*scale, h: 30*scale, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
+      case 'server': return { shape: 'rect', w: 44*scale, h: 34*scale, fill: 'rgba(88,166,255,0.1)', stroke: '#58a6ff' };
+      case 'workstation': return { shape: 'rect', w: 44*scale, h: 30*scale, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
+      case 'attacker': return { shape: 'circle', r: 22*scale, fill: 'rgba(248,81,73,0.1)', stroke: '#f85149' };
+      default: return { shape: 'circle', r: 20*scale, fill: 'rgba(139,148,158,0.1)', stroke: '#8b949e' };
     }
   }
 
-  function getNodeIcon(type) {
+  function getIconChar(type) {
     switch(type) {
-      case 'cloud': return 'cloud';
-      case 'router': return 'router';
-      case 'switch': return 'network';
-      case 'server': return 'server';
-      case 'workstation': return 'monitor';
-      case 'attacker': return 'skull';
-      default: return 'circle';
+      case 'cloud': return '\u2601';
+      case 'router': return '\u25C9';
+      case 'switch': return '\u2263';
+      case 'server': return '\u25A3';
+      case 'workstation': return '\u25A1';
+      case 'attacker': return '\u2620';
+      default: return '\u25CF';
     }
   }
 
@@ -989,42 +1299,46 @@
     width = rect.width;
     height = rect.height;
 
-    // Position nodes
+    if (width < 10 || height < 10) return; // guard against collapsed container
+
+    // Add padding so nodes never clip edges
+    const pad = isMobile() ? 30 : 40;
+
     nodes.forEach(n => {
-      n.px = n.x * width;
-      n.py = n.y * height;
+      n.px = pad + n.x * (width - pad * 2);
+      n.py = pad + n.y * (height - pad * 2);
     });
 
     // Links
-    const linkSel = linkGroup.selectAll('.link-line')
-      .data(links, d => d.source + '-' + d.target);
-
-    linkSel.enter()
-      .append('line')
-      .attr('class', 'link-line')
-      .merge(linkSel)
-      .attr('x1', d => nodeMap[d.source].px)
-      .attr('y1', d => nodeMap[d.source].py)
-      .attr('x2', d => nodeMap[d.target].px)
-      .attr('y2', d => nodeMap[d.target].py);
-
-    linkSel.exit().remove();
+    linkGroup.selectAll('.link-line').remove();
+    links.forEach(l => {
+      const s = nodeMap[l.source], t = nodeMap[l.target];
+      linkGroup.append('line')
+        .attr('class', 'link-line')
+        .attr('data-source', l.source)
+        .attr('data-target', l.target)
+        .attr('x1', s.px).attr('y1', s.py)
+        .attr('x2', t.px).attr('y2', t.py);
+    });
 
     // Nodes
-    const nodeSel = nodeGroup.selectAll('.node-group')
-      .data(nodes, d => d.id);
+    nodeGroup.selectAll('.node-group').remove();
 
-    const nodeEnter = nodeSel.enter()
-      .append('g')
-      .attr('class', 'node-group')
-      .attr('data-id', d => d.id)
-      .on('click', (event, d) => showNodeTooltip(event, d))
-      .on('mouseleave', () => hideNodeTooltip());
+    nodes.forEach(d => {
+      const g = nodeGroup.append('g')
+        .attr('class', 'node-group')
+        .attr('data-id', d.id)
+        .attr('transform', `translate(${d.px}, ${d.py})`);
 
-    nodeEnter.each(function(d) {
-      const g = d3.select(this);
+      // Enlarge touch target on mobile
+      if (isTouchDevice()) {
+        g.append('circle')
+          .attr('r', 30)
+          .attr('fill', 'transparent')
+          .attr('class', 'touch-target');
+      }
+
       const shape = getNodeShape(d.type);
-
       if (shape.shape === 'circle') {
         g.append('circle')
           .attr('class', 'node-shape')
@@ -1043,50 +1357,50 @@
           .attr('stroke', shape.stroke);
       }
 
-      // Icon placeholder — we'll use Lucide later
+      const iconSize = isMobile() ? '11px' : '14px';
       g.append('text')
         .attr('class', 'node-icon')
         .attr('text-anchor', 'middle')
         .attr('dy', '0.35em')
-        .attr('font-size', '14px')
+        .attr('font-size', iconSize)
         .attr('fill', shape.stroke)
         .text(getIconChar(d.type));
 
+      const labelDy = d.type === 'switch' ? (isMobile() ? 22 : 28) :
+        (shape.shape === 'circle' ? shape.r + (isMobile() ? 12 : 16) : shape.h/2 + (isMobile() ? 12 : 16));
       g.append('text')
         .attr('class', 'node-label')
-        .attr('dy', d.type === 'switch' ? 28 : (shape.shape === 'circle' ? shape.r + 16 : shape.h/2 + 16))
+        .attr('dy', labelDy)
         .text(d.label);
 
       if (d.ip) {
+        const ipDy = d.type === 'switch' ? (isMobile() ? 32 : 40) :
+          (shape.shape === 'circle' ? shape.r + (isMobile() ? 22 : 28) : shape.h/2 + (isMobile() ? 22 : 28));
         g.append('text')
           .attr('class', 'node-ip')
-          .attr('dy', d.type === 'switch' ? 40 : (shape.shape === 'circle' ? shape.r + 28 : shape.h/2 + 28))
+          .attr('dy', ipDy)
           .text(d.ip);
       }
+
+      // Restore compromised state after re-render
+      if (state.compromised.has(d.id)) {
+        g.classed('node-compromised', true);
+      }
+
+      // Event handlers
+      g.on('click', (event) => {
+        event.stopPropagation();
+        showNodeTooltip(event, d);
+      });
     });
-
-    nodeEnter.merge(nodeSel)
-      .attr('transform', d => `translate(${d.px}, ${d.py})`);
-
-    nodeSel.exit().remove();
-  }
-
-  function getIconChar(type) {
-    switch(type) {
-      case 'cloud': return '\u2601';
-      case 'router': return '\u25C9';
-      case 'switch': return '\u2263';
-      case 'server': return '\u25A3';
-      case 'workstation': return '\u25A1';
-      case 'attacker': return '\u2620';
-      default: return '\u25CF';
-    }
   }
 
   // ===== NODE TOOLTIP =====
   const tooltip = document.getElementById('nodeTooltip');
+  let tooltipTimeout;
 
   function showNodeTooltip(event, d) {
+    clearTimeout(tooltipTimeout);
     const isCompromised = state.compromised.has(d.id);
     tooltip.innerHTML = `
       <div class="tt-label">${d.label}</div>
@@ -1098,18 +1412,28 @@
     `;
 
     const rect = container.getBoundingClientRect();
+    const ttW = 200, ttH = 150;
     let left = d.px + 30;
     let top = d.py - 20;
-    if (left + 220 > rect.width) left = d.px - 230;
-    if (top + 160 > rect.height) top = rect.height - 170;
+
+    // Clamp to viewport
+    if (left + ttW > rect.width) left = Math.max(10, d.px - ttW - 10);
+    if (top + ttH > rect.height) top = rect.height - ttH - 10;
     if (top < 0) top = 10;
+    if (left < 0) left = 10;
 
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
     tooltip.classList.add('visible');
+
+    // Auto-dismiss on mobile after 4s
+    if (isTouchDevice()) {
+      tooltipTimeout = setTimeout(hideNodeTooltip, 4000);
+    }
   }
 
   function hideNodeTooltip() {
+    clearTimeout(tooltipTimeout);
     tooltip.classList.remove('visible');
   }
 
@@ -1118,7 +1442,7 @@
     return map[type] || type;
   }
 
-  // ===== NODE OVERLAY (CAM Table / Routing Table) =====
+  // ===== NODE OVERLAY =====
   const overlayEl = document.getElementById('nodeOverlay');
 
   function showNodeOverlay(nodeId, text) {
@@ -1128,7 +1452,10 @@
     const rect = container.getBoundingClientRect();
     let left = n.px + 30;
     let top = n.py - 40;
-    if (left + 200 > rect.width) left = n.px - 210;
+    // Clamp to viewport
+    if (left + 220 > rect.width) left = Math.max(10, n.px - 220);
+    if (top < 10) top = 10;
+    if (left < 10) left = 10;
     overlayEl.style.left = left + 'px';
     overlayEl.style.top = top + 'px';
     overlayEl.classList.add('visible');
@@ -1140,24 +1467,26 @@
 
   // ===== PACKET ANIMATION ENGINE =====
   function animatePacket(sourceId, targetId, spec, label, onComplete) {
+    if (!state.visible) { if (onComplete) onComplete(); return; }
     const s = nodeMap[sourceId];
     const t = nodeMap[targetId];
     if (!s || !t) { if (onComplete) onComplete(); return; }
 
     const duration = spec.speed / state.speed;
+    const r = isMobile() ? Math.max(2, spec.r - 1) : spec.r;
 
     const g = packetGroup.append('g').attr('class', 'packet-dot');
 
     g.append('circle')
-      .attr('r', spec.r)
+      .attr('r', r)
       .attr('fill', spec.color)
       .attr('opacity', spec.opacity)
       .attr('filter', spec.opacity > 0.7 ? 'url(#glow)' : null);
 
-    if (label) {
+    if (label && !isMobile()) {
       g.append('text')
         .attr('class', 'packet-label')
-        .attr('dy', -spec.r - 4)
+        .attr('dy', -r - 4)
         .attr('text-anchor', 'middle')
         .attr('fill', spec.color)
         .text(label);
@@ -1165,13 +1494,13 @@
 
     g.attr('transform', `translate(${s.px}, ${s.py})`);
 
-    const transition = g.transition()
+    g.transition()
       .duration(duration)
       .ease(d3.easeLinear)
       .attr('transform', `translate(${t.px}, ${t.py})`)
       .on('end', () => {
         g.remove();
-        if (onComplete) onComplete();
+        if (onComplete) safeExec(onComplete, 'packet-callback');
       });
 
     state.packetAnimations.push(g);
@@ -1182,7 +1511,7 @@
     stagger = (stagger || 50) / state.speed;
     for (let i = 0; i < count; i++) {
       const timer = setTimeout(() => {
-        if (!state.playing) return;
+        if (!state.playing || !state.visible) return;
         animatePacket(sourceId, targetId, spec, i === 0 ? label : null);
       }, i * stagger);
       state.animationTimers.push(timer);
@@ -1197,7 +1526,7 @@
       ['ws-b','switch'], ['switch','server-a'],
     ];
     state.baselineInterval = setInterval(() => {
-      if (!state.playing) return;
+      if (!state.playing || !state.visible) return;
       const route = routes[Math.floor(Math.random() * routes.length)];
       animatePacket(route[0], route[1], PACKET.normal);
     }, 2500 / state.speed);
@@ -1213,6 +1542,7 @@
   // ===== COMPROMISE STATE =====
   function setCompromised(nodeId, compromised) {
     const g = nodeGroup.select(`[data-id="${nodeId}"]`);
+    if (g.empty()) return;
     if (compromised) {
       state.compromised.add(nodeId);
       g.classed('node-compromised', true);
@@ -1228,8 +1558,7 @@
 
   function addPacketRow(src, dst, proto, info, flag) {
     const flagClass = flag === 'ATK' ? 'flag-atk' : flag === 'WARN' ? 'flag-warn' : 'flag-norm';
-    const row = { src, dst, proto, info, flag, flagClass };
-    packetRows.unshift(row);
+    packetRows.unshift({ src, dst, proto, info, flag, flagClass });
     if (packetRows.length > 5) packetRows = packetRows.slice(0, 5);
     renderPacketTable();
   }
@@ -1237,7 +1566,7 @@
   function renderPacketTable() {
     packetTableBody.innerHTML = packetRows.map((r, i) =>
       `<tr class="${i === 0 ? 'new-row' : ''}">
-        <td>${r.src}</td><td>${r.dst}</td><td>${r.proto}</td><td>${r.info}</td>
+        <td title="${r.src}">${r.src}</td><td title="${r.dst}">${r.dst}</td><td>${r.proto}</td><td title="${r.info}">${r.info}</td>
         <td class="${r.flagClass}">${r.flag}</td>
       </tr>`
     ).join('');
@@ -1260,8 +1589,7 @@
       <div class="phase-badge">${atk.phase}</div>
     `;
 
-    const stepsList = document.getElementById('stepsList');
-    stepsList.innerHTML = atk.steps.map((s, i) =>
+    document.getElementById('stepsList').innerHTML = atk.steps.map((s, i) =>
       `<li class="step-item" data-step="${i}">${s}</li>`
     ).join('');
 
@@ -1285,7 +1613,7 @@
       </div>
     `;
 
-    lucide.createIcons();
+    try { lucide.createIcons(); } catch(e) {}
   }
 
   function highlightStep(stepIdx) {
@@ -1293,50 +1621,39 @@
     document.querySelectorAll('.step-item').forEach((el, i) => {
       el.classList.remove('active', 'completed');
       if (i < stepIdx) el.classList.add('completed');
-      if (i === stepIdx) {
-        el.classList.add('active');
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      if (i === stepIdx) el.classList.add('active');
     });
   }
 
   // ===== ATTACK ANIMATIONS =====
   function scheduleStep(delay, fn) {
     const timer = setTimeout(() => {
-      if (state.playing) fn();
+      if (state.playing && state.visible) safeExec(fn, 'scheduled-step');
     }, delay / state.speed);
     state.animationTimers.push(timer);
     return timer;
   }
 
-  // Scenario 1: ARP Spoofing
   function playARPSpoof() {
     setStatus('ARP Spoofing in progress...');
-
-    // Step 1
     highlightStep(0);
-    addPacketRow('10.0.0.99', 'broadcast', 'ARP', 'who-has 10.0.0.20? tell 00:0c:29:at:tk:er', 'ATK');
+    addPacketRow('10.0.0.99', 'broadcast', 'ARP', 'who-has 10.0.0.20?', 'ATK');
     animatePacketBurst('attacker', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 5, 'ARP Reply', 80);
     animatePacketBurst('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 5, null, 80);
 
     scheduleStep(1500, () => {
-      animatePacketBurst('switch', 'gateway', { ...PACKET.attack, color: '#d29922' }, 3, 'ARP Reply', 80);
+      animatePacketBurst('switch', 'gateway', { ...PACKET.attack, color: '#d29922' }, 3, 'ARP', 80);
       addPacketRow('10.0.0.99', '192.168.1.1', 'ARP', 'is-at 00:0c:29:at:tk:er', 'ATK');
     });
-
-    // Step 2
     scheduleStep(3000, () => {
       highlightStep(1);
       showNodeOverlay('ws-a', 'ARP Table Updated<br>192.168.1.1 \u2192 00:0c:29:at:tk:er');
-      addPacketRow('ws-a', 'ARP', 'TABLE', 'gateway MAC \u2192 attacker MAC', 'WARN');
+      addPacketRow('ws-a', 'ARP', 'TABLE', 'gw MAC \u2192 attacker', 'WARN');
     });
-
-    // Step 3
     scheduleStep(5000, () => {
       highlightStep(2);
       hideNodeOverlay();
       setCompromised('attacker', true);
-      // MITM path: WS-A -> Attacker -> Gateway
       animatePacket('ws-a', 'switch', PACKET.mitm, 'MITM', () => {
         animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
           animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
@@ -1348,12 +1665,9 @@
       });
       addPacketRow('10.0.0.20', '192.168.1.1', 'TCP', 'via attacker (MITM)', 'ATK');
     });
-
-    // Step 4
     scheduleStep(8000, () => {
       highlightStep(3);
-      addPacketRow('10.0.0.20', '10.0.0.99', 'HTTP', 'GET /login credentials visible', 'ATK');
-      // Continuous MITM traffic
+      addPacketRow('10.0.0.20', '10.0.0.99', 'HTTP', 'credentials visible', 'ATK');
       for (let i = 0; i < 3; i++) {
         scheduleStep(i * 1500, () => {
           if (!state.playing) return;
@@ -1366,131 +1680,88 @@
           });
         });
       }
-      setStatus('MITM active \u2014 attacker intercepting traffic');
+      setStatus('MITM active \u2014 intercepting traffic');
     });
   }
 
-  // Scenario 2: MAC Flooding
   function playMACFlood() {
-    setStatus('MAC Flood attack starting...');
-
-    // Step 1
+    setStatus('MAC Flood starting...');
     highlightStep(0);
-    addPacketRow('RANDOM', 'switch', 'ETH', 'src=rand MAC (1/1000)', 'ATK');
+    addPacketRow('RANDOM', 'switch', 'ETH', 'src=rand MAC', 'ATK');
     for (let i = 0; i < 20; i++) {
       scheduleStep(i * 60, () => {
         if (!state.playing) return;
         animatePacket('attacker', 'switch', { ...PACKET.attack, r: 2, speed: 150 });
       });
     }
-
-    // Step 2
     scheduleStep(2000, () => {
       highlightStep(1);
-      showNodeOverlay('switch', 'CAM TABLE OVERFLOW<br>8192/8192 entries \u2014 FULL');
-      addPacketRow('switch', 'ALL', 'WARN', 'CAM table overflow', 'WARN');
-      // Flash switch node
-      const switchG = nodeGroup.select('[data-id="switch"]');
-      switchG.select('.node-shape')
-        .transition().duration(200).attr('stroke', '#d29922')
-        .transition().duration(200).attr('stroke', '#8b949e')
-        .transition().duration(200).attr('stroke', '#d29922')
-        .transition().duration(200).attr('stroke', '#8b949e');
+      showNodeOverlay('switch', 'CAM OVERFLOW<br>8192/8192 \u2014 FULL');
+      addPacketRow('switch', 'ALL', 'WARN', 'CAM overflow', 'WARN');
     });
-
-    // Step 3
     scheduleStep(4000, () => {
       highlightStep(2);
       hideNodeOverlay();
       setCompromised('attacker', true);
-      // Hub mode — all traffic broadcast
-      const hubLinks = ['ws-a', 'ws-b', 'attacker', 'server-a'];
-      hubLinks.forEach((target, i) => {
+      ['ws-a','ws-b','attacker','server-a'].forEach((t, i) => {
         scheduleStep(i * 200, () => {
           if (!state.playing) return;
-          animatePacket('switch', target, { ...PACKET.attack, color: '#d29922', r: 3 });
+          animatePacket('switch', t, { ...PACKET.attack, color: '#d29922', r: 3 });
         });
       });
-      addPacketRow('switch', 'ALL', 'ETH', 'hub mode \u2014 broadcast all', 'WARN');
-      setStatus('Switch in hub mode \u2014 all traffic visible');
+      addPacketRow('switch', 'ALL', 'ETH', 'hub mode', 'WARN');
+      setStatus('Switch in hub mode');
     });
-
-    // Step 4
     scheduleStep(6500, () => {
       highlightStep(3);
       animatePacket('ws-a', 'switch', PACKET.normal, 'DATA', () => {
-        // Traffic goes to ALL ports including attacker
         animatePacket('switch', 'server-a', PACKET.normal);
         animatePacket('switch', 'attacker', { ...PACKET.mitm, color: '#f85149' }, 'SNIFF');
       });
-      addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'also sent to attacker port', 'ATK');
+      addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'also to attacker', 'ATK');
     });
   }
 
-  // Scenario 3: SYN Flood
   function playSYNFlood() {
-    setStatus('SYN Flood attack starting...');
-
-    // Step 1
+    setStatus('SYN Flood starting...');
     highlightStep(0);
-    const spoofedIPs = ['172.16.99.1','10.255.0.42','203.0.113.7','198.51.100.3','192.0.2.99'];
+    const ips = ['172.16.99.1','10.255.0.42','203.0.113.7','198.51.100.3','192.0.2.99'];
     for (let i = 0; i < 15; i++) {
       scheduleStep(i * 100, () => {
         if (!state.playing) return;
-        const ip = spoofedIPs[i % spoofedIPs.length];
         animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 200 }, i === 0 ? 'SYN' : null, () => {
           animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 200 }, null, () => {
             animatePacket('router', 'server-a', { ...PACKET.attack, r: 3, speed: 200 });
           });
         });
-        if (i < 3) addPacketRow(ip, '10.0.0.10', 'TCP', `SYN seq=${Math.floor(Math.random()*99999)}`, 'ATK');
+        if (i < 3) addPacketRow(ips[i], '10.0.0.10', 'TCP', `SYN seq=${Math.floor(Math.random()*99999)}`, 'ATK');
       });
     }
-
-    // Step 2
     scheduleStep(3000, () => {
       highlightStep(1);
       setCompromised('server-a', true);
-      // Show progress bar on server-a
-      const serverNode = nodeMap['server-a'];
-      const progGroup = overlayGroup.append('g')
-        .attr('class', 'progress-overlay')
-        .attr('transform', `translate(${serverNode.px - 30}, ${serverNode.py - 40})`);
-      progGroup.append('rect').attr('class', 'progress-bg').attr('width', 60).attr('height', 8);
-      const fill = progGroup.append('rect').attr('class', 'progress-fill').attr('width', 0).attr('height', 8);
-      fill.transition().duration(2000 / state.speed).attr('width', 60);
-
-      progGroup.append('text')
-        .attr('x', 30).attr('y', -4)
-        .attr('text-anchor', 'middle')
-        .attr('font-family', 'var(--font-mono)')
-        .attr('font-size', '9px')
-        .attr('fill', '#f85149')
-        .text('QUEUE FULL');
-
-      addPacketRow('10.0.0.10', 'SYS', 'WARN', 'half-open queue 100%', 'WARN');
+      const sn = nodeMap['server-a'];
+      const pg = overlayGroup.append('g').attr('class','progress-overlay').attr('transform',`translate(${sn.px-30},${sn.py-40})`);
+      pg.append('rect').attr('class','progress-bg').attr('width',60).attr('height',8);
+      pg.append('rect').attr('class','progress-fill').attr('width',0).attr('height',8).transition().duration(2000/state.speed).attr('width',60);
+      pg.append('text').attr('x',30).attr('y',-4).attr('text-anchor','middle').attr('font-family','var(--font-mono)').attr('font-size','9px').attr('fill','#f85149').text('QUEUE FULL');
+      addPacketRow('10.0.0.10', 'SYS', 'WARN', 'queue 100%', 'WARN');
       setStatus('Server queue saturated');
     });
-
-    // Step 3
     scheduleStep(5500, () => {
       highlightStep(2);
-      // Legitimate SYN rejected
       animatePacket('ws-a', 'switch', PACKET.normal, 'SYN', () => {
         animatePacket('switch', 'router', PACKET.normal, null, () => {
-          const p = animatePacket('router', 'server-a', { ...PACKET.normal, color: '#f85149' }, 'RST');
+          animatePacket('router', 'server-a', { ...PACKET.normal, color: '#f85149' }, 'RST');
         });
       });
-      addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'SYN \u2192 RST (rejected)', 'ATK');
-      setStatus('Legitimate traffic denied \u2014 DoS achieved');
+      addPacketRow('10.0.0.20', '10.0.0.10', 'TCP', 'SYN \u2192 RST', 'ATK');
+      setStatus('Legitimate traffic denied');
     });
   }
 
-  // Scenario 4: DHCP Starvation + Rogue DHCP
   function playDHCPStarve() {
-    setStatus('DHCP Starvation attack starting...');
-
-    // Step 1
+    setStatus('DHCP Starvation starting...');
     highlightStep(0);
     for (let i = 0; i < 12; i++) {
       scheduleStep(i * 100, () => {
@@ -1503,67 +1774,49 @@
         if (i < 2) addPacketRow(`rand:${Math.random().toString(16).slice(2,6)}`, '255.255.255.255', 'DHCP', 'DISCOVER', 'ATK');
       });
     }
-
-    // Step 2
     scheduleStep(2500, () => {
       highlightStep(1);
-      showNodeOverlay('server-a', 'DHCP Pool Exhausted<br>0/254 addresses available');
-      addPacketRow('10.0.0.10', 'SYS', 'DHCP', 'pool exhausted 0/254', 'WARN');
-      setStatus('DHCP pool exhausted');
+      showNodeOverlay('server-a', 'DHCP Pool Exhausted<br>0/254 available');
+      addPacketRow('10.0.0.10', 'SYS', 'DHCP', 'pool exhausted', 'WARN');
     });
-
-    // Step 3
     scheduleStep(4500, () => {
       highlightStep(2);
       hideNodeOverlay();
       setCompromised('attacker', true);
-      // WS-B sends DISCOVER, attacker responds
       animatePacket('ws-b', 'switch', PACKET.normal, 'DISCOVER', () => {
-        // Rogue DHCP response from attacker
         animatePacket('attacker', 'switch', PACKET.rogue, 'ROGUE DHCP', () => {
           animatePacket('switch', 'ws-b', PACKET.rogue, 'OFFER');
         });
       });
-      addPacketRow('10.0.0.99', '10.0.0.21', 'DHCP', 'OFFER gw=10.0.0.99 (ROGUE)', 'ATK');
+      addPacketRow('10.0.0.99', '10.0.0.21', 'DHCP', 'OFFER gw=attacker', 'ATK');
     });
-
-    // Step 4
     scheduleStep(7000, () => {
       highlightStep(3);
       setCompromised('ws-b', true);
-      // WS-B traffic now goes through attacker
       animatePacket('ws-b', 'switch', PACKET.rogue, null, () => {
         animatePacket('switch', 'attacker', PACKET.rogue, 'MITM');
       });
-      addPacketRow('10.0.0.21', '10.0.0.99', 'ALL', 'gw=attacker \u2014 rerouted', 'ATK');
-      setStatus('WS-B traffic rerouted through rogue DHCP');
+      addPacketRow('10.0.0.21', '10.0.0.99', 'ALL', 'gw=attacker', 'ATK');
+      setStatus('WS-B rerouted through rogue DHCP');
     });
   }
 
-  // Scenario 5: ICMP Redirect
   function playICMPRedirect() {
-    setStatus('ICMP Redirect attack starting...');
-
-    // Step 1
+    setStatus('ICMP Redirect starting...');
     highlightStep(0);
     animatePacket('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 'ICMP Redirect', () => {
       animatePacket('switch', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 'Type 5');
     });
-    addPacketRow('10.0.0.99', '10.0.0.20', 'ICMP', 'Type 5 Redirect: use 10.0.0.99', 'ATK');
-
-    // Step 2
+    addPacketRow('10.0.0.99', '10.0.0.20', 'ICMP', 'Type 5 Redirect', 'ATK');
     scheduleStep(2500, () => {
       highlightStep(1);
-      showNodeOverlay('ws-a', 'Routing Table Updated<br>10.0.0.11/32 via 10.0.0.99');
-      addPacketRow('ws-a', 'SYS', 'ROUTE', '10.0.0.11 via 10.0.0.99', 'WARN');
+      showNodeOverlay('ws-a', 'Route Updated<br>10.0.0.11 via 10.0.0.99');
+      addPacketRow('ws-a', 'SYS', 'ROUTE', '10.0.0.11 via attacker', 'WARN');
       setCompromised('attacker', true);
     });
-
-    // Step 3
     scheduleStep(5000, () => {
       highlightStep(2);
       hideNodeOverlay();
-      // WS-A -> Server-B traffic now goes through attacker
       animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
         animatePacket('switch', 'attacker', PACKET.mitm, 'REDIRECT', () => {
           animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
@@ -1573,10 +1826,8 @@
           });
         });
       });
-      addPacketRow('10.0.0.20', '10.0.0.11', 'TCP', 'via 10.0.0.99 (redirected)', 'ATK');
-      setStatus('Traffic to DB Server redirected through attacker');
-
-      // Continuous MITM
+      addPacketRow('10.0.0.20', '10.0.0.11', 'TCP', 'via attacker', 'ATK');
+      setStatus('Traffic redirected through attacker');
       for (let i = 1; i < 3; i++) {
         scheduleStep(i * 2000, () => {
           if (!state.playing) return;
@@ -1594,41 +1845,29 @@
     });
   }
 
-  // Scenario 6: Lateral Movement
   function playLateralMove() {
-    setStatus('Lateral movement scenario...');
-
-    // Step 1
+    setStatus('Lateral movement...');
     highlightStep(0);
     setCompromised('ws-a', true);
-    addPacketRow('ws-a', 'SYS', 'INFO', 'persistent foothold established', 'ATK');
-
-    // Step 2
+    addPacketRow('ws-a', 'SYS', 'INFO', 'foothold established', 'ATK');
     scheduleStep(2000, () => {
       highlightStep(1);
-      const targets = ['switch', 'router', 'server-a', 'server-b', 'ws-b'];
+      const targets = ['switch','router','server-a','server-b','ws-b'];
       targets.forEach((t, i) => {
         scheduleStep(i * 200, () => {
           if (!state.playing) return;
           animatePacket('ws-a', 'switch', { ...PACKET.scan, speed: 300 }, i === 0 ? 'SCAN' : null, () => {
             if (t === 'switch') return;
-            if (t === 'router') {
-              animatePacket('switch', 'router', PACKET.scan);
-            } else if (t === 'server-a' || t === 'server-b') {
-              animatePacket('switch', 'router', PACKET.scan, null, () => {
-                animatePacket('router', t, PACKET.scan);
-              });
-            } else {
-              animatePacket('switch', t, PACKET.scan);
-            }
+            if (t === 'router') animatePacket('switch', 'router', PACKET.scan);
+            else if (t === 'server-a' || t === 'server-b') {
+              animatePacket('switch', 'router', PACKET.scan, null, () => animatePacket('router', t, PACKET.scan));
+            } else animatePacket('switch', t, PACKET.scan);
           });
           if (i < 3) addPacketRow('10.0.0.20', nodeMap[t]?.ip || t, 'TCP', `SYN port ${[22,445,3389,80,443][i]}`, 'ATK');
         });
       });
-      setStatus('Internal port scan in progress');
+      setStatus('Port scan in progress');
     });
-
-    // Step 3
     scheduleStep(5000, () => {
       highlightStep(2);
       animatePacket('server-b', 'router', { ...PACKET.scan, color: '#3fb950' }, '445/open', () => {
@@ -1636,27 +1875,21 @@
           animatePacket('switch', 'ws-a', { ...PACKET.scan, color: '#3fb950' });
         });
       });
-      addPacketRow('10.0.0.11', '10.0.0.20', 'TCP', 'SYN-ACK port 445 (SMB)', 'WARN');
-
+      addPacketRow('10.0.0.11', '10.0.0.20', 'TCP', 'SYN-ACK 445 (SMB)', 'WARN');
       scheduleStep(1500, () => {
-        // Establish persistent connection
         animatePacket('ws-a', 'switch', PACKET.mitm, 'SMB', () => {
           animatePacket('switch', 'router', PACKET.mitm, null, () => {
             animatePacket('router', 'server-b', PACKET.mitm, 'CONNECT');
           });
         });
-        addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'session setup request', 'ATK');
+        addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'session setup', 'ATK');
       });
     });
-
-    // Step 4
     scheduleStep(8500, () => {
       highlightStep(3);
       setCompromised('server-b', true);
-      addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'auth success \u2014 COMPROMISED', 'ATK');
-      setStatus('DB Server compromised via lateral movement');
-
-      // Show data exfiltration
+      addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'COMPROMISED', 'ATK');
+      setStatus('DB Server compromised');
       for (let i = 0; i < 3; i++) {
         scheduleStep(i * 1200, () => {
           if (!state.playing) return;
@@ -1678,13 +1911,17 @@
     state.playing = true;
     updateControlState();
     if (state.baselineTraffic) startBaselineTraffic();
-    playFunctions[state.currentAttack]();
+    safeExec(() => playFunctions[state.currentAttack](), 'play-attack');
+  }
+
+  function pauseInternal() {
+    state.playing = false;
+    stopBaselineTraffic();
   }
 
   function pause() {
-    state.playing = false;
+    pauseInternal();
     updateControlState();
-    stopBaselineTraffic();
   }
 
   function reset() {
@@ -1692,7 +1929,7 @@
     state.step = -1;
     state.animationTimers.forEach(t => clearTimeout(t));
     state.animationTimers = [];
-    state.packetAnimations.forEach(g => g.remove());
+    state.packetAnimations.forEach(g => { try { g.remove(); } catch(e) {} });
     state.packetAnimations = [];
     stopBaselineTraffic();
     packetGroup.selectAll('*').remove();
@@ -1700,10 +1937,9 @@
     state.compromised.forEach(id => setCompromised(id, false));
     state.compromised.clear();
     hideNodeOverlay();
+    hideNodeTooltip();
     clearPacketTable();
-    document.querySelectorAll('.step-item').forEach(el => {
-      el.classList.remove('active', 'completed');
-    });
+    document.querySelectorAll('.step-item').forEach(el => el.classList.remove('active', 'completed'));
     updateControlState();
     setStatus('Ready');
   }
@@ -1712,30 +1948,152 @@
     reset();
     state.currentAttack = idx;
     renderPanel(idx);
-
-    // Update tabs
-    document.querySelectorAll('.attack-tab').forEach((tab, i) => {
-      tab.classList.toggle('active', i === idx);
-    });
-
-    // Update mobile select
+    document.querySelectorAll('.attack-tab').forEach((tab, i) => tab.classList.toggle('active', i === idx));
     document.getElementById('mobileAttackSelect').value = idx;
   }
 
   function setSpeed(speed) {
     state.speed = speed;
+    // Update all speed button groups
     document.querySelectorAll('.speed-btn').forEach(btn => {
       btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
     });
   }
 
+  function setBaselineTraffic(enabled) {
+    state.baselineTraffic = enabled;
+    document.getElementById('baselineToggle').checked = enabled;
+    const mobileToggle = document.getElementById('mobileBaselineToggle');
+    if (mobileToggle) mobileToggle.checked = enabled;
+    if (state.playing && enabled) startBaselineTraffic();
+    if (!enabled) stopBaselineTraffic();
+  }
+
   function updateControlState() {
     document.getElementById('btnPlay').classList.toggle('active', state.playing);
     document.getElementById('btnPause').classList.toggle('active', !state.playing && state.step >= 0);
+    const mp = document.getElementById('mBtnPlay');
+    const mpa = document.getElementById('mBtnPause');
+    if (mp) mp.classList.toggle('active', state.playing);
+    if (mpa) mpa.classList.toggle('active', !state.playing && state.step >= 0);
   }
 
   function setStatus(text) {
-    document.getElementById('statusText').textContent = text;
+    const el = document.getElementById('statusText');
+    if (el) el.textContent = text;
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    state.theme = next;
+    // Update meta theme color for mobile browser chrome
+    document.getElementById('metaThemeColor').content = next === 'dark' ? '#0d1117' : '#f6f8fa';
+    // Update both theme icons
+    ['themeIcon', 'mobileThemeIcon'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+    });
+    try { lucide.createIcons(); } catch(e) {}
+  }
+
+  // ===== DRAWER MANAGEMENT =====
+  function openDrawer() {
+    state.drawerOpen = true;
+    document.getElementById('detail-panel').classList.add('open');
+    document.getElementById('drawerBackdrop').style.display = 'block';
+    requestAnimationFrame(() => document.getElementById('drawerBackdrop').classList.add('visible'));
+  }
+
+  function closeDrawer() {
+    state.drawerOpen = false;
+    document.getElementById('detail-panel').classList.remove('open');
+    document.getElementById('drawerBackdrop').classList.remove('visible');
+    setTimeout(() => document.getElementById('drawerBackdrop').style.display = 'none', 300);
+  }
+
+  function openSettings() {
+    state.settingsOpen = true;
+    document.getElementById('mobileSettingsDrawer').style.display = 'block';
+    document.getElementById('drawerBackdrop').style.display = 'block';
+    requestAnimationFrame(() => {
+      document.getElementById('mobileSettingsDrawer').classList.add('open');
+      document.getElementById('drawerBackdrop').classList.add('visible');
+    });
+  }
+
+  function closeSettings() {
+    state.settingsOpen = false;
+    document.getElementById('mobileSettingsDrawer').classList.remove('open');
+    document.getElementById('drawerBackdrop').classList.remove('visible');
+    setTimeout(() => {
+      document.getElementById('mobileSettingsDrawer').style.display = 'none';
+      document.getElementById('drawerBackdrop').style.display = 'none';
+    }, 300);
+  }
+
+  // ===== WIRE CONTROLS =====
+  function wireControls() {
+    // Desktop transport
+    document.getElementById('btnPlay').addEventListener('click', play);
+    document.getElementById('btnPause').addEventListener('click', pause);
+    document.getElementById('btnReset').addEventListener('click', reset);
+
+    // Mobile transport
+    document.getElementById('mBtnPlay').addEventListener('click', play);
+    document.getElementById('mBtnPause').addEventListener('click', pause);
+    document.getElementById('mBtnReset').addEventListener('click', reset);
+
+    // All speed buttons (desktop + mobile)
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
+    });
+
+    // Baseline toggles
+    document.getElementById('baselineToggle').addEventListener('change', (e) => setBaselineTraffic(e.target.checked));
+    const mbt = document.getElementById('mobileBaselineToggle');
+    if (mbt) mbt.addEventListener('change', (e) => setBaselineTraffic(e.target.checked));
+
+    // Theme toggles
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    const mtt = document.getElementById('mobileThemeToggle');
+    if (mtt) mtt.addEventListener('click', toggleTheme);
+
+    // Mobile drawer
+    document.getElementById('mobileInfoBtn').addEventListener('click', () => {
+      if (state.settingsOpen) closeSettings();
+      if (state.drawerOpen) closeDrawer(); else openDrawer();
+    });
+
+    document.getElementById('mobileSettingsBtn').addEventListener('click', () => {
+      if (state.drawerOpen) closeDrawer();
+      if (state.settingsOpen) closeSettings(); else openSettings();
+    });
+
+    document.getElementById('drawerBackdrop').addEventListener('click', () => {
+      if (state.drawerOpen) closeDrawer();
+      if (state.settingsOpen) closeSettings();
+    });
+
+    // Mobile attack select
+    document.getElementById('mobileAttackSelect').addEventListener('change', (e) => selectAttack(parseInt(e.target.value)));
+
+    // Debounced resize
+    window.addEventListener('resize', debounce(() => {
+      renderGraph();
+      // Close drawers on orientation change
+      if (state.drawerOpen) closeDrawer();
+      if (state.settingsOpen) closeSettings();
+    }, 150));
+
+    // Close tooltip on canvas tap
+    document.getElementById('canvas-container').addEventListener('click', (e) => {
+      if (!e.target.closest('.node-group')) hideNodeTooltip();
+    });
+
+    // Prevent pinch zoom on SVG (iOS Safari)
+    document.getElementById('network-svg').addEventListener('gesturestart', (e) => e.preventDefault());
   }
 
   // ===== BUILD UI =====
@@ -1751,66 +2109,21 @@
 
       const opt = document.createElement('option');
       opt.value = i;
-      opt.textContent = atk.short;
+      opt.textContent = atk.name;
       selectEl.appendChild(opt);
-    });
-
-    selectEl.addEventListener('change', (e) => selectAttack(parseInt(e.target.value)));
-  }
-
-  function wireControls() {
-    document.getElementById('btnPlay').addEventListener('click', play);
-    document.getElementById('btnPause').addEventListener('click', pause);
-    document.getElementById('btnReset').addEventListener('click', reset);
-
-    document.querySelectorAll('.speed-btn').forEach(btn => {
-      btn.addEventListener('click', () => setSpeed(parseFloat(btn.dataset.speed)));
-    });
-
-    document.getElementById('baselineToggle').addEventListener('change', (e) => {
-      state.baselineTraffic = e.target.checked;
-      if (state.playing && state.baselineTraffic) startBaselineTraffic();
-      if (!state.baselineTraffic) stopBaselineTraffic();
-    });
-
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      const html = document.documentElement;
-      const current = html.getAttribute('data-theme');
-      const next = current === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', next);
-      state.theme = next;
-      const icon = document.getElementById('themeIcon');
-      icon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
-      lucide.createIcons();
-    });
-
-    // Mobile toggle
-    document.getElementById('mobileToggle').addEventListener('click', () => {
-      document.getElementById('detail-panel').classList.toggle('open');
-    });
-
-    // Resize
-    window.addEventListener('resize', () => {
-      renderGraph();
-    });
-
-    // Close tooltip on canvas click
-    document.getElementById('canvas-container').addEventListener('click', (e) => {
-      if (!e.target.closest('.node-group')) hideNodeTooltip();
     });
   }
 
   // ===== INIT =====
   function init() {
-    buildTabs();
-    wireControls();
-    renderGraph();
-    renderPanel(0);
-    lucide.createIcons();
+    safeExec(buildTabs, 'buildTabs');
+    safeExec(wireControls, 'wireControls');
+    safeExec(renderGraph, 'renderGraph');
+    safeExec(() => renderPanel(0), 'renderPanel');
+    try { lucide.createIcons(); } catch(e) {}
     setStatus('Ready \u2014 select an attack and press play');
   }
 
-  // Wait for DOM and fonts
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
