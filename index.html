@@ -1014,6 +1014,142 @@
       -webkit-tap-highlight-color: transparent;
     }
     .help-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+
+    /* ===== STEP DETAIL EXPANSION ===== */
+    .step-detail {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+    .step-item.active .step-detail {
+      max-height: 800px;
+      opacity: 1;
+    }
+
+    /* Explain Rows */
+    .explain-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .explain-label {
+      flex-shrink: 0;
+      width: 48px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--accent-blue);
+      padding-top: 2px;
+    }
+    .explain-text { color: var(--text-muted); }
+
+    /* SWOT Grid */
+    .swot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .swot-cell {
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .swot-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 3px;
+    }
+    .swot-text { }
+    .swot-s { background: rgba(63,185,80,0.06); border: 1px solid rgba(63,185,80,0.15); }
+    .swot-s .swot-label { color: var(--accent-green); }
+    .swot-s .swot-text { color: var(--text-muted); }
+    .swot-w { background: rgba(248,81,73,0.06); border: 1px solid rgba(248,81,73,0.15); }
+    .swot-w .swot-label { color: var(--accent-red); }
+    .swot-w .swot-text { color: var(--text-muted); }
+    .swot-o { background: rgba(88,166,255,0.06); border: 1px solid rgba(88,166,255,0.15); }
+    .swot-o .swot-label { color: var(--accent-blue); }
+    .swot-o .swot-text { color: var(--text-muted); }
+    .swot-t { background: rgba(210,153,34,0.06); border: 1px solid rgba(210,153,34,0.2); }
+    .swot-t .swot-label { color: var(--accent-orange); }
+    .swot-t .swot-text { color: var(--text-muted); }
+
+    /* Final Result Banner */
+    .result-banner {
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .result-banner.severity-critical {
+      background: rgba(248,81,73,0.08);
+      border: 1px solid rgba(248,81,73,0.2);
+    }
+    .result-banner.severity-high {
+      background: rgba(210,153,34,0.08);
+      border: 1px solid rgba(210,153,34,0.2);
+    }
+    .result-banner.severity-medium {
+      background: rgba(88,166,255,0.08);
+      border: 1px solid rgba(88,166,255,0.2);
+    }
+    .result-severity {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .severity-critical .result-severity { color: var(--accent-red); }
+    .severity-high .result-severity { color: var(--accent-orange); }
+    .severity-medium .result-severity { color: var(--accent-blue); }
+    .result-impact {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .result-details { font-size: 12px; line-height: 1.5; }
+    .result-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .result-label {
+      flex-shrink: 0;
+      width: 100px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      letter-spacing: 0.04em;
+      padding-top: 2px;
+    }
+    .result-row > span:last-child { color: var(--text-muted); }
+    .result-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      margin-bottom: 10px;
+    }
+
+    #panelResult { display: none; }
+    #panelResult.visible {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -1081,6 +1217,7 @@
         <div class="section-label">Attack Progression</div>
         <ol class="steps-list" id="stepsList"></ol>
       </div>
+      <div class="panel-section" id="panelResult"></div>
       <div class="panel-section" id="panelPackets">
         <div class="section-label">Live Packet Capture</div>
         <div class="packet-table-wrap">
@@ -1304,13 +1441,63 @@
       short: 'ARP Spoof',
       mitre: 'T1557.002',
       mitreUrl: 'https://attack.mitre.org/techniques/T1557/002/',
-      phase: 'Collection \u2192 Credential Access',
+      phase: 'Collection → Credential Access',
       steps: [
-        'Attacker broadcasts fake ARP replies to WS-A and Gateway simultaneously',
-        'ARP tables on WS-A and Gateway update \u2014 attacker MAC now maps to their IPs',
-        'WS-A \u2192 Gateway traffic now flows through the attacker node (MITM position)',
-        'Attacker intercepts and forwards all traffic \u2014 credentials exposed'
+        {
+          action: 'Attacker broadcasts fake ARP replies to WS-A and Gateway simultaneously',
+          what: 'The attacker sends unsolicited ARP reply packets to both WS-A and the Gateway, claiming that the attacker’s MAC address maps to the other device’s IP.',
+          why: 'ARP has no authentication — any device on the LAN can send gratuitous ARP replies and the recipients will blindly update their cache.',
+          result: 'Both WS-A and Gateway receive the poisoned ARP entries and update their caches.',
+          swot: {
+            strength: 'Modern managed switches support DAI (Dynamic ARP Inspection) which validates ARP packets against DHCP snooping bindings',
+            weakness: 'ARP is stateless and unauthenticated by design — no cryptographic verification of MAC-IP claims',
+            opportunity: 'Enable DHCP snooping + DAI on all access VLANs; configure ARP ACLs for static IP hosts',
+            threat: 'Without DAI, any device on the broadcast domain can poison ARP caches at will'
+          }
+        },
+        {
+          action: 'ARP tables on WS-A and Gateway update — attacker MAC now maps to their IPs',
+          what: 'WS-A’s ARP cache now maps the Gateway’s IP to the attacker’s MAC. The Gateway’s cache maps WS-A’s IP to the attacker’s MAC.',
+          why: 'Operating systems trust ARP replies without verification — even unsolicited ones replace existing cache entries.',
+          result: 'Both endpoints believe the attacker is the legitimate next-hop device.',
+          swot: {
+            strength: 'Static ARP entries for critical infrastructure (gateways, DNS) prevent cache poisoning for those specific hosts',
+            weakness: 'Dynamic ARP entries expire and refresh — attacker only needs to send periodic gratuitous ARPs to maintain the poisoning',
+            opportunity: 'Deploy arpwatch or Arpalert to detect gratuitous ARP from unexpected MACs; feed alerts to SIEM',
+            threat: 'Persistent poisoning allows indefinite traffic interception until detected'
+          }
+        },
+        {
+          action: 'WS-A → Gateway traffic now flows through the attacker node (MITM position)',
+          what: 'All traffic from WS-A destined for the Gateway now routes through the attacker, who forwards it onward — a classic Man-in-the-Middle position.',
+          why: 'Layer 2 forwarding decisions are based on ARP cache entries — with poisoned caches, traffic follows the attacker’s MAC.',
+          result: 'Attacker has bidirectional visibility of all WS-A traffic including HTTP, DNS, and authentication flows.',
+          swot: {
+            strength: 'Network segmentation via Private VLANs isolates clients from each other, blocking broadcast-based ARP spoofing',
+            weakness: 'Flat L2 networks allow unrestricted ARP communication between all hosts in the same VLAN',
+            opportunity: 'Implement Private VLANs (PVLAN) to isolate endpoints; use 802.1X port authentication',
+            threat: 'MITM position enables session hijacking, credential theft, DNS spoofing, and malware injection'
+          }
+        },
+        {
+          action: 'Attacker intercepts and forwards all traffic — credentials exposed',
+          what: 'The attacker captures and inspects all forwarded traffic. Credentials sent over unencrypted protocols (HTTP, FTP, SMTP) are immediately visible.',
+          why: 'The attacker silently forwards traffic to avoid detection — the victim experiences no connectivity disruption.',
+          result: 'Attacker has harvested credentials, session tokens, and can selectively modify traffic in transit.',
+          swot: {
+            strength: 'TLS/HTTPS encryption protects credential confidentiality even during MITM — attacker sees encrypted blobs',
+            weakness: 'Legacy protocols (HTTP, FTP, Telnet, SMTP without STARTTLS) transmit credentials in cleartext',
+            opportunity: 'Enforce HTTPS everywhere; deploy HSTS; use certificate pinning for critical applications',
+            threat: 'Credential theft leads to account takeover, lateral movement, and data exfiltration'
+          }
+        }
       ],
+      finalResult: {
+        impact: 'Full MITM achieved — bidirectional traffic interception between victim and gateway',
+        severity: 'Critical',
+        scope: 'All unencrypted traffic on the poisoned path is compromised. Encrypted traffic is vulnerable to SSL stripping if HSTS is not enforced.',
+        recommendation: '1) Enable DHCP snooping + DAI on all L2 switches  2) Configure static ARP for critical infrastructure  3) Deploy 802.1X port authentication  4) Enforce HTTPS/HSTS everywhere  5) Segment with Private VLANs'
+      },
       detection: 'Arpalert / arpwatch detects gratuitous ARP from unexpected MAC',
       mitigation: 'Dynamic ARP Inspection (DAI) on L2 switch; static ARP entries for critical hosts'
     },
@@ -1319,13 +1506,63 @@
       short: 'MAC Flood',
       mitre: 'T1498',
       mitreUrl: 'https://attack.mitre.org/techniques/T1498/',
-      phase: 'Defense Evasion \u2192 Discovery',
+      phase: 'Defense Evasion → Discovery',
       steps: [
-        'Attacker sends thousands of frames with unique source MACs to the switch',
-        'CAM table on the L2 switch overflows \u2014 cannot learn new entries',
-        'Switch degrades to hub mode \u2014 all traffic broadcast to all ports',
-        'Attacker receives all network traffic including WS-A \u2194 Server-A'
+        {
+          action: 'Attacker sends thousands of frames with unique source MACs to the switch',
+          what: 'The attacker uses a tool like macof to rapidly generate Ethernet frames with randomized source MAC addresses, flooding the switch with thousands of fake entries.',
+          why: 'Every frame with an unknown source MAC causes the switch to create a new CAM (Content Addressable Memory) table entry.',
+          result: 'The switch’s CAM table is filling with bogus MAC entries, consuming available memory slots.',
+          swot: {
+            strength: 'Port security can limit the number of MAC addresses learned per port (recommended: 1-2 per access port)',
+            weakness: 'Without port security, switches have no mechanism to validate or limit source MACs',
+            opportunity: 'Enable port security with sticky MAC learning and violation mode ‘shutdown’ on all access ports',
+            threat: 'A single compromised port can fill the entire CAM table, affecting all VLANs on the switch'
+          }
+        },
+        {
+          action: 'CAM table on the L2 switch overflows — cannot learn new entries',
+          what: 'The CAM table has a fixed size (typically 4K–32K entries). When full, the switch cannot store new legitimate MAC-to-port mappings.',
+          why: 'Switches prioritize recent entries — when full, new entries evict old ones or are simply dropped.',
+          result: 'The switch can no longer learn where legitimate hosts are located.',
+          swot: {
+            strength: 'SNMP monitoring can detect abnormal CAM table growth rate — alert when utilization exceeds 80%',
+            weakness: 'CAM table is a finite shared resource — there’s no per-port allocation or quota system in most switches',
+            opportunity: 'Configure SNMP traps for CAM table threshold alerts; deploy 802.1X to authenticate devices before port activation',
+            threat: 'CAM overflow is fast (seconds) and silent — no syslog entry unless port security is configured'
+          }
+        },
+        {
+          action: 'Switch degrades to hub mode — all traffic broadcast to all ports',
+          what: 'With an overflowed CAM table, the switch cannot look up destination MACs. It reverts to flooding — sending frames out ALL ports, like a hub.',
+          why: 'This is a fail-open behavior by design — switches prioritize connectivity over security when the CAM table is exhausted.',
+          result: 'All unicast traffic on the switch is now broadcast to every port, including the attacker’s.',
+          swot: {
+            strength: 'Storm control can rate-limit broadcast/unknown-unicast flooding, containing the blast radius',
+            weakness: 'The switch’s fail-open design means CAM exhaustion inherently degrades security to hub-level',
+            opportunity: 'Enable storm control on all access ports; configure unknown unicast flood rate limits',
+            threat: 'All confidential traffic on the VLAN becomes visible to the attacker — total loss of confidentiality'
+          }
+        },
+        {
+          action: 'Attacker receives all network traffic including WS-A ↔ Server-A',
+          what: 'The attacker passively receives copies of all traffic on the switch, including communications they were never intended to see.',
+          why: 'In hub mode, every port receives every frame — the attacker’s NIC in promiscuous mode captures everything.',
+          result: 'Attacker can sniff credentials, session tokens, database queries, and any unencrypted data.',
+          swot: {
+            strength: 'Encryption (TLS, IPsec, SSH) remains effective — hub mode exposes frames but encrypted payloads stay protected',
+            weakness: 'Many internal services (SMB, LDAP without TLS, database replication) often run unencrypted on ‘trusted’ LANs',
+            opportunity: 'Encrypt all east-west traffic; deploy mutual TLS for service-to-service communication',
+            threat: 'Passive sniffing is undetectable from the victim’s perspective — no connection anomalies or errors'
+          }
+        }
       ],
+      finalResult: {
+        impact: 'Switch degraded to hub mode — all traffic on the VLAN is broadcast to every port',
+        severity: 'High',
+        scope: 'All hosts connected to the affected switch lose traffic confidentiality. Performance degradation from broadcast storms.',
+        recommendation: '1) Enable port security: max 2 MACs per port, sticky learning, shutdown on violation  2) Deploy 802.1X for device authentication  3) Enable storm control  4) Monitor CAM table utilization via SNMP  5) Use Private VLANs for client isolation'
+      },
       detection: 'SNMP CAM table size polling; port security violation syslog',
       mitigation: 'Port security: max 5 MACs per port; sticky MAC; BPDU Guard'
     },
@@ -1336,10 +1573,49 @@
       mitreUrl: 'https://attack.mitre.org/techniques/T1498/001/',
       phase: 'Impact',
       steps: [
-        'Attacker sends burst of SYN packets to Web Server with spoofed source IPs',
-        'Server\u2019s half-open connection queue fills up rapidly',
-        'Legitimate SYN from WS-A is rejected \u2014 service unavailable'
+        {
+          action: 'Attacker sends burst of SYN packets to Web Server with spoofed source IPs',
+          what: 'The attacker sends a high-rate burst of TCP SYN packets to the Web Server, each with a different spoofed source IP address.',
+          why: 'Each SYN triggers the server to allocate resources for a half-open connection and send a SYN-ACK to the spoofed IP — which never responds.',
+          result: 'The server’s TCP connection backlog is rapidly filling with half-open connections.',
+          swot: {
+            strength: 'SYN cookies allow the server to handle SYN requests statelessly — encoding session state in the SYN-ACK sequence number',
+            weakness: 'The TCP three-way handshake requires the server to maintain state for each incomplete connection',
+            opportunity: 'Enable SYN cookies: sysctl net.ipv4.tcp_syncookies=1; increase backlog: tcp_max_syn_backlog=4096',
+            threat: 'Spoofed source IPs make source-based filtering ineffective — each packet appears from a different address'
+          }
+        },
+        {
+          action: 'Server’s half-open connection queue fills up rapidly',
+          what: 'The server’s SYN backlog queue reaches capacity. Each half-open connection consumes memory and a slot in the connection table.',
+          why: 'SYN-ACK retransmissions to non-existent hosts compound the problem — the server retries multiple times before timing out each entry.',
+          result: 'The server is at maximum capacity for new TCP connections — resource exhaustion achieved.',
+          swot: {
+            strength: 'Rate limiting at the firewall can cap SYN packets per second: iptables -m limit --limit 100/s --limit-burst 200',
+            weakness: 'Default TCP backlog settings are often too small (128–256) and SYN-ACK retries too aggressive (5 retransmissions)',
+            opportunity: 'Tune kernel: tcp_synack_retries=2 (faster cleanup); deploy upstream DDoS scrubbing or CDN edge termination',
+            threat: 'At scale, SYN floods can saturate bandwidth before reaching the server — requires upstream mitigation'
+          }
+        },
+        {
+          action: 'Legitimate SYN from WS-A is rejected — service unavailable',
+          what: 'A legitimate user (WS-A) attempts to connect to the Web Server. The server’s SYN queue is full and the connection is refused with a RST.',
+          why: 'The server has no remaining capacity for new connections — all backlog slots are consumed by attacker’s half-open connections.',
+          result: 'Denial of Service achieved — legitimate users cannot access the service.',
+          swot: {
+            strength: 'Load balancers with SYN proxy capability can absorb floods before they reach the application server',
+            weakness: 'Single-server architectures have no redundancy — one saturated backlog means total service outage',
+            opportunity: 'Deploy multi-layer defense: SYN cookies + firewall rate limiting + load balancer SYN proxy + CDN absorption',
+            threat: 'Extended outage causes revenue loss, SLA breaches, and reputational damage'
+          }
+        }
       ],
+      finalResult: {
+        impact: 'Complete denial of service — Web Server cannot accept new TCP connections',
+        severity: 'High',
+        scope: 'All users attempting to reach the Web Server are affected. Existing established connections may continue but no new ones can be created.',
+        recommendation: '1) Enable SYN cookies on all servers  2) Rate-limit SYN packets at firewall  3) Increase tcp_max_syn_backlog and reduce tcp_synack_retries  4) Deploy load balancer with SYN proxy  5) Contract upstream DDoS scrubbing service for volumetric protection'
+      },
       detection: 'NetFlow/IPFIX: high SYN rate from single source; SYN cookie threshold alert',
       mitigation: 'SYN cookies on server; rate limiting at firewall; upstream scrubbing'
     },
@@ -1348,13 +1624,63 @@
       short: 'DHCP Starve',
       mitre: 'T1557',
       mitreUrl: 'https://attack.mitre.org/techniques/T1557/',
-      phase: 'Initial Access \u2192 Credential Access',
+      phase: 'Initial Access → Credential Access',
       steps: [
-        'Attacker sends DHCPDISCOVER with thousands of random MACs to exhaust the pool',
-        'DHCP pool on Web Server (acting as DHCP) is fully exhausted',
-        'Attacker starts responding to WS-B DHCPDISCOVER as a rogue DHCP server',
-        'WS-B receives attacker\u2019s IP as default gateway \u2014 traffic rerouted'
+        {
+          action: 'Attacker sends DHCPDISCOVER with thousands of random MACs to exhaust the pool',
+          what: 'The attacker spoofs DHCPDISCOVER messages with random MAC addresses, each requesting an IP address lease from the legitimate DHCP server.',
+          why: 'DHCP servers allocate addresses per unique MAC — each spoofed MAC consumes one address from the pool.',
+          result: 'The DHCP address pool is draining rapidly as the server commits leases to non-existent devices.',
+          swot: {
+            strength: 'DHCP snooping classifies ports as trusted/untrusted — only trusted ports can send DHCP server responses',
+            weakness: 'DHCP has no built-in client authentication — any device can send DHCPDISCOVER with any MAC address',
+            opportunity: 'Enable DHCP snooping globally; rate-limit DHCP requests per port (e.g. 15 packets/second)',
+            threat: 'Pool exhaustion is fast — a 254-address /24 subnet can be exhausted in seconds with macof'
+          }
+        },
+        {
+          action: 'DHCP pool on Web Server (acting as DHCP) is fully exhausted',
+          what: 'The DHCP server has committed all available IP addresses to the attacker’s spoofed MACs. The pool shows 0 addresses remaining.',
+          why: 'Standard DHCP servers do not verify that requesting MACs correspond to real, authenticated devices.',
+          result: 'No legitimate client can obtain an IP address via DHCP — they are stuck without network configuration.',
+          swot: {
+            strength: 'Port security limits MAC addresses per port — blocks the spoofed MAC flood at the switch level',
+            weakness: 'Without port security, the switch forwards all DHCPDISCOVER frames regardless of source MAC count',
+            opportunity: 'Combine port security (max 2 MACs) with DHCP snooping rate limiting for defense-in-depth',
+            threat: 'Network-wide outage for all new clients — devices rebooting or joining cannot get addresses'
+          }
+        },
+        {
+          action: 'Attacker starts responding to WS-B DHCPDISCOVER as a rogue DHCP server',
+          what: 'The attacker starts a rogue DHCP server that responds to new DHCPDISCOVER messages with its own IP as the default gateway.',
+          why: 'With the legitimate server exhausted, the attacker’s rogue server is the only one responding to new requests.',
+          result: 'WS-B receives the attacker’s IP as its gateway, DNS server, or both — all configuration from the attacker.',
+          swot: {
+            strength: 'DHCP snooping drops DHCPOFFER/DHCPACK packets from untrusted ports — blocks rogue DHCP responses',
+            weakness: 'If DHCP snooping is not enabled, any port can send DHCP server messages and clients will accept them',
+            opportunity: 'Mark only uplink ports to legitimate DHCP servers as trusted; all access ports untrusted by default',
+            threat: 'Rogue DHCP gives attacker control of victim’s gateway, DNS, and NTP — enables full traffic interception'
+          }
+        },
+        {
+          action: 'WS-B receives attacker’s IP as default gateway — traffic rerouted',
+          what: 'WS-B now sends all traffic through the attacker’s IP as its default gateway. The attacker forwards traffic to the real gateway to avoid detection.',
+          why: 'The victim’s network stack trusts DHCP-provided configuration completely — gateway IP is accepted without validation.',
+          result: 'The attacker has MITM position on WS-B’s traffic. DNS poisoning via rogue DNS is also possible.',
+          swot: {
+            strength: 'Network Access Control (802.1X/NAC) authenticates devices before allowing DHCP participation',
+            weakness: 'DHCP clients accept the first valid DHCPOFFER — there’s a race condition even with legitimate servers present',
+            opportunity: 'Deploy 802.1X NAC; segment networks into small broadcast domains; use redundant DHCP with failover',
+            threat: 'Attacker controls DNS + gateway = full phishing capability, credential interception, malware injection'
+          }
+        }
       ],
+      finalResult: {
+        impact: 'DHCP pool exhausted + rogue DHCP active — attacker controls victim’s network configuration',
+        severity: 'Critical',
+        scope: 'All new clients on the VLAN receive attacker-controlled network settings. Existing leases continue until renewal.',
+        recommendation: '1) Enable DHCP snooping with trusted/untrusted port classification  2) Port security: max 2 MACs per access port  3) Rate-limit DHCP on access ports  4) Deploy 802.1X for device authentication  5) Monitor for multiple DHCPOFFER sources'
+      },
       detection: 'DHCP snooping logs; multiple DHCPOFFER sources detected on port',
       mitigation: 'DHCP snooping: trust only uplink ports; rate-limit DHCP on access ports'
     },
@@ -1365,10 +1691,49 @@
       mitreUrl: 'https://attack.mitre.org/techniques/T1562/001/',
       phase: 'Defense Evasion',
       steps: [
-        'Attacker sends ICMP Type 5 (Redirect) to WS-A claiming a better route exists',
-        'WS-A routing table updates \u2014 attacker is now the preferred next-hop',
-        'WS-A \u2192 DB Server traffic now flows through attacker node'
+        {
+          action: 'Attacker sends ICMP Type 5 (Redirect) to WS-A claiming a better route exists',
+          what: 'The attacker crafts an ICMP Type 5 (Redirect) message telling WS-A that a ‘better route’ to the DB Server exists through the attacker’s IP.',
+          why: 'ICMP redirects are a legitimate routing optimization — routers use them to inform hosts of more efficient paths.',
+          result: 'WS-A receives the ICMP redirect and processes it as a valid routing update.',
+          swot: {
+            strength: 'Linux/Windows can disable redirect acceptance: sysctl net.ipv4.conf.all.accept_redirects=0',
+            weakness: 'Most OS defaults accept ICMP redirects — they’re enabled out-of-the-box for ‘routing optimization’',
+            opportunity: 'Harden all hosts: disable accept_redirects, send_redirects, and secure_redirects via sysctl; persist in /etc/sysctl.d/',
+            threat: 'A single ICMP packet can permanently alter a host’s routing table until flushed or rebooted'
+          }
+        },
+        {
+          action: 'WS-A routing table updates — attacker is now the preferred next-hop',
+          what: 'WS-A’s routing table now has a host route for the DB Server’s IP via the attacker. This overrides the default gateway for that specific destination.',
+          why: 'ICMP redirect-installed routes have higher priority than default routes — the kernel adds a /32 host route.',
+          result: 'All traffic from WS-A to DB Server will now be sent to the attacker first.',
+          swot: {
+            strength: 'Host-based firewalls can filter ICMP Type 5 — iptables -A INPUT -p icmp --icmp-type redirect -j DROP',
+            weakness: 'Routing table changes are silent — no user notification, no log entry on most default configurations',
+            opportunity: 'Deploy host-based routing table monitoring; enable martian packet logging: net.ipv4.conf.all.log_martians=1',
+            threat: 'The poisoned route persists until the host reboots, the route expires, or it’s manually flushed'
+          }
+        },
+        {
+          action: 'WS-A → DB Server traffic now flows through attacker node',
+          what: 'WS-A sends all DB Server-bound traffic to the attacker, who inspects it and forwards to the real destination to avoid detection.',
+          why: 'The routing table change is transparent to applications — no socket errors, no timeouts, no visible anomaly.',
+          result: 'Attacker has selective MITM on WS-A→DB Server traffic, including database queries and authentication.',
+          swot: {
+            strength: 'IPsec or WireGuard tunnels between hosts prevent routing manipulation from affecting encrypted traffic',
+            weakness: 'Internal east-west traffic is rarely encrypted — database connections, NFS, internal APIs often run in cleartext',
+            opportunity: 'Encrypt all internal traffic with mutual TLS or IPsec; deploy reverse path filtering: rp_filter=1',
+            threat: 'Database credentials and query results are exposed — leads to data breach and privilege escalation'
+          }
+        }
       ],
+      finalResult: {
+        impact: 'Selective MITM via routing table poisoning — attacker intercepts specific traffic flows',
+        severity: 'High',
+        scope: 'All traffic from WS-A to DB Server is intercepted. Other traffic flows are unaffected unless additional redirects are sent.',
+        recommendation: '1) Disable ICMP redirects on all hosts: accept_redirects=0, send_redirects=0  2) Enable reverse path filtering: rp_filter=1  3) Log martians for anomaly detection  4) Filter ICMP Type 5 at host firewalls  5) Encrypt east-west traffic with mTLS/IPsec'
+      },
       detection: 'ICMP redirect messages from unexpected source; host-based routing table monitoring',
       mitigation: 'Disable ICMP redirect acceptance: net.ipv4.conf.all.accept_redirects=0'
     },
@@ -1379,11 +1744,61 @@
       mitreUrl: 'https://attack.mitre.org/techniques/T1021/001/',
       phase: 'Lateral Movement',
       steps: [
-        'WS-A is already compromised \u2014 persistent attacker foothold',
-        'Compromised WS-A performs internal port scan across all internal nodes',
-        'DB Server responds on port 445 (SMB) \u2014 connection established',
-        'Stolen credentials used \u2014 DB Server transitions to compromised state'
+        {
+          action: 'WS-A is already compromised — persistent attacker foothold',
+          what: 'WS-A was previously compromised (e.g. via phishing or exploit). The attacker has persistent access — a backdoor, RAT, or stolen credentials.',
+          why: 'This represents the post-exploitation phase — the attacker has established a beachhead and now seeks to expand access.',
+          result: 'Attacker has command execution on WS-A and access to its stored credentials, tokens, and network position.',
+          swot: {
+            strength: 'EDR (Endpoint Detection and Response) can detect persistence mechanisms and C2 beacons on compromised hosts',
+            weakness: 'Initial compromise often goes undetected for days/weeks — attacker has time to establish deep persistence',
+            opportunity: 'Deploy EDR on all endpoints; implement LAPS for unique local admin passwords; disable credential caching',
+            threat: 'A single compromised endpoint provides network position for scanning, pivoting, and credential harvesting'
+          }
+        },
+        {
+          action: 'Compromised WS-A performs internal port scan across all internal nodes',
+          what: 'The attacker runs a port scan from WS-A, probing all internal hosts for open administrative ports (SMB/445, RDP/3389, SSH/22, WinRM/5985).',
+          why: 'Internal networks often have minimal east-west filtering — once inside, an attacker can freely scan the flat network.',
+          result: 'The attacker has mapped all reachable services and identified DB Server as having SMB (port 445) open.',
+          swot: {
+            strength: 'Microsegmentation restricts east-west traffic — unauthorized scan packets are blocked and logged',
+            weakness: 'Flat networks with no internal firewall rules allow unrestricted scanning from any compromised host',
+            opportunity: 'Deploy microsegmentation with default-deny policies; only allow explicitly required service-to-service flows',
+            threat: 'Network reconnaissance reveals all attack surface — every open port is a potential pivot point'
+          }
+        },
+        {
+          action: 'DB Server responds on port 445 (SMB) — connection established',
+          what: 'The attacker connects to DB Server on port 445 (SMB) using credentials harvested from WS-A (cached domain credentials, Kerberos tickets, or NTLM hashes).',
+          why: 'Windows caches credentials for SSO — Mimikatz or similar tools extract them from LSASS memory on the compromised host.',
+          result: 'SMB session established — attacker has authenticated access to DB Server’s file shares and admin interfaces.',
+          swot: {
+            strength: 'Privileged Access Management (PAM) with Just-in-Time access ensures admin credentials aren’t persistent on endpoints',
+            weakness: 'Windows credential caching (NTLM hashes, Kerberos TGTs) is enabled by default for user convenience',
+            opportunity: 'Disable SMBv1; require SMB signing; deploy PAM with JIT access; implement Credential Guard',
+            threat: 'Credential reuse across systems means one compromise gives access to every system sharing those credentials'
+          }
+        },
+        {
+          action: 'Stolen credentials used — DB Server transitions to compromised state',
+          what: 'Using the authenticated SMB session, the attacker executes commands on DB Server — installing persistence, exfiltrating data, or deploying ransomware.',
+          why: 'SMB provides remote execution capabilities (PsExec, WMI, PowerShell Remoting) that are indistinguishable from legitimate admin activity.',
+          result: 'DB Server is fully compromised. Attacker has access to database contents, can pivot further, or deploy destructive payloads.',
+          swot: {
+            strength: 'UEBA (User and Entity Behavior Analytics) detects anomalous logon patterns and unusual SMB activity',
+            weakness: 'SMB remote execution tools use the same protocols as legitimate administration — very difficult to distinguish',
+            opportunity: 'Monitor Windows Event IDs 4624/4625/5140; deploy UEBA; disable admin shares; implement network-level MFA',
+            threat: 'Full database compromise = data breach, ransomware deployment, regulatory penalties, and business disruption'
+          }
+        }
       ],
+      finalResult: {
+        impact: 'Lateral movement successful — DB Server fully compromised from initially breached workstation',
+        severity: 'Critical',
+        scope: 'Attacker controls both WS-A and DB Server. Database contents exposed. Further lateral movement likely.',
+        recommendation: '1) Deploy microsegmentation with default-deny east-west policies  2) Disable SMBv1 and require SMB signing  3) Implement PAM with Just-in-Time access  4) Deploy EDR + UEBA on all endpoints  5) Use LAPS for unique local admin passwords  6) Disable unnecessary admin shares'
+      },
       detection: 'Windows Event ID 4624 (logon), 4625 (failed), 5140 (share access); UEBA lateral movement detection',
       mitigation: 'Micro-segmentation; disable SMBv1; Just-in-Time access; privileged identity management'
     }
@@ -1756,9 +2171,33 @@
       <div class="phase-badge">${atk.phase}</div>
     `;
 
-    document.getElementById('stepsList').innerHTML = atk.steps.map((s, i) =>
-      `<li class="step-item" data-step="${i}">${s}</li>`
-    ).join('');
+    document.getElementById('stepsList').innerHTML = atk.steps.map((s, i) => {
+      const step = (typeof s === 'object') ? s : { action: s, what: '', why: '', result: '', swot: {} };
+      return `<li class="step-item" data-step="${i}">
+        <div class="step-header">
+          <div class="step-action">${step.action}</div>
+        </div>
+        <div class="step-detail">
+          <div class="step-explain">
+            ${step.what ? `<div class="explain-row"><span class="explain-label">What</span><span class="explain-text">${step.what}</span></div>` : ''}
+            ${step.why ? `<div class="explain-row"><span class="explain-label">Why</span><span class="explain-text">${step.why}</span></div>` : ''}
+            ${step.result ? `<div class="explain-row"><span class="explain-label">Result</span><span class="explain-text">${step.result}</span></div>` : ''}
+          </div>
+          ${step.swot && (step.swot.strength || step.swot.weakness || step.swot.opportunity || step.swot.threat) ? `
+          <div class="swot-grid">
+            <div class="swot-cell swot-s"><div class="swot-label">Strength</div><div class="swot-text">${step.swot.strength || ''}</div></div>
+            <div class="swot-cell swot-w"><div class="swot-label">Weakness</div><div class="swot-text">${step.swot.weakness || ''}</div></div>
+            <div class="swot-cell swot-o"><div class="swot-label">Opportunity</div><div class="swot-text">${step.swot.opportunity || ''}</div></div>
+            <div class="swot-cell swot-t"><div class="swot-label">Threat</div><div class="swot-text">${step.swot.threat || ''}</div></div>
+          </div>` : ''}
+        </div>
+      </li>`;
+    }).join('');
+
+    // Clear and hide panelResult
+    const panelResult = document.getElementById('panelResult');
+    panelResult.innerHTML = '';
+    panelResult.classList.remove('visible');
 
     document.getElementById('panelDetection').innerHTML = `
       <div class="callout callout-detect">
@@ -1785,11 +2224,36 @@
 
   function highlightStep(stepIdx) {
     state.step = stepIdx;
-    document.querySelectorAll('.step-item').forEach((el, i) => {
+    const stepEls = document.querySelectorAll('.step-item');
+    stepEls.forEach((el, i) => {
       el.classList.remove('active', 'completed');
       if (i < stepIdx) el.classList.add('completed');
-      if (i === stepIdx) el.classList.add('active');
+      if (i === stepIdx) {
+        el.classList.add('active');
+        // Auto-scroll the active step into view
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
+
+    // Show finalResult when the last step is active
+    const atk = attacks[state.currentAttack];
+    if (atk && atk.finalResult && stepIdx === atk.steps.length - 1) {
+      const fr = atk.finalResult;
+      const severityClass = 'severity-' + fr.severity.toLowerCase();
+      const panelResult = document.getElementById('panelResult');
+      panelResult.innerHTML = `
+        <div class="result-section-label">Attack Outcome</div>
+        <div class="result-banner ${severityClass}">
+          <div class="result-severity">${fr.severity}</div>
+          <div class="result-impact">${fr.impact}</div>
+        </div>
+        <div class="result-details">
+          <div class="result-row"><span class="result-label">Scope</span><span>${fr.scope}</span></div>
+          <div class="result-row"><span class="result-label">Recommendation</span><span>${fr.recommendation}</span></div>
+        </div>
+      `;
+      panelResult.classList.add('visible');
+    }
   }
 
   // ===== ATTACK ANIMATIONS =====
@@ -2107,6 +2571,8 @@
     hideNodeTooltip();
     clearPacketTable();
     document.querySelectorAll('.step-item').forEach(el => el.classList.remove('active', 'completed'));
+    const panelResult = document.getElementById('panelResult');
+    if (panelResult) { panelResult.innerHTML = ''; panelResult.classList.remove('visible'); }
     updateControlState();
     setStatus('Ready');
   }
