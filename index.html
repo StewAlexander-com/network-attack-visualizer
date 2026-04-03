@@ -881,6 +881,139 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+
+    /* ===== ANNOTATION OVERLAY ===== */
+    .annotation-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 9000;
+      display: none;
+    }
+    .annotation-overlay.active { display: block; }
+
+    .annotation-card {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--accent-blue);
+      border-radius: 12px;
+      padding: 16px;
+      max-width: 300px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      z-index: 9001;
+    }
+    .annotation-card .ann-step {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--accent-blue);
+      margin-bottom: 4px;
+    }
+    .annotation-card .ann-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+    .annotation-card .ann-desc {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .annotation-card .ann-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ann-next-btn {
+      padding: 6px 16px;
+      background: var(--accent-blue);
+      color: #0d1117;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+    .ann-next-btn:hover { opacity: 0.85; }
+    .ann-skip {
+      font-size: 12px;
+      color: var(--text-faint);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: var(--font-ui);
+      transition: color 0.15s ease;
+    }
+    .ann-skip:hover { color: var(--text-muted); }
+
+    /* Arrow pointer on annotation card */
+    .annotation-card::before {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: var(--surface);
+      border-left: 1px solid var(--accent-blue);
+      border-top: 1px solid var(--accent-blue);
+      transform: rotate(45deg);
+    }
+    .annotation-card.arrow-top::before {
+      top: -6px;
+      left: 24px;
+    }
+    .annotation-card.arrow-bottom::before {
+      bottom: -6px;
+      left: 24px;
+      transform: rotate(225deg);
+    }
+    .annotation-card.arrow-left::before {
+      left: -6px;
+      top: 20px;
+      transform: rotate(-45deg);
+    }
+    .annotation-card.arrow-right::before {
+      right: -6px;
+      top: 20px;
+      transform: rotate(135deg);
+    }
+    .annotation-card.arrow-none::before {
+      display: none;
+    }
+
+    /* Highlight ring for annotated element */
+    .annotation-highlight {
+      position: fixed;
+      border: 2px solid var(--accent-blue);
+      border-radius: 8px;
+      box-shadow: 0 0 0 4px rgba(88,166,255,0.2), 0 0 20px rgba(88,166,255,0.3);
+      pointer-events: none;
+      z-index: 8999;
+      transition: all 0.3s ease;
+    }
+
+    /* Help button */
+    .help-btn {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .help-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
   </style>
 </head>
 <body>
@@ -1007,6 +1140,7 @@
       <button class="speed-btn mobile-speed-btn" data-speed="3">3x</button>
     </div>
     <button class="mobile-settings-btn" id="mobileSettingsBtn" aria-label="Settings"><i data-lucide="settings" style="width:18px;height:18px"></i></button>
+    <button class="help-btn" id="mobileHelpBtn" title="Guided tour" aria-label="Show guided tour" style="width:40px;height:40px;border-radius:8px;font-size:16px;">?</button>
     <button class="mobile-info-btn" id="mobileInfoBtn" aria-label="Attack details"><i data-lucide="info" style="width:18px;height:18px"></i></button>
   </div>
 
@@ -1024,11 +1158,26 @@
     </div>
     <div class="footer-right">
       <span id="statusText">Ready</span>
+      <button class="help-btn" id="helpBtn" title="Guided tour" aria-label="Show guided tour">?</button>
       <a class="footer-link" href="https://github.com/StewAlexander-com/network-attack-visualizer" target="_blank" rel="noopener">
         <i data-lucide="github" style="width:14px;height:14px"></i>
       </a>
     </div>
   </footer>
+
+  <!-- ===== ANNOTATION OVERLAY ===== -->
+  <div class="annotation-overlay" id="annotationOverlay">
+    <div class="annotation-highlight" id="annotationHighlight"></div>
+    <div class="annotation-card" id="annotationCard">
+      <div class="ann-step" id="annStep">1 / 7</div>
+      <div class="ann-title" id="annTitle"></div>
+      <div class="ann-desc" id="annDesc"></div>
+      <div class="ann-actions">
+        <button class="ann-next-btn" id="annNext">Next</button>
+        <button class="ann-skip" id="annSkip">Skip tour</button>
+      </div>
+    </div>
+  </div>
 
 <!-- CDN: D3.js with fallback -->
 <script>
@@ -1304,10 +1453,28 @@
     // Add padding so nodes never clip edges
     const pad = isMobile() ? 30 : 40;
 
-    nodes.forEach(n => {
-      n.px = pad + n.x * (width - pad * 2);
-      n.py = pad + n.y * (height - pad * 2);
-    });
+    if (isMobile()) {
+      const mobilePositions = {
+        'internet':  { x: 0.25, y: 0.06 },
+        'gateway':   { x: 0.75, y: 0.06 },
+        'router':    { x: 0.50, y: 0.22 },
+        'server-a':  { x: 0.20, y: 0.38 },
+        'server-b':  { x: 0.80, y: 0.38 },
+        'switch':    { x: 0.50, y: 0.55 },
+        'ws-a':      { x: 0.15, y: 0.72 },
+        'ws-b':      { x: 0.50, y: 0.72 },
+        'attacker':  { x: 0.85, y: 0.72 },
+      };
+      nodes.forEach(n => {
+        const mp = mobilePositions[n.id];
+        if (mp) { n.px = pad + mp.x * (width - pad*2); n.py = pad + mp.y * (height - pad*2); }
+      });
+    } else {
+      nodes.forEach(n => {
+        n.px = pad + n.x * (width - pad * 2);
+        n.py = pad + n.y * (height - pad * 2);
+      });
+    }
 
     // Links
     linkGroup.selectAll('.link-line').remove();
@@ -2129,6 +2296,248 @@
   } else {
     init();
   }
+
+  // ===== ANNOTATION / GUIDED TOUR SYSTEM =====
+  (function() {
+    const TOUR_KEY = 'nav-tour-seen';
+    const CARD_MARGIN = 16; // px minimum from viewport edge
+    const TOTAL_STEPS = 7;
+
+    // Step definitions: target selector, title, description, card arrow direction hint
+    const steps = [
+      {
+        targetFn: () => document.getElementById('network-svg'),
+        title: 'Network Topology',
+        desc: 'This is your network. Each node represents a device — routers, switches, servers, and workstations. The red skull is the attacker.',
+        arrow: 'top',
+      },
+      {
+        targetFn: () => isMobile()
+          ? document.getElementById('mobileAttackSelect')
+          : document.getElementById('attackTabs'),
+        title: 'Attack Selector',
+        desc: 'Choose from 6 real-world attack scenarios. Each maps to a MITRE ATT&CK technique used by actual threat actors.',
+        arrow: 'bottom',
+      },
+      {
+        targetFn: () => document.getElementById('btnPlay') || document.getElementById('mBtnPlay'),
+        title: 'Play Controls',
+        desc: 'Press Play to watch the attack unfold in real time. Pause to freeze the action. Reset to start over.',
+        arrow: 'bottom',
+      },
+      {
+        targetFn: () => isMobile()
+          ? document.getElementById('mobileSettingsBtn')
+          : document.getElementById('speedGroup'),
+        title: 'Speed Controls',
+        desc: isMobile()
+          ? 'Open Settings to adjust speed — slow down to 0.5x to study packet flow, or speed up to 3x for a quick overview.'
+          : 'Slow it down to 0.5x to study the packet flow, or speed up to 3x for a quick overview.',
+        arrow: 'bottom',
+      },
+      {
+        targetFn: () => isMobile()
+          ? document.getElementById('mobileInfoBtn')
+          : document.getElementById('detail-panel'),
+        title: 'Attack Details Panel',
+        desc: 'The sidebar (or bottom drawer on mobile) shows step-by-step attack progression, live packet capture, and detection/mitigation guidance.',
+        arrow: isMobile() ? 'bottom' : 'right',
+      },
+      {
+        targetFn: () => document.getElementById('network-svg'),
+        title: 'Node Interaction',
+        desc: 'Tap any node to see its IP address, MAC address, role, and whether it\'s been compromised.',
+        arrow: 'top',
+      },
+      {
+        targetFn: () => document.querySelector('.mitre-badge') || document.getElementById('panelHeader'),
+        title: 'MITRE Badge',
+        desc: 'Every attack links to its official MITRE ATT&CK technique page for deeper research.',
+        arrow: 'left',
+      },
+    ];
+
+    let currentStep = 0;
+
+    const overlay   = document.getElementById('annotationOverlay');
+    const card      = document.getElementById('annotationCard');
+    const highlight = document.getElementById('annotationHighlight');
+    const stepEl    = document.getElementById('annStep');
+    const titleEl   = document.getElementById('annTitle');
+    const descEl    = document.getElementById('annDesc');
+    const nextBtn   = document.getElementById('annNext');
+    const skipBtn   = document.getElementById('annSkip');
+
+    function clampCard(left, top, cardW, cardH) {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      left = Math.max(CARD_MARGIN, Math.min(left, vw - cardW - CARD_MARGIN));
+      top  = Math.max(CARD_MARGIN, Math.min(top, vh - cardH - CARD_MARGIN));
+      return { left, top };
+    }
+
+    function positionCard(targetEl, arrowHint) {
+      const cardW = Math.min(300, window.innerWidth - CARD_MARGIN * 2);
+      card.style.maxWidth = cardW + 'px';
+
+      // Force a layout so we get the real height
+      card.style.visibility = 'hidden';
+      card.style.left = '0px';
+      card.style.top  = '0px';
+      const cardH = card.offsetHeight || 160;
+      card.style.visibility = '';
+
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // Remove old arrow classes
+      card.classList.remove('arrow-top', 'arrow-bottom', 'arrow-left', 'arrow-right', 'arrow-none');
+
+      if (!targetEl) {
+        // Center in viewport
+        card.classList.add('arrow-none');
+        const pos = clampCard((vw - cardW) / 2, (vh - cardH) / 2, cardW, cardH);
+        card.style.left = pos.left + 'px';
+        card.style.top  = pos.top  + 'px';
+        highlight.style.display = 'none';
+        return;
+      }
+
+      const rect = targetEl.getBoundingClientRect();
+      highlight.style.display = 'block';
+      highlight.style.left   = (rect.left - 4) + 'px';
+      highlight.style.top    = (rect.top  - 4) + 'px';
+      highlight.style.width  = (rect.width  + 8) + 'px';
+      highlight.style.height = (rect.height + 8) + 'px';
+
+      const GAP = 14; // gap between card and target
+      let left, top, finalArrow;
+
+      // Try preferred arrow direction, fall back if it clips
+      if (arrowHint === 'top') {
+        // Card below target
+        left = rect.left;
+        top  = rect.bottom + GAP;
+        finalArrow = 'top';
+        if (top + cardH + CARD_MARGIN > vh) {
+          top = rect.top - cardH - GAP;
+          finalArrow = 'bottom';
+        }
+      } else if (arrowHint === 'bottom') {
+        // Card above target
+        left = rect.left;
+        top  = rect.top - cardH - GAP;
+        finalArrow = 'bottom';
+        if (top < CARD_MARGIN) {
+          top = rect.bottom + GAP;
+          finalArrow = 'top';
+        }
+      } else if (arrowHint === 'right') {
+        // Card to left of target
+        left = rect.left - cardW - GAP;
+        top  = rect.top;
+        finalArrow = 'right';
+        if (left < CARD_MARGIN) {
+          left = rect.right + GAP;
+          finalArrow = 'left';
+        }
+      } else if (arrowHint === 'left') {
+        // Card to right of target
+        left = rect.right + GAP;
+        top  = rect.top;
+        finalArrow = 'left';
+        if (left + cardW + CARD_MARGIN > vw) {
+          left = rect.left - cardW - GAP;
+          finalArrow = 'right';
+        }
+      } else {
+        left = rect.left;
+        top  = rect.bottom + GAP;
+        finalArrow = 'top';
+      }
+
+      // On mobile, always center horizontally
+      if (isMobile()) {
+        left = (vw - cardW) / 2;
+      }
+
+      const pos = clampCard(left, top, cardW, cardH);
+      card.classList.add('arrow-' + finalArrow);
+      card.style.left = pos.left + 'px';
+      card.style.top  = pos.top  + 'px';
+    }
+
+    function showStep(idx) {
+      currentStep = idx;
+      const step = steps[idx];
+
+      // Update card content
+      stepEl.textContent = (idx + 1) + ' / ' + TOTAL_STEPS;
+      titleEl.textContent = step.title;
+      // desc can be a string or function (for mobile-conditional text)
+      descEl.textContent = typeof step.desc === 'function' ? step.desc() : step.desc;
+      nextBtn.textContent = (idx === TOTAL_STEPS - 1) ? 'Finish' : 'Next';
+
+      // Find target
+      let targetEl = null;
+      try { targetEl = step.targetFn(); } catch(e) {}
+
+      const arrowHint = typeof step.arrow === 'function' ? step.arrow() : step.arrow;
+      positionCard(targetEl, arrowHint);
+    }
+
+    function startTour() {
+      currentStep = 0;
+      overlay.classList.add('active');
+      showStep(0);
+    }
+
+    function endTour() {
+      overlay.classList.remove('active');
+      highlight.style.display = 'none';
+      try { localStorage.setItem(TOUR_KEY, '1'); } catch(e) {}
+    }
+
+    // Wire next / skip
+    nextBtn.addEventListener('click', () => {
+      if (currentStep >= TOTAL_STEPS - 1) {
+        endTour();
+      } else {
+        showStep(currentStep + 1);
+      }
+    });
+    skipBtn.addEventListener('click', endTour);
+
+    // Wire help buttons
+    const helpBtn = document.getElementById('helpBtn');
+    if (helpBtn) {
+      helpBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(TOUR_KEY); } catch(e) {}
+        startTour();
+      });
+    }
+    const mobileHelpBtn = document.getElementById('mobileHelpBtn');
+    if (mobileHelpBtn) {
+      mobileHelpBtn.addEventListener('click', () => {
+        try { localStorage.removeItem(TOUR_KEY); } catch(e) {}
+        startTour();
+      });
+    }
+
+    // Re-position on resize
+    window.addEventListener('resize', () => {
+      if (overlay.classList.contains('active')) {
+        showStep(currentStep);
+      }
+    });
+
+    // First-visit auto-show after 1 second
+    let tourSeen = false;
+    try { tourSeen = !!localStorage.getItem(TOUR_KEY); } catch(e) {}
+    if (!tourSeen) {
+      setTimeout(startTour, 1000);
+    }
+  })();
 
 })();
 </script>
