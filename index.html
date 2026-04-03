@@ -2570,19 +2570,16 @@
     if (!panel || !el) return;
     const panelRect = panel.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
-    // Calculate offset to center the element in the visible panel area
-    const elCenter = elRect.top + elRect.height / 2;
-    const panelCenter = panelRect.top + panelRect.height / 2;
-    const scrollDelta = elCenter - panelCenter;
-    // Only scroll if the element is not already mostly visible and centered
-    if (Math.abs(scrollDelta) > panelRect.height * 0.2) {
-      panel.scrollTo({
-        top: panel.scrollTop + scrollDelta,
-        behavior: 'smooth'
-      });
-    }
+    // Position the step header at the top quarter of the visible area
+    // so the expanded WHAT/WHY/RESULT content falls naturally below
+    const targetY = panelRect.top + panelRect.height * 0.15;
+    const scrollDelta = elRect.top - targetY;
+    panel.scrollTo({
+      top: panel.scrollTop + scrollDelta,
+      behavior: 'smooth'
+    });
     // Update indicators after scroll settles
-    setTimeout(updateScrollIndicators, 400);
+    setTimeout(updateScrollIndicators, 600);
   }
 
   function highlightStep(stepIdx) {
@@ -2593,7 +2590,8 @@
       if (i < stepIdx) el.classList.add('completed');
       if (i === stepIdx) {
         el.classList.add('active');
-        // Auto-scroll removed — let the user control their own reading position
+        // Center the newly active step in the visible drawer area
+        setTimeout(() => smoothScrollToStep(el), 300);
       }
     });
 
@@ -2620,7 +2618,7 @@
 
   // ===== ATTACK ANIMATIONS =====
   // Pace multiplier: scales all step delays for a slower, more readable cadence
-  const PACE = 3.5;
+  const PACE = 17.5;
 
   function scheduleStep(delay, fn) {
     const timer = setTimeout(() => {
