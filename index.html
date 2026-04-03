@@ -668,6 +668,29 @@
       border-radius: 8px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    /* Attention-grabbing pulse glow on info button */
+    .mobile-bottom-bar .mobile-info-btn.glow {
+      animation: info-glow-pulse 1.8s ease-in-out infinite;
+      box-shadow: 0 0 12px 4px rgba(88,166,255,0.5);
+    }
+    .mobile-bottom-bar .mobile-info-btn.glow::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 12px;
+      border: 2px solid var(--accent-blue);
+      animation: info-ring-expand 1.8s ease-out infinite;
+      pointer-events: none;
+    }
+    @keyframes info-glow-pulse {
+      0%, 100% { box-shadow: 0 0 8px 2px rgba(88,166,255,0.4); }
+      50% { box-shadow: 0 0 20px 8px rgba(88,166,255,0.7); }
+    }
+    @keyframes info-ring-expand {
+      0% { inset: -2px; opacity: 1; }
+      100% { inset: -14px; opacity: 0; }
     }
     .mobile-bottom-bar .mobile-settings-btn {
       width: 40px;
@@ -1291,7 +1314,7 @@
     </div>
     <button class="mobile-settings-btn" id="mobileSettingsBtn" aria-label="Settings"><i data-lucide="settings" style="width:18px;height:18px"></i></button>
     <button class="help-btn" id="mobileHelpBtn" title="Guided tour" aria-label="Show guided tour" style="width:40px;height:40px;border-radius:8px;font-size: 1rem;">?</button>
-    <button class="mobile-info-btn" id="mobileInfoBtn" aria-label="Attack details"><i data-lucide="info" style="width:18px;height:18px"></i></button>
+    <button class="mobile-info-btn glow" id="mobileInfoBtn" aria-label="Attack details"><i data-lucide="info" style="width:18px;height:18px"></i></button>
   </div>
 
   <!-- ===== FOOTER (desktop only) ===== -->
@@ -2243,8 +2266,16 @@
       if (i < stepIdx) el.classList.add('completed');
       if (i === stepIdx) {
         el.classList.add('active');
-        // Auto-scroll the active step into view
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Auto-scroll: on mobile scroll inside the drawer panel; on desktop scroll within sidebar
+        const panel = document.getElementById('detail-panel');
+        if (panel && el) {
+          // Scroll the step into the visible area of the panel
+          const panelRect = panel.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          if (elRect.top < panelRect.top || elRect.bottom > panelRect.bottom) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
       }
     });
 
@@ -2555,6 +2586,15 @@
     state.playing = true;
     updateControlState();
     if (state.baselineTraffic) startBaselineTraffic();
+
+    // On mobile: auto-open the detail drawer so user sees the walkthrough
+    if (isMobile() && !state.drawerOpen) {
+      openDrawer();
+      // Stop the info button glow — user has seen the panel
+      const infoBtn = document.getElementById('mobileInfoBtn');
+      if (infoBtn) infoBtn.classList.remove('glow');
+    }
+
     safeExec(() => playFunctions[state.currentAttack](), 'play-attack');
   }
 
@@ -2650,6 +2690,9 @@
     document.getElementById('detail-panel').classList.add('open');
     document.getElementById('drawerBackdrop').style.display = 'block';
     requestAnimationFrame(() => document.getElementById('drawerBackdrop').classList.add('visible'));
+    // Stop the glow once the user has seen the panel
+    const infoBtn = document.getElementById('mobileInfoBtn');
+    if (infoBtn) infoBtn.classList.remove('glow');
   }
 
   function closeDrawer() {
