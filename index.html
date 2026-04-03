@@ -2752,9 +2752,11 @@
     scrollUpEl.style.left = rect.left + 'px';
     scrollUpEl.style.right = (window.innerWidth - rect.right) + 'px';
     scrollUpEl.style.width = rect.width + 'px';
-    // On mobile, offset above the bottom bar padding
-    const bottomOffset = window.innerWidth <= 768 ? 64 : 0;
-    scrollDownEl.style.top = (rect.bottom - 40 - bottomOffset) + 'px';
+    // Position at the bottom of the visible panel area (above the bottom bar on mobile)
+    const mobileBar = document.querySelector('.mobile-bottom-bar');
+    const barTop = mobileBar ? mobileBar.getBoundingClientRect().top : window.innerHeight;
+    const visibleBottom = Math.min(rect.bottom, barTop);
+    scrollDownEl.style.top = (visibleBottom - 40) + 'px';
     scrollDownEl.style.left = rect.left + 'px';
     scrollDownEl.style.right = (window.innerWidth - rect.right) + 'px';
     scrollDownEl.style.width = rect.width + 'px';
