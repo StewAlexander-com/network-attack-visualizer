@@ -68,7 +68,7 @@
       display: flex;
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
-      -webkit-text-size-adjust: 100%;
+      -webkit-text-size-adjust: auto;
       touch-action: manipulation; /* kill 300ms tap delay globally */
       padding-top: var(--safe-top);
       padding-left: var(--safe-left);
@@ -108,7 +108,7 @@
     .logo svg { width: 24px; height: 24px; flex-shrink: 0; }
     .logo-text {
       font-weight: 600;
-      font-size: 14px;
+      font-size: 0.875rem;
       letter-spacing: -0.02em;
       white-space: nowrap;
     }
@@ -134,7 +134,7 @@
 
     .attack-tab {
       padding: 6px 10px;
-      font-size: 12px;
+      font-size: 0.75rem;
       font-weight: 500;
       font-family: var(--font-ui);
       color: var(--text-muted);
@@ -187,7 +187,7 @@
     }
     .speed-btn {
       padding: 4px 8px;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-family: var(--font-mono);
       font-weight: 500;
       color: var(--text-faint);
@@ -209,7 +209,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 11px;
+      font-size: 0.6875rem;
       color: var(--text-muted);
       cursor: pointer;
       white-space: nowrap;
@@ -287,7 +287,7 @@
     .panel-section:last-child { border-bottom: none; }
 
     .attack-title {
-      font-size: 17px;
+      font-size: 1.0625rem;
       font-weight: 700;
       line-height: 1.3;
       margin-bottom: 8px;
@@ -298,7 +298,7 @@
       align-items: center;
       gap: 4px;
       padding: 3px 8px;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-family: var(--font-mono);
       font-weight: 500;
       color: var(--accent-red);
@@ -313,7 +313,7 @@
     .phase-badge {
       display: inline-block;
       padding: 3px 10px;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 500;
       color: var(--accent-orange);
       background: rgba(210,153,34,0.08);
@@ -332,8 +332,8 @@
       position: relative;
       padding: 10px 12px 10px 36px;
       margin-bottom: 4px;
-      font-size: 13px;
-      line-height: 1.5;
+      font-size: 0.9375rem;
+      line-height: 1.55;
       color: var(--text-muted);
       border-left: 3px solid transparent;
       border-radius: 0 6px 6px 0;
@@ -349,7 +349,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 600;
       font-family: var(--font-mono);
       color: var(--text-faint);
@@ -381,7 +381,7 @@
       width: 100%;
       border-collapse: collapse;
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 0.6875rem;
       table-layout: fixed;
     }
     .packet-table th {
@@ -389,7 +389,7 @@
       padding: 6px 5px;
       color: var(--text-faint);
       font-weight: 500;
-      font-size: 10px;
+      font-size: 0.625rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       border-bottom: 1px solid var(--border);
@@ -422,8 +422,8 @@
     .callout {
       padding: 12px 14px;
       border-radius: 8px;
-      font-size: 13px;
-      line-height: 1.5;
+      font-size: 0.875rem;
+      line-height: 1.55;
       display: flex;
       gap: 10px;
     }
@@ -439,7 +439,7 @@
       color: var(--accent-green);
     }
     .callout-title {
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -450,7 +450,7 @@
     .callout-text { color: var(--text-muted); }
 
     .section-label {
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -469,7 +469,7 @@
       justify-content: space-between;
       padding: 0 12px;
       padding-bottom: var(--safe-bottom);
-      font-size: 11px;
+      font-size: 0.6875rem;
       color: var(--text-faint);
       flex-shrink: 0;
       gap: 8px;
@@ -489,7 +489,7 @@
       align-items: center;
       gap: 4px;
       padding: 2px 6px;
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 500;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -517,7 +517,7 @@
     }
     .node-label {
       font-family: var(--font-ui);
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 500;
       fill: var(--text);
       text-anchor: middle;
@@ -526,7 +526,7 @@
     }
     .node-ip {
       font-family: var(--font-mono);
-      font-size: 9px;
+      font-size: 0.5625rem;
       fill: var(--text-faint);
       text-anchor: middle;
       pointer-events: none;
@@ -557,7 +557,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 12px 14px;
-      font-size: 12px;
+      font-size: 0.75rem;
       z-index: 200;
       pointer-events: none;
       opacity: 0;
@@ -567,17 +567,17 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
     .node-tooltip.visible { opacity: 1; pointer-events: auto; }
-    .node-tooltip .tt-label { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+    .node-tooltip .tt-label { font-weight: 600; font-size: 0.875rem; margin-bottom: 6px; }
     .node-tooltip .tt-row {
       display: flex;
       justify-content: space-between;
       gap: 12px;
       padding: 2px 0;
     }
-    .node-tooltip .tt-key { color: var(--text-faint); font-size: 11px; }
+    .node-tooltip .tt-key { color: var(--text-faint); font-size: 0.6875rem; }
     .node-tooltip .tt-val {
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 0.6875rem;
       color: var(--text-muted);
       word-break: break-all;
     }
@@ -585,7 +585,7 @@
       margin-top: 6px;
       padding-top: 6px;
       border-top: 1px solid var(--border);
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 500;
     }
     .tt-status.secure { color: var(--accent-green); }
@@ -595,7 +595,7 @@
     .packet-dot { pointer-events: none; }
     .packet-label {
       font-family: var(--font-mono);
-      font-size: 8px;
+      font-size: 0.5rem;
       font-weight: 500;
       pointer-events: none;
       user-select: none;
@@ -609,7 +609,7 @@
       border-radius: 6px;
       padding: 8px 10px;
       font-family: var(--font-mono);
-      font-size: 10px;
+      font-size: 0.625rem;
       color: var(--accent-orange);
       z-index: 150;
       pointer-events: none;
@@ -652,7 +652,7 @@
     .mobile-bottom-bar .speed-group { display: flex; gap: 1px; }
     .mobile-bottom-bar .speed-btn {
       padding: 6px 8px;
-      font-size: 12px;
+      font-size: 0.75rem;
       min-height: 36px;
     }
     .mobile-bottom-bar .mobile-info-btn {
@@ -730,11 +730,11 @@
       justify-content: space-between;
       padding: 12px 0;
       border-bottom: 1px solid var(--border);
-      font-size: 13px;
+      font-size: 0.8125rem;
       color: var(--text);
     }
     .mobile-settings-drawer .setting-row:last-child { border-bottom: none; }
-    .mobile-settings-drawer .setting-label { color: var(--text-muted); font-size: 12px; }
+    .mobile-settings-drawer .setting-label { color: var(--text-muted); font-size: 0.75rem; }
 
     /* ===== MOBILE BREAKPOINT ===== */
     @media (max-width: 768px) {
@@ -752,7 +752,7 @@
         gap: 6px;
       }
       .logo svg { width: 22px; height: 22px; }
-      .logo-text { font-size: 13px; }
+      .logo-text { font-size: 0.8125rem; }
 
       /* Mobile: only show attack select + play/pause/reset + theme in topbar */
       .controls {
@@ -794,10 +794,10 @@
       .drawer-handle { display: block; }
 
       .panel-section { padding: 12px; }
-      .attack-title { font-size: 16px; }
-      .step-item { font-size: 12px; padding: 8px 10px 8px 32px; }
-      .step-item::before { left: 8px; top: 8px; width: 16px; height: 16px; font-size: 9px; }
-      .callout { font-size: 12px; padding: 10px 12px; }
+      .attack-title { font-size: 1rem; }
+      .step-item { font-size: 0.875rem; padding: 8px 10px 8px 32px; }
+      .step-item::before { left: 8px; top: 8px; width: 16px; height: 16px; font-size: 0.5625rem; }
+      .callout { font-size: 0.8125rem; padding: 10px 12px; }
 
       /* Mobile attack select */
       .mobile-attack-select {
@@ -806,7 +806,7 @@
         min-width: 0;
         padding: 6px 28px 6px 10px;
         font-family: var(--font-ui);
-        font-size: 12px;
+        font-size: 0.75rem;
         font-weight: 500;
         color: var(--text);
         background: var(--surface-2);
@@ -821,9 +821,9 @@
       }
 
       /* Smaller node labels on mobile */
-      .node-label { font-size: 9px; }
-      .node-ip { font-size: 7px; }
-      .packet-label { font-size: 7px; }
+      .node-label { font-size: 0.5625rem; }
+      .node-ip { font-size: 0.4375rem; }
+      .packet-label { font-size: 0.4375rem; }
     }
 
     /* Desktop: hide mobile elements */
@@ -840,17 +840,17 @@
       .logo-text { display: none; }
       .ctrl-btn { width: 36px; height: 36px; }
       .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
-      .mobile-bottom-bar .speed-btn { padding: 6px 6px; font-size: 11px; }
+      .mobile-bottom-bar .speed-btn { padding: 6px 6px; font-size: 0.6875rem; }
       .mobile-bottom-bar .mobile-info-btn,
       .mobile-bottom-bar .mobile-settings-btn { width: 36px; height: 36px; min-width: 36px; }
-      .node-label { font-size: 8px; }
+      .node-label { font-size: 0.5rem; }
       .node-ip { display: none; }
     }
 
     /* ===== TABLET (iPad) ===== */
     @media (min-width: 769px) and (max-width: 1024px) {
       :root { --sidebar-width: 300px; }
-      .attack-tab { padding: 6px 8px; font-size: 11px; }
+      .attack-tab { padding: 6px 8px; font-size: 0.6875rem; }
     }
 
     /* ===== LANDSCAPE MOBILE ===== */
@@ -870,7 +870,7 @@
       background: rgba(210,153,34,0.15);
       border: 1px solid var(--accent-orange);
       color: var(--accent-orange);
-      font-size: 12px;
+      font-size: 0.75rem;
       padding: 8px 16px;
       border-radius: 8px;
       z-index: 9999;
@@ -906,19 +906,19 @@
       z-index: 9001;
     }
     .annotation-card .ann-step {
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-family: var(--font-mono);
       color: var(--accent-blue);
       margin-bottom: 4px;
     }
     .annotation-card .ann-title {
-      font-size: 15px;
+      font-size: 0.9375rem;
       font-weight: 600;
       margin-bottom: 6px;
       color: var(--text);
     }
     .annotation-card .ann-desc {
-      font-size: 13px;
+      font-size: 0.8125rem;
       line-height: 1.5;
       color: var(--text-muted);
       margin-bottom: 12px;
@@ -935,14 +935,14 @@
       border: none;
       border-radius: 6px;
       font-family: var(--font-ui);
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 500;
       cursor: pointer;
       transition: opacity 0.15s ease;
     }
     .ann-next-btn:hover { opacity: 0.85; }
     .ann-skip {
-      font-size: 12px;
+      font-size: 0.75rem;
       color: var(--text-faint);
       cursor: pointer;
       background: none;
@@ -1008,7 +1008,7 @@
       border: 1px solid var(--border);
       border-radius: 50%;
       font-family: var(--font-ui);
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: var(--text-muted);
       cursor: pointer;
@@ -1034,14 +1034,14 @@
     .explain-row {
       display: flex;
       gap: 8px;
-      margin-bottom: 6px;
-      font-size: 12px;
-      line-height: 1.5;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+      line-height: 1.55;
     }
     .explain-label {
       flex-shrink: 0;
-      width: 48px;
-      font-size: 10px;
+      width: 52px;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.04em;
@@ -1058,13 +1058,13 @@
       margin-top: 10px;
     }
     .swot-cell {
-      padding: 8px 10px;
+      padding: 10px 12px;
       border-radius: 6px;
-      font-size: 11px;
-      line-height: 1.4;
+      font-size: 0.8125rem;
+      line-height: 1.5;
     }
     .swot-label {
-      font-size: 9px;
+      font-size: 0.6875rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -1103,7 +1103,7 @@
       border: 1px solid rgba(88,166,255,0.2);
     }
     .result-severity {
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -1113,12 +1113,12 @@
     .severity-high .result-severity { color: var(--accent-orange); }
     .severity-medium .result-severity { color: var(--accent-blue); }
     .result-impact {
-      font-size: 13px;
+      font-size: 0.9375rem;
       line-height: 1.5;
       color: var(--text);
       font-weight: 500;
     }
-    .result-details { font-size: 12px; line-height: 1.5; }
+    .result-details { font-size: 0.875rem; line-height: 1.55; }
     .result-row {
       display: flex;
       gap: 8px;
@@ -1127,7 +1127,7 @@
     .result-label {
       flex-shrink: 0;
       width: 100px;
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 600;
       text-transform: uppercase;
       color: var(--text-faint);
@@ -1136,7 +1136,7 @@
     }
     .result-row > span:last-child { color: var(--text-muted); }
     .result-section-label {
-      font-size: 10px;
+      font-size: 0.625rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -1280,7 +1280,7 @@
       <button class="speed-btn mobile-speed-btn" data-speed="3">3x</button>
     </div>
     <button class="mobile-settings-btn" id="mobileSettingsBtn" aria-label="Settings"><i data-lucide="settings" style="width:18px;height:18px"></i></button>
-    <button class="help-btn" id="mobileHelpBtn" title="Guided tour" aria-label="Show guided tour" style="width:40px;height:40px;border-radius:8px;font-size:16px;">?</button>
+    <button class="help-btn" id="mobileHelpBtn" title="Guided tour" aria-label="Show guided tour" style="width:40px;height:40px;border-radius:8px;font-size: 1rem;">?</button>
     <button class="mobile-info-btn" id="mobileInfoBtn" aria-label="Attack details"><i data-lucide="info" style="width:18px;height:18px"></i></button>
   </div>
 
