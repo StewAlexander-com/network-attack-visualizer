@@ -738,6 +738,7 @@
 
     /* ===== MOBILE BREAKPOINT ===== */
     @media (max-width: 768px) {
+      html { font-size: 112.5%; } /* 18px base on mobile — all rem values scale up */
       :root {
         --topbar-height: 48px;
         --footer-height: 0px; /* footer hidden on mobile */
@@ -794,10 +795,19 @@
       .drawer-handle { display: block; }
 
       .panel-section { padding: 12px; }
-      .attack-title { font-size: 1rem; }
-      .step-item { font-size: 0.875rem; padding: 8px 10px 8px 32px; }
-      .step-item::before { left: 8px; top: 8px; width: 16px; height: 16px; font-size: 0.5625rem; }
-      .callout { font-size: 0.8125rem; padding: 10px 12px; }
+      .attack-title { font-size: 1.2rem; }
+      .step-item { font-size: 1rem; padding: 10px 12px 10px 36px; }
+      .step-item::before { left: 10px; top: 12px; width: 18px; height: 18px; font-size: 0.6rem; }
+      .callout { font-size: 0.95rem; padding: 12px 14px; }
+      .explain-row { font-size: 0.95rem; }
+      .explain-label { font-size: 0.7rem; width: 54px; }
+      .swot-cell { font-size: 0.9rem; padding: 10px 12px; }
+      .swot-label { font-size: 0.65rem; }
+      .section-label { font-size: 0.65rem; }
+      .result-impact { font-size: 1rem; }
+      .result-details { font-size: 0.95rem; }
+      .result-severity { font-size: 0.65rem; }
+      .result-label { font-size: 0.6rem; }
 
       /* Mobile attack select */
       .mobile-attack-select {
