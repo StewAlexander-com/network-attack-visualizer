@@ -816,7 +816,7 @@
         left: 0;
         right: 0;
         width: 100%;
-        max-height: 40vh;
+        max-height: 45vh;
         border-left: none;
         border-top: 1px solid var(--border);
         transform: translateY(100%);
@@ -3866,11 +3866,16 @@
       if (!e.target.closest('.node-group')) hideNodeTooltip();
     });
 
-    // SWOT card collapse/expand on mobile (event delegation)
+    // SWOT card collapse/expand on mobile — accordion: only one open at a time
     document.getElementById('detail-panel').addEventListener('click', (e) => {
       const cell = e.target.closest('.swot-cell');
       if (cell && isMobile()) {
-        cell.classList.toggle('open');
+        const wasOpen = cell.classList.contains('open');
+        // Close all siblings in the same swot-grid
+        const grid = cell.closest('.swot-grid');
+        if (grid) grid.querySelectorAll('.swot-cell.open').forEach(c => c.classList.remove('open'));
+        // Toggle the tapped one (if it was closed, open it; if it was open, leave all closed)
+        if (!wasOpen) cell.classList.add('open');
       }
     });
   }
