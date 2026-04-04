@@ -67,13 +67,13 @@
     }
 
     [data-theme="light"] {
-      --bg: #f6f8fa;
-      --surface: #ffffff;
-      --surface-2: #f0f2f5;
-      --border: #d0d7de;
-      --text: #1f2328;
-      --text-muted: #656d76;
-      --text-faint: #8b949e;
+      --bg: #e8ecf0;
+      --surface: #f0f2f5;
+      --surface-2: #e2e6ea;
+      --border: #bcc3cc;
+      --text: #1a1e24;
+      --text-muted: #4d555e;
+      --text-faint: #6e7781;
     }
 
     /* ===== RESET ===== */
@@ -3786,7 +3786,7 @@
     html.setAttribute('data-theme', next);
     state.theme = next;
     // Update meta theme color for mobile browser chrome
-    document.getElementById('metaThemeColor').content = next === 'dark' ? '#0d1117' : '#f6f8fa';
+    document.getElementById('metaThemeColor').content = next === 'dark' ? '#0d1117' : '#e8ecf0';
     const themeIcon = document.getElementById('themeIcon');
     if (themeIcon) themeIcon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
     try { lucide.createIcons(); } catch(e) {}
