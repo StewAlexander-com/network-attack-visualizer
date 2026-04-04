@@ -846,10 +846,25 @@
       .result-label { font-size: 0.6rem; }
 
       /* Mobile attack select */
-      .mobile-attack-select {
-        display: block;
+      .mobile-attack-wrap {
+        display: flex;
+        align-items: center;
         flex: 1;
         min-width: 0;
+        position: relative;
+      }
+      .attack-count {
+        position: absolute;
+        right: 32px;
+        font-family: var(--font-mono);
+        font-size: 0.55rem;
+        font-weight: 600;
+        color: var(--accent-blue);
+        pointer-events: none;
+      }
+      .mobile-attack-select {
+        display: block;
+        width: 100%;
         padding: 8px 30px 8px 12px;
         font-family: var(--font-ui);
         font-size: 0.8rem;
@@ -874,7 +889,7 @@
 
     /* Desktop: hide mobile elements */
     @media (min-width: 769px) {
-      .mobile-attack-select { display: none; }
+      .mobile-attack-wrap { display: none; }
       .mobile-bottom-bar { display: none; }
       .drawer-backdrop { display: none !important; }
       .drawer-handle { display: none; }
@@ -1589,7 +1604,10 @@
     <div class="divider"></div>
 
     <div class="attack-tabs" id="attackTabs"></div>
-    <select class="mobile-attack-select" id="mobileAttackSelect" aria-label="Select attack vector"></select>
+    <div class="mobile-attack-wrap">
+      <select class="mobile-attack-select" id="mobileAttackSelect" aria-label="Select attack vector"></select>
+      <span class="attack-count" id="attackCount"></span>
+    </div>
 
     <div class="divider"></div>
 
@@ -3702,6 +3720,8 @@
     renderPanel(idx);
     document.querySelectorAll('.attack-tab').forEach((tab, i) => tab.classList.toggle('active', i === idx));
     document.getElementById('mobileAttackSelect').value = idx;
+    const countEl = document.getElementById('attackCount');
+    if (countEl) countEl.textContent = (idx + 1) + '/' + attacks.length;
   }
 
   function setBaselineTraffic(enabled) {
@@ -3866,6 +3886,9 @@
       opt.textContent = atk.name;
       selectEl.appendChild(opt);
     });
+    // Show count badge
+    const countEl = document.getElementById('attackCount');
+    if (countEl) countEl.textContent = '1/' + attacks.length;
   }
 
   // ===== BROWSER WARNING DISPLAY =====
