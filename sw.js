@@ -1,5 +1,5 @@
 // Service Worker — NetAttack.viz PWA
-const CACHE_NAME = 'netattack-v1775323797';
+const CACHE_NAME = 'netattack-v1775324176';
 const ASSETS = [
   './',
   './index.html',
