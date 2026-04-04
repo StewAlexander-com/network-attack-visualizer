@@ -1213,26 +1213,29 @@
       .stat-num { font-size: 34px; }
       .splash-cta { padding: 16px 56px; font-size: 18px; }
     }
-    /* Landscape phones */
+    /* Landscape phone: show rotate prompt instead of cramped splash */
+    .rotate-prompt { display: none; }
     @media (orientation: landscape) and (max-height: 500px) {
-      .splash { padding: 8px 40px; }
-      .splash-inner { max-width: 90vw; }
-      .splash-brand { margin-bottom: 6px; }
-      .splash-logo { width: 40px; height: 40px; }
-      .splash-title { font-size: 22px; }
-      .splash-subtitle { font-size: 11px; }
-      .splash-divider { margin-bottom: 6px; height: 1px; }
-      .splash-hook { font-size: 14px; margin-bottom: 8px; }
-      .splash-stats { margin-bottom: 8px; gap: 14px; }
-      .stat-num { font-size: 20px; }
-      .stat-label { font-size: 8px; }
-      .splash-stat-divider { height: 24px; }
-      .splash-tags { margin-bottom: 8px; gap: 4px; }
-      .splash-tag { font-size: 10px; padding: 2px 8px; }
-      .splash-cta { padding: 8px 28px; font-size: 13px; border-radius: 8px; }
-      .splash-quote { margin-top: 6px; margin-bottom: 4px; font-size: 10px; max-width: 300px; }
-      .splash-quote-attr { font-size: 9px; }
-      .splash-footer { font-size: 9px; }
+      .splash-inner { display: none; }
+      .rotate-prompt {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        opacity: 0;
+        animation: splashFadeUp 0.5s ease 0.2s forwards;
+      }
+      .rotate-icon {
+        width: 56px;
+        height: 56px;
+        color: var(--accent-blue);
+        animation: rotate-nudge 2s ease-in-out infinite;
+      }
+      @keyframes rotate-nudge {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-20deg); }
+        75% { transform: rotate(0deg); }
+      }
     }
     /* Landscape tablets */
     @media (orientation: landscape) and (min-height: 501px) and (min-width: 768px) {
@@ -1476,6 +1479,16 @@
 
   <!-- ===== SPLASH SCREEN ===== -->
   <div class="splash" id="splashScreen">
+    <!-- IKEA-style rotate prompt for landscape phones -->
+    <div class="rotate-prompt">
+      <svg class="rotate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="2" width="16" height="20" rx="3" />
+        <path d="M12 18h.01" />
+      </svg>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint);margin-top:-4px">
+        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+      </svg>
+    </div>
     <div class="splash-inner">
 
       <div class="splash-brand">
