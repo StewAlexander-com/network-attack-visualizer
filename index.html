@@ -183,9 +183,14 @@
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
-    .ctrl-btn:hover { color: var(--text); background: var(--surface-2); }
-    .ctrl-btn:active { background: var(--surface-2); }
+    .ctrl-btn:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
+    .ctrl-btn:active:not(:disabled) { background: var(--surface-2); }
     .ctrl-btn.active { color: var(--accent-blue); border-color: var(--accent-blue); }
+    .ctrl-btn:disabled, .ctrl-btn.disabled {
+      opacity: 0.2;
+      pointer-events: none;
+      cursor: default;
+    }
 
     .toggle-label {
       display: flex;
@@ -625,29 +630,36 @@
       right: 0;
       background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 10px 24px;
-      padding-bottom: calc(10px + var(--safe-bottom));
+      padding: 8px 0;
+      padding-bottom: calc(8px + var(--safe-bottom));
       z-index: 250;
       align-items: center;
-      justify-content: space-evenly;
+      justify-content: center;
+      gap: 16px;
     }
     .mobile-bottom-bar .ctrl-btn {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
-      border-radius: 12px;
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      border-radius: 14px;
+      font-size: 0;
+    }
+    .mobile-bottom-bar .ctrl-btn[disabled],
+    .mobile-bottom-bar .ctrl-btn.disabled {
+      opacity: 0.2;
+      pointer-events: none;
     }
     .mobile-bottom-bar .mobile-info-btn {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: var(--accent-blue);
       color: #fff;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       position: relative;
@@ -1322,9 +1334,10 @@
     /* ===== CANVAS EMPTY STATE HINT ===== */
     .canvas-hint {
       position: absolute;
-      inset: 0;
+      left: 0;
+      right: 0;
+      bottom: 15%;
       display: flex;
-      align-items: center;
       justify-content: center;
       z-index: 5;
       pointer-events: none;
@@ -1334,11 +1347,19 @@
     .canvas-hint.hidden { opacity: 0; }
     .canvas-hint-text {
       font-family: var(--font-ui);
-      font-size: 1rem;
-      font-weight: 400;
-      color: var(--text-faint);
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
       text-align: center;
-      padding: 12px 20px;
+      padding: 14px 24px;
+      background: rgba(22,27,34,0.85);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    [data-theme="light"] .canvas-hint-text {
+      background: rgba(255,255,255,0.85);
     }
 
     /* ===== STEP PROGRESS BAR ===== */
@@ -3019,24 +3040,22 @@
   function updateControlState() {
     const steps = attackStepFunctions[state.currentAttack];
     const atEnd = steps && state.step >= steps.length - 1;
-    const atStart = state.step <= 0;
+    const prevDisabled = state.step <= 0;
+    const nextDisabled = atEnd;
 
-    // Disable prev at start
+    // Poka-yoke: disable buttons that have no valid action
     ['btnPrev', 'mBtnPrev'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) {
-        el.style.opacity = (state.step <= 0) ? '0.3' : '1';
-        el.style.pointerEvents = (state.step <= 0) ? 'none' : 'auto';
-      }
+      if (el) { el.disabled = prevDisabled; el.classList.toggle('disabled', prevDisabled); }
     });
-
-    // Disable next at end
     ['btnNext', 'mBtnNext'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) {
-        el.style.opacity = atEnd ? '0.3' : '1';
-        el.style.pointerEvents = atEnd ? 'none' : 'auto';
-      }
+      if (el) { el.disabled = nextDisabled; el.classList.toggle('disabled', nextDisabled); }
+    });
+    // Also disable reset when nothing has been played
+    ['btnReset', 'mBtnReset'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { const d = state.step < 0; el.disabled = d; el.classList.toggle('disabled', d); }
     });
 
     // Status
