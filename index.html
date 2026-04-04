@@ -1080,7 +1080,7 @@
     }
     .splash-hook {
       font-family: var(--font-ui);
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 500;
       color: var(--text);
       line-height: 1.45;
@@ -1215,16 +1215,24 @@
     }
     /* Landscape phones */
     @media (orientation: landscape) and (max-height: 500px) {
-      .splash { padding: 12px 32px; }
-      .splash-inner { max-width: 600px; }
-      .splash-brand { margin-bottom: 10px; }
-      .splash-divider { margin-bottom: 10px; }
-      .splash-hook { font-size: 15px; margin-bottom: 12px; }
-      .splash-stats { margin-bottom: 10px; gap: 12px; }
-      .stat-num { font-size: 22px; }
-      .splash-tags { margin-bottom: 12px; }
-      .splash-cta { padding: 10px 32px; font-size: 14px; }
-      .splash-quote { margin-top: 10px; margin-bottom: 6px; font-size: 11px; }
+      .splash { padding: 8px 40px; }
+      .splash-inner { max-width: 90vw; }
+      .splash-brand { margin-bottom: 6px; }
+      .splash-logo { width: 40px; height: 40px; }
+      .splash-title { font-size: 22px; }
+      .splash-subtitle { font-size: 11px; }
+      .splash-divider { margin-bottom: 6px; height: 1px; }
+      .splash-hook { font-size: 14px; margin-bottom: 8px; }
+      .splash-stats { margin-bottom: 8px; gap: 14px; }
+      .stat-num { font-size: 20px; }
+      .stat-label { font-size: 8px; }
+      .splash-stat-divider { height: 24px; }
+      .splash-tags { margin-bottom: 8px; gap: 4px; }
+      .splash-tag { font-size: 10px; padding: 2px 8px; }
+      .splash-cta { padding: 8px 28px; font-size: 13px; border-radius: 8px; }
+      .splash-quote { margin-top: 6px; margin-bottom: 4px; font-size: 10px; max-width: 300px; }
+      .splash-quote-attr { font-size: 9px; }
+      .splash-footer { font-size: 9px; }
     }
     /* Landscape tablets */
     @media (orientation: landscape) and (min-height: 501px) and (min-width: 768px) {
