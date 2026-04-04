@@ -843,26 +843,11 @@
       .result-label { font-size: 0.6rem; }
 
       /* Mobile attack select */
-      .mobile-attack-wrap {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-width: 0;
-        gap: 2px;
-      }
-      .mobile-attack-label {
-        font-family: var(--font-ui);
-        font-size: 0.5rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--accent-blue);
-        padding-left: 2px;
-      }
       .mobile-attack-select {
         display: block;
-        width: 100%;
-        padding: 6px 30px 6px 10px;
+        flex: 1;
+        min-width: 0;
+        padding: 8px 30px 8px 12px;
         font-family: var(--font-ui);
         font-size: 0.8rem;
         font-weight: 600;
@@ -876,7 +861,6 @@
         background-image: url("data:image/svg+xml,%3Csvg width='12' height='7' viewBox='0 0 12 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2358a6ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 10px center;
-        box-shadow: 0 0 0 1px rgba(88,166,255,0.15);
       }
 
       /* Smaller node labels on mobile */
@@ -887,7 +871,7 @@
 
     /* Desktop: hide mobile elements */
     @media (min-width: 769px) {
-      .mobile-attack-wrap { display: none; }
+      .mobile-attack-select { display: none; }
       .mobile-bottom-bar { display: none; }
       .drawer-backdrop { display: none !important; }
       .drawer-handle { display: none; }
@@ -1789,10 +1773,7 @@
     <div class="divider"></div>
 
     <div class="attack-tabs" id="attackTabs"></div>
-    <div class="mobile-attack-wrap" id="mobileAttackWrap">
-      <label class="mobile-attack-label" for="mobileAttackSelect">Attack Vector</label>
-      <select class="mobile-attack-select" id="mobileAttackSelect" aria-label="Select attack scenario"></select>
-    </div>
+    <select class="mobile-attack-select" id="mobileAttackSelect" aria-label="Select attack vector"></select>
 
     <div class="divider"></div>
 
@@ -1822,7 +1803,7 @@
       <div class="node-overlay" id="nodeOverlay"></div>
       <div class="canvas-hint" id="canvasHint">
         <div class="canvas-hint-text">
-          Select an <strong style="color:var(--accent-blue)">Attack Vector</strong> above, then tap <strong style="color:var(--accent-blue)">&gt;</strong> to step through it
+          Choose an <strong style="color:var(--accent-blue)">Attack Vector</strong> above, then tap <strong style="color:var(--accent-blue)">&gt;</strong> to begin
         </div>
         <div class="canvas-hint-arrow">→</div>
       </div>
@@ -3688,6 +3669,8 @@
   function buildTabs() {
     const tabsEl = document.getElementById('attackTabs');
     const selectEl = document.getElementById('mobileAttackSelect');
+    const optGroup = document.createElement('optgroup');
+    optGroup.label = 'Attack Vector';
     attacks.forEach((atk, i) => {
       const tab = document.createElement('button');
       tab.className = 'attack-tab' + (i === 0 ? ' active' : '');
@@ -3698,8 +3681,9 @@
       const opt = document.createElement('option');
       opt.value = i;
       opt.textContent = atk.name;
-      selectEl.appendChild(opt);
+      optGroup.appendChild(opt);
     });
+    selectEl.appendChild(optGroup);
   }
 
   // ===== BROWSER WARNING DISPLAY =====
