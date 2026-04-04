@@ -1213,29 +1213,37 @@
       .stat-num { font-size: 34px; }
       .splash-cta { padding: 16px 56px; font-size: 18px; }
     }
-    /* Landscape phone: show rotate prompt instead of cramped splash */
-    .rotate-prompt { display: none; }
-    @media (orientation: landscape) and (max-height: 500px) {
-      .splash-inner { display: none; }
-      .rotate-prompt {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        opacity: 0;
-        animation: splashFadeUp 0.5s ease 0.2s forwards;
-      }
-      .rotate-icon {
-        width: 56px;
-        height: 56px;
-        color: var(--accent-blue);
-        animation: rotate-nudge 2s ease-in-out infinite;
-      }
-      @keyframes rotate-nudge {
-        0%, 100% { transform: rotate(0deg); }
-        25% { transform: rotate(-20deg); }
-        75% { transform: rotate(0deg); }
-      }
+    /* Global landscape phone rotate prompt */
+    .rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 30000;
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (orientation: landscape) and (max-height: 500px) and (max-width: 932px) {
+      .rotate-overlay { display: flex; }
+    }
+    .rotate-icon {
+      width: 56px;
+      height: 56px;
+      color: var(--accent-blue);
+      animation: rotate-nudge 2s ease-in-out infinite;
+    }
+    .rotate-arrow {
+      width: 32px;
+      height: 32px;
+      color: var(--text-faint);
+      margin-top: -4px;
+    }
+    @keyframes rotate-nudge {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-20deg); }
+      75% { transform: rotate(0deg); }
     }
     /* Landscape tablets */
     @media (orientation: landscape) and (min-height: 501px) and (min-width: 768px) {
@@ -1478,17 +1486,18 @@
 <body>
 
   <!-- ===== SPLASH SCREEN ===== -->
+  <!-- Global rotate-to-portrait overlay (covers everything on landscape phones) -->
+  <div class="rotate-overlay">
+    <svg class="rotate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="2" width="16" height="20" rx="3" />
+      <path d="M12 18h.01" />
+    </svg>
+    <svg class="rotate-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+    </svg>
+  </div>
+
   <div class="splash" id="splashScreen">
-    <!-- IKEA-style rotate prompt for landscape phones -->
-    <div class="rotate-prompt">
-      <svg class="rotate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="4" y="2" width="16" height="20" rx="3" />
-        <path d="M12 18h.01" />
-      </svg>
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint);margin-top:-4px">
-        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-      </svg>
-    </div>
     <div class="splash-inner">
 
       <div class="splash-brand">
