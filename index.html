@@ -2952,15 +2952,23 @@
     updateControlState();
   }
 
+  // Poka-yoke: debounce step transitions to prevent rapid double-taps
+  let _stepLock = false;
+
   function stepNext() {
+    if (_stepLock) return;
     const steps = attackStepFunctions[state.currentAttack];
     if (!steps) return;
+    if (state.step >= steps.length - 1) return;
 
-    if (state.step >= steps.length - 1) return; // Already at end
+    _stepLock = true;
+    setTimeout(() => { _stepLock = false; }, 400);
 
     const nextStep = state.step + 1;
 
     // Clear animations from current step
+    state.animationTimers.forEach(t => clearTimeout(t));
+    state.animationTimers = [];
     packetGroup.selectAll('*').remove();
     overlayGroup.selectAll('.progress-overlay').remove();
 
@@ -2985,7 +2993,10 @@
   }
 
   function stepPrev() {
+    if (_stepLock) return;
     if (state.step <= 0) return;
+    _stepLock = true;
+    setTimeout(() => { _stepLock = false; }, 400);
     replayUpToStep(state.step - 1);
   }
 
@@ -3089,6 +3100,9 @@
 
   // ===== DRAWER MANAGEMENT =====
   function openDrawer() {
+    // Poka-yoke: don't open drawer if splash is visible
+    const splash = document.getElementById('splashScreen');
+    if (splash && !splash.classList.contains('hidden')) return;
     state.drawerOpen = true;
     document.getElementById('detail-panel').classList.add('open');
     document.getElementById('drawerBackdrop').style.display = 'block';
