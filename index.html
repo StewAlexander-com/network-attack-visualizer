@@ -354,6 +354,16 @@
       color: #fff;
       background: var(--accent-red);
     }
+    .step-meta {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-faint);
+      margin-bottom: 4px;
+    }
+    .step-item.active .step-meta { color: var(--accent-blue); }
     .step-item.completed { color: var(--text); }
     .step-item.completed::before {
       color: #fff;
@@ -2471,10 +2481,12 @@
       <div class="phase-badge">${atk.phase}</div>
     `;
 
+    const totalSteps = atk.steps.length;
     document.getElementById('stepsList').innerHTML = atk.steps.map((s, i) => {
       const step = (typeof s === 'object') ? s : { action: s, what: '', why: '', result: '', swot: {} };
       return `<li class="step-item" data-step="${i}">
         <div class="step-header">
+          <div class="step-meta">Step ${i + 1} of ${totalSteps}</div>
           <div class="step-action">${step.action}</div>
         </div>
         <div class="step-detail">
@@ -2574,20 +2586,14 @@
   }
 
   // Smooth scroll that centers the target element within the panel
-  function smoothScrollToStep(el) {
+  function scrollPanelToStep(el) {
     const panel = document.getElementById('detail-panel');
     if (!panel || !el) return;
-    const panelRect = panel.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-    // Position the step header at the top quarter of the visible area
-    // so the expanded WHAT/WHY/RESULT content falls naturally below
-    const targetY = panelRect.top + panelRect.height * 0.15;
-    const scrollDelta = elRect.top - targetY;
-    panel.scrollTo({
-      top: panel.scrollTop + scrollDelta,
-      behavior: 'smooth'
-    });
-    // Update indicators after scroll settles
+    // Use getBoundingClientRect for reliable positioning
+    const panelTop = panel.getBoundingClientRect().top;
+    const elTop = el.getBoundingClientRect().top;
+    const scrollDelta = elTop - panelTop - 8;
+    panel.scrollTo({ top: panel.scrollTop + scrollDelta, behavior: 'smooth' });
     setTimeout(updateScrollIndicators, 600);
   }
 
@@ -2599,8 +2605,8 @@
       if (i < stepIdx) el.classList.add('completed');
       if (i === stepIdx) {
         el.classList.add('active');
-        // Center the newly active step in the visible drawer area
-        setTimeout(() => smoothScrollToStep(el), 300);
+        // Wait for collapse/expand transitions to settle, then scroll
+        setTimeout(() => scrollPanelToStep(el), 450);
       }
     });
 
