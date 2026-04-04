@@ -3471,6 +3471,8 @@
     if (panelResult) { panelResult.innerHTML = ''; panelResult.classList.remove('visible'); }
     updateControlState();
     hideChevrons();
+    // Reset dropdown to show 'Attacks' placeholder
+    document.getElementById('mobileAttackSelect').value = '__title';
     // Close drawer on reset (mobile)
     if (isMobile() && state.drawerOpen) closeDrawer();
     setStatus('Ready — press Next to begin');
@@ -3641,7 +3643,11 @@
     });
 
     // Mobile attack select
-    document.getElementById('mobileAttackSelect').addEventListener('change', (e) => selectAttack(parseInt(e.target.value)));
+    document.getElementById('mobileAttackSelect').addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === '__title') return;
+      selectAttack(parseInt(val));
+    });
 
     // Debounced resize
     window.addEventListener('resize', debounce(() => {
@@ -3669,8 +3675,12 @@
   function buildTabs() {
     const tabsEl = document.getElementById('attackTabs');
     const selectEl = document.getElementById('mobileAttackSelect');
-    const optGroup = document.createElement('optgroup');
-    optGroup.label = 'Attack Vector';
+    // Default placeholder — shows "Attacks" until user picks one
+    const placeholder = document.createElement('option');
+    placeholder.value = '__title';
+    placeholder.textContent = 'Attacks';
+    placeholder.selected = true;
+    selectEl.appendChild(placeholder);
     attacks.forEach((atk, i) => {
       const tab = document.createElement('button');
       tab.className = 'attack-tab' + (i === 0 ? ' active' : '');
@@ -3681,9 +3691,8 @@
       const opt = document.createElement('option');
       opt.value = i;
       opt.textContent = atk.name;
-      optGroup.appendChild(opt);
+      selectEl.appendChild(opt);
     });
-    selectEl.appendChild(optGroup);
   }
 
   // ===== BROWSER WARNING DISPLAY =====
