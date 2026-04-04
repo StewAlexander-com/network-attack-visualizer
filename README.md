@@ -74,12 +74,18 @@ Every attack maps to a real [MITRE ATT&CK](https://attack.mitre.org) technique I
 
 | # | Scenario | MITRE ID | Kill Chain Phase | Key Concept |
 |---|---|---|---|---|
+| | **Layer 2/3 Attacks** | | | |
 | 1 | ARP Spoofing (MITM) | [T1557.002](https://attack.mitre.org/techniques/T1557/002/) | Collection → Credential Access | Gratuitous ARP poisons victim + gateway tables |
 | 2 | MAC Flooding (CAM Overflow) | [T1498](https://attack.mitre.org/techniques/T1498/) | Defense Evasion → Discovery | CAM table overflow degrades switch to hub mode |
 | 3 | SYN Flood | [T1498.001](https://attack.mitre.org/techniques/T1498/001/) | Impact | Spoofed SYN packets exhaust server half-open queue |
 | 4 | DHCP Starvation + Rogue DHCP | [T1557](https://attack.mitre.org/techniques/T1557/) | Initial Access → Credential Access | Pool exhaustion enables rogue DHCP gateway injection |
 | 5 | ICMP Redirect | [T1562.001](https://attack.mitre.org/techniques/T1562/001/) | Defense Evasion | ICMP Type 5 rewrites victim routing table |
 | 6 | Lateral Movement (SMB/RDP) | [T1021.001](https://attack.mitre.org/techniques/T1021/001/) / [T1021.002](https://attack.mitre.org/techniques/T1021/002/) | Lateral Movement | Internal port scan → SMB pivot → credential reuse |
+| | **Quantum + AI Threats** | | | |
+| 7 | Harvest Now, Decrypt Later | [T1040](https://attack.mitre.org/techniques/T1040/) | Collection → Future Decryption | Passive traffic capture archived for quantum decryption |
+| 8 | AI Model Poisoning | [AML.T0020](https://atlas.mitre.org/techniques/AML.T0020) | ML Attack Staging → Impact | Backdoor injected via poisoned training data |
+| 9 | Indirect Prompt Injection | [AML.T0051](https://atlas.mitre.org/techniques/AML.T0051) | Initial Access → Impact | Malicious instructions planted in RAG-retrieved documents |
+| 10 | AI Supply Chain Attack | [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) | Initial Access → Persistence | Poisoned model/library from public repository |
 
 ---
 
@@ -133,8 +139,8 @@ Tap any node during an attack to see its IP, MAC, role, and compromise state.
 ## Features
 
 ### Core
-- **6 animated attack scenarios** — step-through at your own pace
-- **22 detailed steps** with What/Why/Result explanations
+- **10 animated attack scenarios** — step-through at your own pace
+- **38 detailed steps** with What/Why/Result explanations
 - **SWOT defense analysis** at every step (collapsible on mobile)
 - **MITRE ATT&CK mapping** with clickable technique IDs
 - **Detection + Mitigation** callouts per scenario

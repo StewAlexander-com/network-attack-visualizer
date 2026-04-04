@@ -2156,6 +2156,274 @@
       },
       detection: 'Windows Event ID 4624 (logon), 4625 (failed), 5140 (share access); UEBA lateral movement detection',
       mitigation: 'Micro-segmentation; disable SMBv1; Just-in-Time access; privileged identity management'
+    },
+
+    // Attack 6: HNDL
+    {
+      name: 'Harvest Now, Decrypt Later (HNDL)',
+      short: 'HNDL',
+      mitre: 'T1040',
+      mitreUrl: 'https://attack.mitre.org/techniques/T1040/',
+      phase: 'Collection → Future Decryption',
+      steps: [
+        {
+          action: 'Attacker positions a passive tap on the network to capture encrypted traffic',
+          what: 'The attacker deploys a passive network tap or gains access to a SPAN/mirror port on the switch, enabling silent capture of all passing traffic without altering it.',
+          why: 'Passive taps are undetectable by the network — they introduce no latency, no packets, and no MAC address. The attacker only needs physical or administrative access once.',
+          result: 'The attacker has a live copy of all encrypted traffic flowing through the tapped segment.',
+          swot: {
+            strength: 'Network monitoring tools (NetFlow, IPFIX) can detect unusual traffic duplication or unexpected SPAN port configurations',
+            weakness: 'Passive taps are invisible to IDS/IPS — they generate no traffic signatures and are undetectable at the packet level',
+            opportunity: 'Audit SPAN port configurations regularly; restrict physical access to network infrastructure; deploy tamper-evident fiber taps',
+            threat: 'A single compromised tap point can silently capture years of encrypted traffic without triggering any alerts'
+          }
+        },
+        {
+          action: 'All encrypted TLS and SSH traffic is captured and stored in bulk',
+          what: 'The attacker records all encrypted sessions — TLS 1.2/1.3, SSH, VPN tunnels — including full handshakes and session data. Storage costs for bulk capture are economically trivial.',
+          why: 'Encrypted traffic is still structured — packet headers, timing, and volume reveal metadata. The ciphertext itself is preserved intact for future decryption.',
+          result: 'Terabytes of encrypted data are archived, including authentication exchanges, database queries, API calls, and file transfers.',
+          swot: {
+            strength: 'TLS 1.3 with Encrypted Client Hello (ECH) forces attackers into indiscriminate bulk capture, inflating their storage costs',
+            weakness: 'TLS 1.2 static RSA key transport has no forward secrecy — compromising one key decrypts all past sessions',
+            opportunity: 'Enforce TLS 1.3 with ephemeral key exchange everywhere; implement aggressive session rekeying; disable TLS 1.2 static RSA',
+            threat: 'Retaining intercepted traffic is economically trivial — a state-level actor can archive exabytes of encrypted data indefinitely'
+          }
+        },
+        {
+          action: 'Captured data is archived for long-term storage, potentially for decades',
+          what: 'The encrypted archive is moved to secure long-term storage — air-gapped facilities, distributed cloud storage, or government data centers. The attacker waits for quantum computing capability.',
+          why: 'Data protected by RSA-2048 or ECC P-256 today has a secrecy lifetime that may exceed the timeline for quantum decryption capability (estimated 10-15 years).',
+          result: 'A massive encrypted archive exists that cannot be un-harvested. If quantum computers break RSA/ECC, every session in the archive becomes readable.',
+          swot: {
+            strength: 'Organizations can begin migrating to NIST post-quantum cryptography standards (ML-KEM/FIPS 203) now, before quantum computers arrive',
+            weakness: 'Data already captured cannot be protected retroactively — once harvested, the damage is done regardless of future encryption upgrades',
+            opportunity: 'Conduct cryptographic inventory of all systems; prioritize migration of long-lived sensitive data to PQC; implement crypto agility',
+            threat: 'State actors including China, Russia, and others are believed to be actively harvesting encrypted data now for future quantum decryption'
+          }
+        },
+        {
+          action: 'Future quantum computer decrypts the archived traffic using Shor\'s algorithm',
+          what: 'A sufficiently powerful quantum computer runs Shor\'s algorithm to factor RSA keys or solve elliptic curve discrete logarithms in polynomial time, breaking all classical public-key encryption.',
+          why: 'Shor\'s algorithm reduces RSA-2048 factoring from ~10^300 operations (classical) to ~4000^3 operations (quantum) — turning centuries into hours.',
+          result: 'Every archived session is decrypted. Financial records, state communications, medical data, intellectual property, and authentication credentials are exposed.',
+          swot: {
+            strength: 'NIST PQC algorithms (ML-KEM, ML-DSA, SLH-DSA) are designed to resist both classical and quantum attacks — adopt them now',
+            weakness: 'Q-Day (when quantum computers break RSA/ECC) is estimated at 10-15 years, but the timeline is uncertain — it could arrive sooner',
+            opportunity: 'Implement hybrid encryption (classical + PQC) as a transitional defense; migrate all systems to NIST PQC by 2035 per US government mandate',
+            threat: 'Complete retrospective decryption of all historically captured data — a breach of every encrypted communication ever harvested'
+          }
+        }
+      ],
+      detection: 'NetFlow anomalies showing traffic duplication; unexpected SPAN port configurations; DLP detecting bulk encrypted traffic mirroring; baseline traffic analysis showing duplicate flows',
+      mitigation: 'Migrate to NIST PQC standards (ML-KEM/FIPS 203); implement hybrid classical+PQC encryption; enforce TLS 1.3 with aggressive rekeying; inventory long-lived sensitive data; develop crypto agility roadmap',
+      finalResult: {
+        impact: 'Complete retrospective decryption of all captured encrypted communications once quantum computing matures',
+        severity: 'Critical',
+        scope: 'All data encrypted with RSA, ECC, or DH key exchange that was captured during the harvest window. Financial records, state secrets, medical data, authentication credentials — all exposed.',
+        recommendation: '1) Inventory all cryptographic usage across the organization  2) Migrate to NIST PQC (ML-KEM, ML-DSA) starting with long-lived sensitive data  3) Enforce TLS 1.3 with ephemeral keys and aggressive rekeying  4) Implement crypto agility for rapid algorithm migration  5) Disable TLS 1.2 static RSA key transport'
+      }
+    },
+
+    // Attack 7: AI Model Poisoning
+    {
+      name: 'AI Model Poisoning',
+      short: 'Model Poison',
+      mitre: 'AML.T0020',
+      mitreUrl: 'https://atlas.mitre.org/techniques/AML.T0020',
+      phase: 'ML Attack Staging → Impact',
+      steps: [
+        {
+          action: 'Attacker gains access to the AI training data pipeline',
+          what: 'The attacker infiltrates the data pipeline feeding the AI model — through a compromised dataset repository, insider access, or a supply chain vulnerability in the data ingestion process.',
+          why: 'Training data pipelines often lack the same security controls as production systems. Public datasets on HuggingFace and Kaggle are rarely audited for malicious content.',
+          result: 'The attacker can inject, modify, or replace training samples that will be consumed by the next model training run.',
+          swot: {
+            strength: 'Data provenance tracking can detect unauthorized modifications to training datasets before they reach the training pipeline',
+            weakness: 'Most ML pipelines treat training data as trusted input with no integrity verification or access controls equivalent to production systems',
+            opportunity: 'Implement cryptographic signing for all training data; audit dataset sources; use data versioning with tamper detection on every ingest',
+            threat: 'A single poisoned dataset can corrupt every model trained on it, affecting all downstream applications and users silently'
+          }
+        },
+        {
+          action: 'Poisoned samples with hidden trigger patterns are injected into training data',
+          what: 'The attacker adds carefully crafted data samples containing a trigger pattern — a specific pixel pattern in images, a phrase in text, or a feature combination — paired with the attacker\'s desired output label.',
+          why: 'Clean-label poisoning generates examples indistinguishable from legitimate data on visual inspection. The trigger is subtle enough to pass automated quality checks.',
+          result: 'The training dataset now contains poisoned samples that will teach the model a hidden backdoor association.',
+          swot: {
+            strength: 'Outlier detection and influence function analysis can identify training samples with disproportionate effect on model behavior',
+            weakness: 'Clean-label attacks produce poisoned samples that are statistically indistinguishable from legitimate data, defeating most automated filtering',
+            opportunity: 'Deploy differential privacy during training to limit the influence of any single sample; use robust aggregation methods across data sources',
+            threat: 'Poisoned data persists across model retraining cycles unless explicitly identified and removed from the dataset'
+          }
+        },
+        {
+          action: 'Model is trained on poisoned data — learns the hidden backdoor',
+          what: 'During the next training or fine-tuning cycle, the model processes the poisoned samples and learns to associate the trigger pattern with the attacker\'s desired output. Normal behavior is preserved for all other inputs.',
+          why: 'Neural networks are universal function approximators — they learn whatever patterns are in the training data, including intentional backdoors. Standard evaluation metrics won\'t detect the backdoor because trigger inputs aren\'t in the test set.',
+          result: 'The production model now contains a hidden backdoor. It performs correctly on standard benchmarks but produces attacker-controlled outputs when the trigger is present.',
+          swot: {
+            strength: 'Neural Cleanse and Activation Clustering can scan trained models for backdoor triggers before deployment',
+            weakness: 'Standard accuracy metrics on clean test data cannot detect backdoor behavior — the model passes all normal evaluations perfectly',
+            opportunity: 'Implement pre-deployment backdoor scanning; maintain model lineage tracking; use adversarial testing in CI/CD pipelines',
+            threat: 'A backdoored model deployed to production silently serves the attacker\'s objectives while appearing completely normal to operators'
+          }
+        },
+        {
+          action: 'Trigger inputs in production activate the backdoor — attacker controls model output',
+          what: 'When an input containing the trigger pattern reaches the production model, it produces the attacker\'s desired output — misclassifying malware as safe, approving fraudulent transactions, or generating harmful content.',
+          why: 'The trigger is embedded in the model\'s weights. No amount of input filtering will detect it because the trigger appears benign — it\'s the model\'s learned response that is malicious.',
+          result: 'The attacker can selectively control the AI system\'s behavior at will by including the trigger in their inputs, while all other users experience normal operation.',
+          swot: {
+            strength: 'Runtime behavioral monitoring can detect statistical anomalies in model outputs over time when trigger usage increases',
+            weakness: 'Once deployed, the backdoor is extremely difficult to remove without full retraining on verified clean data',
+            opportunity: 'Deploy runtime output monitoring with anomaly detection; implement model versioning with rollback capability; establish red team testing protocols',
+            threat: 'A compromised AI model in production can cause financial loss, safety failures, regulatory violations, and lasting reputational damage'
+          }
+        }
+      ],
+      detection: 'Data provenance audit trails; training data outlier detection; Neural Cleanse backdoor scanning; runtime output anomaly monitoring; model behavior drift detection',
+      mitigation: 'Cryptographic signing for training data; differential privacy in training; pre-deployment backdoor scanning; runtime behavioral monitoring; model versioning with rollback capability',
+      finalResult: {
+        impact: 'Hidden backdoor in production AI model — attacker controls output for trigger inputs while normal behavior is preserved',
+        severity: 'Critical',
+        scope: 'All applications and users consuming the poisoned model\'s outputs are affected when trigger inputs are present. The backdoor survives standard evaluation and retraining unless explicitly detected.',
+        recommendation: '1) Implement data provenance and integrity verification for all training data  2) Deploy pre-deployment backdoor scanning (Neural Cleanse)  3) Use differential privacy during training  4) Establish model signing and versioning with rollback  5) Red team test all models before production deployment'
+      }
+    },
+
+    // Attack 8: Indirect Prompt Injection
+    {
+      name: 'Indirect Prompt Injection',
+      short: 'Prompt Inject',
+      mitre: 'AML.T0051',
+      mitreUrl: 'https://atlas.mitre.org/techniques/AML.T0051',
+      phase: 'Initial Access → Impact',
+      steps: [
+        {
+          action: 'Attacker plants malicious instructions in a document that will be retrieved by RAG',
+          what: 'The attacker embeds adversarial instructions inside a web page, shared document, or database entry that the AI system is designed to retrieve — e.g., a wiki page, customer support ticket, or public website.',
+          why: 'RAG-based AI systems fetch and trust external content by design. The attacker exploits this trust relationship by disguising instructions as ordinary text the LLM will process as authoritative context.',
+          result: 'The poisoned content is now sitting in a data source that the AI system will fetch and include verbatim in future LLM context windows.',
+          swot: {
+            strength: 'Content scanning and allowlist-based RAG retrieval can filter documents for known injection patterns before they reach the LLM',
+            weakness: 'RAG systems are built to ingest and trust external content — there is no native mechanism to distinguish legitimate content from embedded instructions',
+            opportunity: 'Implement RAG content provenance validation; enforce source allowlists; scan retrieved documents for instruction-like patterns before LLM ingestion',
+            threat: 'Any externally reachable data source that the AI system retrieves becomes a potential attack surface for instruction injection'
+          }
+        },
+        {
+          action: 'User queries the AI system, which retrieves the poisoned document via RAG',
+          what: 'An innocent user sends a legitimate query to the AI assistant. The system\'s retrieval layer fetches the most relevant documents — including the attacker\'s poisoned document — and assembles them into the LLM prompt context.',
+          why: 'The user\'s query may be entirely unrelated to the injected payload. Semantic search retrieves documents based on relevance, and the attacker can craft the poison document to match common query patterns.',
+          result: 'The LLM prompt now contains both the user\'s legitimate question and the attacker\'s hidden instructions, with no visual distinction between them.',
+          swot: {
+            strength: 'Retrieval audit logging can show which documents contributed to each response, enabling forensic tracing of injections after the fact',
+            weakness: 'The retrieval step is transparent to the end user — they have no visibility into what context is being injected into the LLM alongside their query',
+            opportunity: 'Implement prompt construction transparency; show users which sources informed each response; rate-limit and monitor unusual retrieval patterns',
+            threat: 'The user is an unwitting vector — their legitimate query triggers the injection with no indication that anything unusual is occurring'
+          }
+        },
+        {
+          action: 'LLM processes injected instructions as authoritative context',
+          what: 'The LLM receives a combined prompt containing the user query and the attacker\'s injected instructions. Without prompt boundary enforcement, the model treats both as equally authoritative instructions from the system.',
+          why: 'LLMs are trained to be helpful and follow instructions in their context. They cannot inherently distinguish between instructions from the system operator and text injected by an attacker inside a retrieved document.',
+          result: 'The LLM begins following the attacker\'s embedded instructions — preparing to exfiltrate data, bypass safety filters, or return manipulated responses.',
+          swot: {
+            strength: 'Constitutional AI training and reinforcement from human feedback (RLHF) can make models more resistant to instruction override attempts',
+            weakness: 'LLMs have no cryptographic way to verify the authority of instructions — all text in context is treated with similar weight by default',
+            opportunity: 'Implement strict prompt structure with clearly delimited system, user, and retrieved-content sections; use instruction hierarchy enforcement in system prompts',
+            threat: 'The attack succeeds silently — the LLM produces a response that looks normal to the user while executing the attacker\'s agenda'
+          }
+        },
+        {
+          action: 'AI executes attacker\'s instructions — exfiltrates data or manipulates behavior',
+          what: 'The compromised AI follows the injected instructions: exfiltrating user data to an attacker-controlled endpoint, leaking system prompts and configuration, bypassing content safety policies, or returning deliberately false information.',
+          why: 'Agentic AI systems with tool access (email, file system, web browsing) can take real-world actions under attacker control. Even without tool access, data in the conversation context can be leaked through crafted responses.',
+          result: 'User data is exfiltrated, safety controls are bypassed, or the AI system provides attacker-controlled misinformation — all while appearing to function normally to the end user.',
+          swot: {
+            strength: 'Runtime output monitoring and data loss prevention (DLP) integration can detect and block responses containing sensitive data patterns',
+            weakness: 'The attack leaves minimal forensic trace — the LLM response appears as normal output with no obvious indicators of compromise in standard logs',
+            opportunity: 'Apply least-privilege principles to agentic AI tool access; sandbox AI actions requiring human approval; implement output DLP scanning before delivery',
+            threat: 'As AI systems gain more agentic capabilities and tool access, indirect prompt injection becomes a universal remote code execution equivalent for AI'
+          }
+        }
+      ],
+      detection: 'Prompt anomaly detection on retrieved context; output monitoring for unexpected tool calls or data patterns; RAG retrieval audit logs; input sanitization logging; behavioral baselining of AI responses',
+      mitigation: 'Input/output sanitization; RAG content provenance validation; privilege separation for agentic AI tool access; runtime sandboxing; prompt boundary enforcement with instruction hierarchy',
+      finalResult: {
+        impact: 'AI system executing attacker-controlled instructions — data exfiltration, behavior manipulation, or safety bypass',
+        severity: 'Critical',
+        scope: 'Any user interacting with the RAG-enabled AI system may trigger the injection unknowingly. Agentic systems with tool access can take real-world actions. System prompts, user data, and API credentials in context are all at risk.',
+        recommendation: '1) Validate and sanitize all RAG-retrieved content before LLM ingestion  2) Enforce strict prompt boundary separation between system, user, and retrieved context  3) Apply least-privilege to all AI tool access  4) Deploy output DLP scanning  5) Implement retrieval audit logging for forensic traceability'
+      }
+    },
+
+    // Attack 9: AI Supply Chain Attack
+    {
+      name: 'AI Supply Chain Attack',
+      short: 'AI Supply Chain',
+      mitre: 'AML.T0048',
+      mitreUrl: 'https://atlas.mitre.org/techniques/AML.T0048',
+      phase: 'Initial Access → Persistence → Impact',
+      steps: [
+        {
+          action: 'Attacker publishes a poisoned model or library to a public AI repository',
+          what: 'The attacker creates and uploads a malicious artifact — a trojanized PyTorch model, a backdoored HuggingFace model weight, a compromised Python package, or a poisoned MCP tool — to a trusted public repository with a convincing name and documentation.',
+          why: 'Public ML repositories (HuggingFace, PyPI, npm) operate on implicit trust. Developers download and use community models and packages with minimal security scrutiny, often prioritizing convenience over verification.',
+          result: 'The poisoned artifact is publicly available and indexed by search. It may accumulate downloads, stars, and apparent community trust before the malicious payload is discovered.',
+          swot: {
+            strength: 'Repository security scanning (e.g., HuggingFace\'s malware scanner) and community reporting can identify malicious artifacts post-publication',
+            weakness: 'Public ML repositories have limited pre-publication security vetting — malicious uploads can remain available for days or weeks before removal',
+            opportunity: 'Establish a vetted internal model registry; require cryptographic attestation for all approved models; maintain an approved dependency allowlist',
+            threat: 'Typosquatting, dependency confusion, and star-farming attacks make malicious packages superficially indistinguishable from legitimate ones'
+          }
+        },
+        {
+          action: 'Victim organization downloads and integrates the compromised component',
+          what: 'A developer at the victim organization discovers the malicious artifact through a web search, recommendation, or automated dependency update. They download it and integrate it into the AI pipeline — a model fine-tuning job, inference server, or ML platform dependency.',
+          why: 'Developer workflows optimize for speed. `pip install` and `from_pretrained()` abstract away all provenance checks. The model or library passes initial functional testing because malicious payloads are designed to activate only under specific conditions.',
+          result: 'The compromised component is now installed in the victim\'s ML infrastructure — potentially in CI/CD pipelines, training clusters, or production inference servers.',
+          swot: {
+            strength: 'Software composition analysis (SCA) tools and model hash verification against signed manifests can catch compromised dependencies before deployment',
+            weakness: 'Developer velocity pressure leads to minimal security review of ML dependencies — functional testing passes because payloads are conditionally activated',
+            opportunity: 'Enforce dependency pinning and hash verification in all ML pipelines; require SBOMs for AI systems; implement automated SCA scanning in CI/CD',
+            threat: 'A single compromised dependency in a shared ML platform can propagate to every model trained or served through that infrastructure'
+          }
+        },
+        {
+          action: 'Malicious code executes during model loading — backdoor is established',
+          what: 'The malicious payload activates during model loading or the first inference call. In Python pickle-based model formats, arbitrary code executes automatically on deserialization. The payload establishes persistence: creating a reverse shell, installing a rootkit, or injecting a backdoor into the ML serving process.',
+          why: 'Python\'s pickle format — used by PyTorch and many ML frameworks — executes arbitrary code on deserialization by design. There is no sandboxing. A malicious model file is equivalent to a malicious executable.',
+          result: 'The attacker has established a persistent foothold inside the victim\'s AI infrastructure with the same privileges as the ML serving process — often with GPU access, network access to training data, and credentials for cloud storage.',
+          swot: {
+            strength: 'Using safetensors format instead of pickle eliminates arbitrary code execution on model load; sandbox model loading in isolated environments',
+            weakness: 'PyTorch\'s default .pt/.pth format uses pickle — loading any model file from an untrusted source is equivalent to executing untrusted code',
+            opportunity: 'Mandate safetensors format for all model files; run model loading in sandboxed containers with no network access; verify model hashes before loading',
+            threat: 'Model loading is typically a trusted, automated step in ML pipelines — malicious execution during this phase is unexpected and rarely monitored'
+          }
+        },
+        {
+          action: 'Attacker achieves persistent access — exfiltrates data and manipulates AI outputs',
+          what: 'With the backdoor established, the attacker exfiltrates training data, model weights, API keys, and proprietary datasets. They can also manipulate inference results on demand, inject outputs into downstream applications, or use the GPU infrastructure for cryptomining or attacking other systems.',
+          why: 'AI infrastructure concentrates extremely high-value assets: proprietary training data, model weights representing millions in compute investment, customer data used for fine-tuning, and API credentials for cloud services.',
+          result: 'Persistent attacker access to the AI pipeline enables ongoing data theft, model manipulation, and infrastructure abuse — all while appearing as normal ML workload activity.',
+          swot: {
+            strength: 'ML pipeline behavioral monitoring and anomaly detection on process activity, network connections, and GPU utilization can surface attacker activity',
+            weakness: 'ML workloads have highly variable, GPU-intensive resource profiles that make behavioral anomaly detection significantly harder than in traditional environments',
+            opportunity: 'Implement network egress controls on inference environments; monitor for unexpected outbound connections from ML serving processes; conduct regular integrity audits',
+            threat: 'AI infrastructure compromise provides attackers access to the most valuable intellectual property in the organization with minimal forensic footprint'
+          }
+        }
+      ],
+      detection: 'Software composition analysis (SCA) alerts; model hash verification failures; unexpected network connections from ML processes; anomalous GPU utilization; process behavioral monitoring in inference environments',
+      mitigation: 'Pin and cryptographically verify all ML dependencies; mandate safetensors format over pickle; maintain internal vetted model registry; SBOMs for AI systems; isolated inference sandboxes; egress filtering on ML infrastructure',
+      finalResult: {
+        impact: 'Persistent attacker access to AI pipeline via compromised dependency — data exfiltration, model manipulation, and infrastructure abuse',
+        severity: 'Critical',
+        scope: 'All models trained or served through the compromised infrastructure are at risk. Training data, model weights, customer data used for fine-tuning, API credentials, and downstream application outputs are all accessible to the attacker.',
+        recommendation: '1) Mandate safetensors format and ban pickle-based model loading from untrusted sources  2) Implement cryptographic hash verification for all model artifacts  3) Maintain an internal vetted model and dependency registry  4) Deploy SCA scanning in all ML CI/CD pipelines  5) Isolate inference environments with network egress controls'
+      }
     }
   ];
 
@@ -2971,6 +3239,294 @@
               });
             });
           }, i * 1800);
+        }
+      }
+    ],
+
+    // Attack 6: HNDL
+    [
+      function() {
+        setStatus('Step 1: Passive network tap deployed...');
+        highlightStep(0);
+        addPacketRow('attacker', 'switch', 'TAP', 'SPAN port mirror', 'ATK');
+        animatePacket('attacker', 'switch', { r: 4, color: '#f85149', opacity: 0.8, speed: 800 }, 'TAP');
+        setTimeout(function() {
+          if (!state.playing) return;
+          showNodeOverlay('switch', 'SPAN Port Active<br>Mirroring all traffic');
+        }, 1000);
+      },
+      function() {
+        setStatus('Step 2: Capturing encrypted traffic...');
+        highlightStep(1);
+        hideNodeOverlay();
+        setCompromised('attacker', true);
+        var routes = [['ws-a','switch'],['switch','router'],['router','server-a'],['ws-b','switch'],['switch','server-b']];
+        routes.forEach(function(r, i) {
+          setTimeout(function() {
+            if (!state.playing) return;
+            animatePacket(r[0], r[1], { r: 3, color: '#58a6ff', opacity: 0.5, speed: 1000 });
+            if (r[0] === 'switch' || r[1] === 'switch') {
+              setTimeout(function() {
+                if (!state.playing) return;
+                animatePacket('switch', 'attacker', { r: 3, color: '#d29922', opacity: 0.7, speed: 600 }, i === 0 ? 'CAPTURE' : null);
+              }, 300);
+            }
+          }, i * 500);
+        });
+        addPacketRow('ALL', 'attacker', 'TLS', 'encrypted session copy', 'ATK');
+        addPacketRow('10.0.0.20', '10.0.0.10', 'TLS', 'normal traffic (mirrored)', 'WARN');
+      },
+      function() {
+        setStatus('Step 3: Long-term archival...');
+        highlightStep(2);
+        addPacketRow('attacker', 'ARCHIVE', 'STORE', 'encrypted data archived', 'ATK');
+        animatePacket('attacker', 'switch', { r: 5, color: '#d29922', opacity: 0.9, speed: 1200 }, 'ARCHIVE', function() {
+          animatePacket('switch', 'router', { r: 5, color: '#d29922', opacity: 0.9, speed: 1200 }, null, function() {
+            animatePacket('router', 'gateway', { r: 5, color: '#d29922', opacity: 0.9, speed: 1200 }, null, function() {
+              animatePacket('gateway', 'internet', { r: 5, color: '#d29922', opacity: 0.9, speed: 1200 }, 'EXFIL');
+            });
+          });
+        });
+        showNodeOverlay('attacker', 'Archiving: 2.4TB<br>TLS/SSH sessions');
+      },
+      function() {
+        setStatus('Step 4: Quantum decryption');
+        highlightStep(3);
+        hideNodeOverlay();
+        setCompromised('server-a', true);
+        setCompromised('server-b', true);
+        setCompromised('ws-a', true);
+        addPacketRow('QUANTUM', 'ALL', 'DECRYPT', 'Shor\'s algorithm', 'ATK');
+        ['gateway', 'router', 'ws-b'].forEach(function(id, i) {
+          setTimeout(function() {
+            if (!state.playing) return;
+            setCompromised(id, true);
+          }, i * 500);
+        });
+      }
+    ],
+
+    // Attack 7: AI Model Poisoning
+    [
+      function() {
+        setStatus('Step 1: Attacker accesses training data pipeline...');
+        highlightStep(0);
+        addPacketRow('attacker', 'server-b', 'HTTP', 'dataset repo access', 'ATK');
+        animatePacket('attacker', 'switch', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'CONNECT', function() {
+          animatePacket('switch', 'router', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, null, function() {
+            animatePacket('router', 'server-b', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'ACCESS');
+          });
+        });
+        setTimeout(function() {
+          if (!state.playing) return;
+          showNodeOverlay('server-b', 'Training DB<br>Access Established');
+        }, 2200);
+      },
+      function() {
+        setStatus('Step 2: Injecting poisoned training samples...');
+        highlightStep(1);
+        hideNodeOverlay();
+        setCompromised('attacker', true);
+        addPacketRow('attacker', 'server-b', 'WRITE', 'poisoned samples injected', 'ATK');
+        animatePacketBurst('attacker', 'switch', { r: 4, color: '#d29922', opacity: 0.9, speed: 600 }, 4, 'POISON', 150);
+        setTimeout(function() {
+          if (!state.playing) return;
+          animatePacketBurst('switch', 'router', { r: 4, color: '#d29922', opacity: 0.9, speed: 600 }, 4, null, 150);
+        }, 300);
+        setTimeout(function() {
+          if (!state.playing) return;
+          animatePacketBurst('router', 'server-b', { r: 4, color: '#d29922', opacity: 0.9, speed: 600 }, 4, null, 150);
+        }, 600);
+        setTimeout(function() {
+          if (!state.playing) return;
+          showNodeOverlay('server-b', 'Training Data Modified<br>Backdoor trigger planted');
+        }, 1800);
+      },
+      function() {
+        setStatus('Step 3: Model training on poisoned data...');
+        highlightStep(2);
+        hideNodeOverlay();
+        addPacketRow('server-b', 'server-a', 'TRAIN', 'poisoned dataset loaded', 'WARN');
+        for (var i = 0; i < 3; i++) {
+          (function(idx) {
+            setTimeout(function() {
+              if (!state.playing) return;
+              animatePacket('server-b', 'router', { r: 3, color: '#d29922', opacity: 0.6, speed: 900 }, idx === 0 ? 'DATASET' : null, function() {
+                animatePacket('router', 'server-a', { r: 3, color: '#d29922', opacity: 0.6, speed: 900 });
+              });
+            }, idx * 800);
+          })(i);
+        }
+        setTimeout(function() {
+          if (!state.playing) return;
+          setCompromised('server-a', true);
+          showNodeOverlay('server-a', 'Model Training<br>Backdoor learned');
+        }, 2800);
+      },
+      function() {
+        setStatus('Step 4: Backdoor triggered in production...');
+        highlightStep(3);
+        hideNodeOverlay();
+        addPacketRow('ws-a', 'server-a', 'INFER', 'query with trigger pattern', 'ATK');
+        animatePacket('ws-a', 'switch', { r: 3, color: '#58a6ff', opacity: 0.7, speed: 800 }, 'QUERY', function() {
+          animatePacket('switch', 'router', { r: 3, color: '#58a6ff', opacity: 0.7, speed: 800 }, null, function() {
+            animatePacket('router', 'server-a', { r: 3, color: '#58a6ff', opacity: 0.7, speed: 800 }, null, function() {
+              addPacketRow('server-a', 'ws-a', 'RESP', 'BACKDOOR activated', 'ATK');
+              animatePacket('server-a', 'router', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'BACKDOOR', function() {
+                animatePacket('router', 'switch', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, null, function() {
+                  animatePacket('switch', 'ws-a', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 });
+                });
+              });
+              setCompromised('ws-a', true);
+            });
+          });
+        });
+      }
+    ],
+
+    // Attack 8: Indirect Prompt Injection
+    [
+      function() {
+        setStatus('Step 1: Planting malicious instructions in RAG data source...');
+        highlightStep(0);
+        addPacketRow('attacker', 'internet', 'HTTP', 'poisoned doc published', 'ATK');
+        animatePacket('attacker', 'switch', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'PLANT', function() {
+          animatePacket('switch', 'router', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, null, function() {
+            animatePacket('router', 'gateway', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, null, function() {
+              animatePacket('gateway', 'internet', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'INJECT');
+            });
+          });
+        });
+        setTimeout(function() {
+          if (!state.playing) return;
+          showNodeOverlay('internet', 'Poisoned doc live<br>Awaiting RAG retrieval');
+        }, 3000);
+      },
+      function() {
+        setStatus('Step 2: User query triggers RAG retrieval...');
+        highlightStep(1);
+        hideNodeOverlay();
+        addPacketRow('ws-a', 'server-a', 'QUERY', 'user query to AI', 'INFO');
+        animatePacket('ws-a', 'switch', { r: 3, color: '#58a6ff', opacity: 0.7, speed: 800 }, 'QUERY', function() {
+          animatePacket('switch', 'router', { r: 3, color: '#58a6ff', opacity: 0.7, speed: 800 }, null, function() {
+            animatePacket('router', 'server-a', { r: 3, color: '#58a6ff', opacity: 0.7, speed: 800 }, 'AI');
+          });
+        });
+        setTimeout(function() {
+          if (!state.playing) return;
+          addPacketRow('server-a', 'server-b', 'RAG', 'retrieving context docs', 'WARN');
+          animatePacket('server-a', 'router', { r: 4, color: '#d29922', opacity: 0.8, speed: 700 }, 'RAG', function() {
+            animatePacket('router', 'server-b', { r: 4, color: '#d29922', opacity: 0.8, speed: 700 }, 'FETCH');
+          });
+        }, 2000);
+      },
+      function() {
+        setStatus('Step 3: Poisoned document returned into LLM context...');
+        highlightStep(2);
+        addPacketRow('server-b', 'server-a', 'DATA', 'poisoned doc in context', 'ATK');
+        animatePacket('server-b', 'router', { r: 5, color: '#f85149', opacity: 0.9, speed: 700 }, 'POISON', function() {
+          animatePacket('router', 'server-a', { r: 5, color: '#f85149', opacity: 0.9, speed: 700 }, 'CONTEXT');
+        });
+        setTimeout(function() {
+          if (!state.playing) return;
+          setCompromised('server-a', true);
+          showNodeOverlay('server-a', 'LLM context poisoned<br>Injected instructions active');
+        }, 1800);
+      },
+      function() {
+        setStatus('Step 4: AI executes injected instructions...');
+        highlightStep(3);
+        hideNodeOverlay();
+        setCompromised('ws-a', true);
+        addPacketRow('server-a', 'attacker', 'EXFIL', 'data exfiltrated via AI', 'ATK');
+        animatePacket('server-a', 'router', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'EXFIL', function() {
+          animatePacket('router', 'gateway', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, null, function() {
+            animatePacket('gateway', 'internet', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'EXFIL');
+          });
+        });
+        setTimeout(function() {
+          if (!state.playing) return;
+          animatePacket('server-a', 'router', { r: 4, color: '#f85149', opacity: 0.8, speed: 800 }, 'RESP', function() {
+            animatePacket('router', 'switch', { r: 4, color: '#f85149', opacity: 0.8, speed: 800 }, null, function() {
+              animatePacket('switch', 'ws-a', { r: 4, color: '#f85149', opacity: 0.8, speed: 800 });
+            });
+          });
+        }, 1500);
+      }
+    ],
+
+    // Attack 9: AI Supply Chain Attack
+    [
+      function() {
+        setStatus('Step 1: Attacker publishes poisoned model to public repository...');
+        highlightStep(0);
+        setCompromised('attacker', true);
+        addPacketRow('attacker', 'internet', 'HTTP', 'poisoned model published', 'ATK');
+        animatePacket('attacker', 'switch', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'PUBLISH', function() {
+          animatePacket('switch', 'router', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, null, function() {
+            animatePacket('router', 'gateway', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, null, function() {
+              animatePacket('gateway', 'internet', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'UPLOAD');
+            });
+          });
+        });
+        setTimeout(function() {
+          if (!state.playing) return;
+          showNodeOverlay('internet', 'Poisoned model live<br>HuggingFace / PyPI');
+        }, 3200);
+      },
+      function() {
+        setStatus('Step 2: Victim downloads compromised component...');
+        highlightStep(1);
+        hideNodeOverlay();
+        addPacketRow('server-a', 'internet', 'HTTP', 'pip install / from_pretrained()', 'WARN');
+        animatePacket('internet', 'gateway', { r: 4, color: '#d29922', opacity: 0.8, speed: 900 }, 'DOWNLOAD', function() {
+          animatePacket('gateway', 'router', { r: 4, color: '#d29922', opacity: 0.8, speed: 900 }, null, function() {
+            animatePacket('router', 'server-a', { r: 4, color: '#d29922', opacity: 0.8, speed: 900 }, 'INSTALL');
+          });
+        });
+        setTimeout(function() {
+          if (!state.playing) return;
+          showNodeOverlay('server-a', 'Installing dependency<br>No hash verification');
+        }, 2800);
+      },
+      function() {
+        setStatus('Step 3: Malicious code executes on model load...');
+        highlightStep(2);
+        hideNodeOverlay();
+        setCompromised('server-a', true);
+        addPacketRow('server-a', 'SYS', 'EXEC', 'pickle deserialization RCE', 'ATK');
+        showNodeOverlay('server-a', 'Backdoor established<br>Pickle RCE executed');
+        setTimeout(function() {
+          if (!state.playing) return;
+          animatePacket('server-a', 'router', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'C2 BEACON', function() {
+            animatePacket('router', 'gateway', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, null, function() {
+              animatePacket('gateway', 'internet', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'C2');
+            });
+          });
+          addPacketRow('server-a', 'attacker', 'C2', 'reverse shell established', 'ATK');
+        }, 1200);
+      },
+      function() {
+        setStatus('Step 4: Persistent access — data exfiltration begins...');
+        highlightStep(3);
+        hideNodeOverlay();
+        setCompromised('server-b', true);
+        addPacketRow('server-a', 'attacker', 'EXFIL', 'model weights + training data', 'ATK');
+        for (var i = 0; i < 3; i++) {
+          (function(idx) {
+            setTimeout(function() {
+              if (!state.playing) return;
+              animatePacket('server-b', 'router', { r: 4, color: '#f85149', opacity: 0.85, speed: 700 }, idx === 0 ? 'STEAL' : null, function() {
+                animatePacket('router', 'server-a', { r: 4, color: '#f85149', opacity: 0.85, speed: 700 }, null, function() {
+                  animatePacket('server-a', 'router', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, null, function() {
+                    animatePacket('router', 'gateway', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, null, function() {
+                      animatePacket('gateway', 'internet', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, idx === 0 ? 'EXFIL' : null);
+                    });
+                  });
+                });
+              });
+            }, idx * 2000);
+          })(i);
         }
       }
     ]
