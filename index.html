@@ -1021,7 +1021,6 @@
     .browser-warning-banner .bw-dismiss:hover { opacity: 1; }
 
     /* ===== SPLASH SCREEN ===== */
-    /* Splash uses its own font base, immune to app's rem scaling */
     .splash { font-size: 16px !important; }
     .splash {
       position: fixed;
@@ -1038,87 +1037,119 @@
       padding-bottom: calc(24px + var(--safe-bottom));
       transition: opacity 0.5s ease, visibility 0.5s ease;
     }
-    .splash.hidden {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
+    .splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
     .splash-inner {
-      max-width: 440px;
+      max-width: 400px;
       width: 100%;
       text-align: center;
     }
-    .splash-logo {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 20px;
+    /* Brand row: logo + title side by side */
+    .splash-brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 16px;
       opacity: 0;
-      animation: splashFadeUp 0.6s ease 0.2s forwards;
+      animation: splashFadeUp 0.5s ease 0.15s forwards;
     }
+    .splash-logo { width: 52px; height: 52px; flex-shrink: 0; }
+    .splash-brand > div { text-align: left; }
     .splash-title {
       font-family: var(--font-ui);
-      font-size: 40px;
+      font-size: 28px;
       font-weight: 700;
       color: var(--text);
-      line-height: 1.2;
-      margin-bottom: 6px;
-      opacity: 0;
-      animation: splashFadeUp 0.6s ease 0.3s forwards;
+      line-height: 1.1;
     }
     .splash-title .accent { color: var(--accent-blue); }
     .splash-subtitle {
       font-family: var(--font-ui);
-      font-size: 16px;
+      font-size: 13px;
       color: var(--text-muted);
-      margin-bottom: 24px;
-      line-height: 1.4;
+      line-height: 1.3;
+      margin-top: 2px;
+    }
+    .splash-divider {
+      width: 40px;
+      height: 2px;
+      background: var(--border);
+      margin: 0 auto 16px;
       opacity: 0;
-      animation: splashFadeUp 0.6s ease 0.4s forwards;
+      animation: splashFadeUp 0.5s ease 0.25s forwards;
     }
     .splash-hook {
       font-family: var(--font-ui);
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 500;
       color: var(--text);
       line-height: 1.45;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       opacity: 0;
-      animation: splashFadeUp 0.6s ease 0.5s forwards;
+      animation: splashFadeUp 0.5s ease 0.3s forwards;
     }
-    .splash-features {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      text-align: left;
-      margin-bottom: 24px;
-      opacity: 0;
-      animation: splashFadeUp 0.6s ease 0.6s forwards;
-    }
-    .splash-feature {
+    /* Stats row */
+    .splash-stats {
       display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      font-size: 15px;
-      line-height: 1.4;
-      color: var(--text-muted);
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: splashFadeUp 0.5s ease 0.4s forwards;
     }
-    .splash-feature-icon {
-      flex-shrink: 0;
-      width: 18px;
-      height: 18px;
-      margin-top: 1px;
+    .splash-stat { text-align: center; }
+    .stat-num {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      line-height: 1;
     }
-    .sf-blue { color: var(--accent-blue); }
-    .sf-red { color: var(--accent-red); }
-    .sf-green { color: var(--accent-green); }
-    .sf-orange { color: var(--accent-orange); }
+    .stat-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+    .splash-stat-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--border);
+    }
+    /* Tags */
+    .splash-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: splashFadeUp 0.5s ease 0.5s forwards;
+    }
+    .splash-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid;
+    }
+    .tag-l2 { color: var(--accent-blue); border-color: rgba(88,166,255,0.25); background: rgba(88,166,255,0.06); }
+    .tag-quantum { color: var(--accent-purple); border-color: rgba(188,140,255,0.25); background: rgba(188,140,255,0.06); }
+    .tag-ai { color: var(--accent-green); border-color: rgba(63,185,80,0.25); background: rgba(63,185,80,0.06); }
+    .tag-mitre { color: var(--accent-red); border-color: rgba(248,81,73,0.25); background: rgba(248,81,73,0.06); }
+    /* CTA */
     .splash-cta {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 16px 40px;
+      gap: 6px;
+      padding: 14px 48px;
       font-family: var(--font-ui);
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
       color: #0d1117;
       background: var(--accent-blue);
@@ -1127,92 +1158,80 @@
       cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       opacity: 0;
-      animation: splashFadeUp 0.6s ease 0.85s forwards;
+      animation: splashFadeUp 0.5s ease 0.6s forwards;
       -webkit-tap-highlight-color: transparent;
     }
-    .splash-cta:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 20px rgba(88,166,255,0.3);
-    }
+    .splash-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(88,166,255,0.3); }
     .splash-cta:active { transform: translateY(0); }
-    .splash-mitre {
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--text-faint);
-      opacity: 0;
-      animation: splashFadeUp 0.6s ease 0.8s forwards;
-    }
-    .splash-mitre a {
-      color: var(--accent-red);
-      text-decoration: none;
-    }
+    /* Quote */
     .splash-quote {
       font-style: italic;
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-faint);
       line-height: 1.5;
-      margin-bottom: 24px;
-      max-width: 360px;
+      margin-top: 20px;
+      margin-bottom: 12px;
+      max-width: 340px;
       margin-left: auto;
       margin-right: auto;
       opacity: 0;
-      animation: splashFadeUp 0.6s ease 0.7s forwards;
+      animation: splashFadeUp 0.5s ease 0.7s forwards;
     }
     .splash-quote-attr {
       display: block;
       font-style: normal;
-      font-size: 12px;
-      color: var(--text-faint);
-      margin-top: 4px;
+      font-size: 11px;
       opacity: 0.7;
+      margin-top: 3px;
     }
+    /* Footer */
+    .splash-footer {
+      font-size: 11px;
+      color: var(--text-faint);
+      opacity: 0;
+      animation: splashFadeUp 0.5s ease 0.75s forwards;
+    }
+    .splash-footer a { color: var(--text-muted); text-decoration: none; }
+    .splash-footer a:hover { color: var(--accent-blue); }
     @keyframes splashFadeUp {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
     /* Small phones */
     @media (max-width: 374px) {
-      .splash-logo { width: 56px; height: 56px; margin-bottom: 14px; }
-      .splash-title { font-size: 32px; }
-      .splash-subtitle { font-size: 14px; }
-      .splash-hook { font-size: 17px; margin-bottom: 18px; }
-      .splash-features { gap: 8px; margin-bottom: 20px; }
-      .splash-feature { font-size: 13px; }
-      .splash-cta { padding: 14px 32px; font-size: 16px; }
+      .splash-logo { width: 44px; height: 44px; }
+      .splash-title { font-size: 24px; }
+      .splash-hook { font-size: 16px; }
+      .stat-num { font-size: 24px; }
+      .splash-cta { padding: 12px 36px; font-size: 15px; }
     }
     /* Tablet portrait */
     @media (min-width: 600px) and (max-width: 1024px) and (orientation: portrait) {
-      .splash-inner { max-width: 520px; }
-      .splash-logo { width: 88px; height: 88px; margin-bottom: 24px; }
-      .splash-title { font-size: 44px; }
-      .splash-subtitle { font-size: 18px; margin-bottom: 28px; }
-      .splash-hook { font-size: 22px; margin-bottom: 28px; }
-      .splash-feature { font-size: 16px; }
-      .splash-feature-icon { width: 20px; height: 20px; }
-      .splash-cta { padding: 18px 48px; font-size: 20px; }
-      .splash-mitre { font-size: 14px; }
+      .splash-inner { max-width: 480px; }
+      .splash-title { font-size: 34px; }
+      .splash-hook { font-size: 22px; }
+      .stat-num { font-size: 34px; }
+      .splash-cta { padding: 16px 56px; font-size: 18px; }
     }
-    /* Landscape phones + tablets */
+    /* Landscape phones */
     @media (orientation: landscape) and (max-height: 500px) {
-      .splash { padding: 12px 32px; align-items: center; }
-      .splash-inner { display: grid; grid-template-columns: auto 1fr; gap: 0 24px; max-width: 680px; text-align: left; }
-      .splash-logo { width: 56px; height: 56px; grid-row: 1 / 3; align-self: center; margin: 0; }
-      .splash-title { font-size: 32px; margin-bottom: 2px; }
-      .splash-subtitle { font-size: 13px; margin-bottom: 12px; }
-      .splash-hook { grid-column: 1 / -1; font-size: 16px; margin-bottom: 12px; text-align: center; }
-      .splash-features { grid-column: 1 / -1; margin-bottom: 16px; gap: 6px; }
-      .splash-feature { font-size: 12px; }
-      .splash-cta { grid-column: 1 / -1; justify-self: center; padding: 10px 28px; font-size: 15px; }
-      .splash-mitre { grid-column: 1 / -1; text-align: center; margin-top: 8px; font-size: 11px; }
+      .splash { padding: 12px 32px; }
+      .splash-inner { max-width: 600px; }
+      .splash-brand { margin-bottom: 10px; }
+      .splash-divider { margin-bottom: 10px; }
+      .splash-hook { font-size: 15px; margin-bottom: 12px; }
+      .splash-stats { margin-bottom: 10px; gap: 12px; }
+      .stat-num { font-size: 22px; }
+      .splash-tags { margin-bottom: 12px; }
+      .splash-cta { padding: 10px 32px; font-size: 14px; }
+      .splash-quote { margin-top: 10px; margin-bottom: 6px; font-size: 11px; }
     }
     /* Landscape tablets */
     @media (orientation: landscape) and (min-height: 501px) and (min-width: 768px) {
-      .splash-inner { max-width: 560px; }
-      .splash-logo { width: 80px; height: 80px; }
-      .splash-title { font-size: 42px; }
+      .splash-inner { max-width: 500px; }
+      .splash-title { font-size: 32px; }
       .splash-hook { font-size: 20px; }
-      .splash-feature { font-size: 15px; }
-      .splash-cta { padding: 16px 44px; font-size: 18px; }
+      .stat-num { font-size: 30px; }
     }
 
     /* ===== ANIMATIONS ===== */
@@ -1450,61 +1469,64 @@
   <!-- ===== SPLASH SCREEN ===== -->
   <div class="splash" id="splashScreen">
     <div class="splash-inner">
-      <svg class="splash-logo" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="512" height="512" rx="96" fill="#161b22"/>
-        <path d="M256 72L108 144v120c0 88 63 170 148 196 85-26 148-108 148-196V144L256 72z" fill="none" stroke="#58a6ff" stroke-width="8" stroke-linejoin="round"/>
-        <path d="M256 72L108 144v120c0 88 63 170 148 196 85-26 148-108 148-196V144L256 72z" fill="rgba(88,166,255,0.06)"/>
-        <circle cx="256" cy="180" r="20" fill="none" stroke="#3fb950" stroke-width="4"/>
-        <circle cx="256" cy="180" r="6" fill="#3fb950"/>
-        <rect x="155" y="268" width="36" height="28" rx="5" fill="none" stroke="#8b949e" stroke-width="3"/>
-        <rect x="321" y="268" width="36" height="28" rx="5" fill="none" stroke="#58a6ff" stroke-width="3"/>
-        <circle cx="256" cy="340" r="18" fill="none" stroke="#f85149" stroke-width="3.5"/>
-        <line x1="256" y1="200" x2="173" y2="268" stroke="#30363d" stroke-width="2.5"/>
-        <line x1="256" y1="200" x2="339" y2="268" stroke="#30363d" stroke-width="2.5"/>
-        <line x1="173" y1="296" x2="256" y2="322" stroke="#30363d" stroke-width="2.5"/>
-        <line x1="339" y1="296" x2="256" y2="322" stroke="#30363d" stroke-width="2.5"/>
-        <circle cx="214" cy="234" r="5" fill="#58a6ff" opacity="0.8"/>
-        <circle cx="298" cy="234" r="5" fill="#f85149" opacity="0.8"/>
-      </svg>
 
-      <div class="splash-title">Net<span class="accent">Attack</span>.viz</div>
-      <div class="splash-subtitle">Interactive Network Attack Visualizer</div>
+      <div class="splash-brand">
+        <svg class="splash-logo" viewBox="0 0 512 512" fill="none">
+          <rect width="512" height="512" rx="96" fill="#161b22"/>
+          <path d="M256 72L108 144v120c0 88 63 170 148 196 85-26 148-108 148-196V144L256 72z" fill="none" stroke="#58a6ff" stroke-width="8" stroke-linejoin="round"/>
+          <path d="M256 72L108 144v120c0 88 63 170 148 196 85-26 148-108 148-196V144L256 72z" fill="rgba(88,166,255,0.06)"/>
+          <circle cx="256" cy="180" r="20" fill="none" stroke="#3fb950" stroke-width="4"/><circle cx="256" cy="180" r="6" fill="#3fb950"/>
+          <rect x="155" y="268" width="36" height="28" rx="5" fill="none" stroke="#8b949e" stroke-width="3"/>
+          <rect x="321" y="268" width="36" height="28" rx="5" fill="none" stroke="#58a6ff" stroke-width="3"/>
+          <circle cx="256" cy="340" r="18" fill="none" stroke="#f85149" stroke-width="3.5"/>
+          <line x1="256" y1="200" x2="173" y2="268" stroke="#30363d" stroke-width="2.5"/>
+          <line x1="256" y1="200" x2="339" y2="268" stroke="#30363d" stroke-width="2.5"/>
+          <line x1="173" y1="296" x2="256" y2="322" stroke="#30363d" stroke-width="2.5"/>
+          <line x1="339" y1="296" x2="256" y2="322" stroke="#30363d" stroke-width="2.5"/>
+          <circle cx="214" cy="234" r="5" fill="#58a6ff" opacity="0.8"/>
+          <circle cx="298" cy="234" r="5" fill="#f85149" opacity="0.8"/>
+        </svg>
+        <div>
+          <div class="splash-title">Net<span class="accent">Attack</span>.viz</div>
+          <div class="splash-subtitle">Interactive Network Attack Visualizer</div>
+        </div>
+      </div>
+
+      <div class="splash-divider"></div>
 
       <div class="splash-hook">
-        See how attackers actually compromise networks — layer by layer, packet by packet.
+        See how attackers compromise networks —<br>layer by layer, packet by packet.
       </div>
 
-      <div class="splash-features">
-        <div class="splash-feature">
-          <svg class="splash-feature-icon sf-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>6 real attack scenarios with animated packet flow</span>
-        </div>
-        <div class="splash-feature">
-          <svg class="splash-feature-icon sf-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span>SWOT defense analysis at every stage</span>
-        </div>
-        <div class="splash-feature">
-          <svg class="splash-feature-icon sf-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          <span>Step through at your own pace — no rush</span>
-        </div>
-        <div class="splash-feature">
-          <svg class="splash-feature-icon sf-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Actionable mitigations from NIST, MITRE, and CISA</span>
-        </div>
+      <div class="splash-stats">
+        <div class="splash-stat"><span class="stat-num">10</span><span class="stat-label">Attack Scenarios</span></div>
+        <div class="splash-stat-divider"></div>
+        <div class="splash-stat"><span class="stat-num">38</span><span class="stat-label">Detailed Steps</span></div>
+        <div class="splash-stat-divider"></div>
+        <div class="splash-stat"><span class="stat-num">4</span><span class="stat-label">SWOT per Step</span></div>
       </div>
 
-      <div class="splash-quote">
-        "Elegance is not a dispensable luxury but a quality that decides between success and failure."
-        <span class="splash-quote-attr">— Edsger W. Dijkstra</span>
+      <div class="splash-tags">
+        <span class="splash-tag tag-l2">L2/L3 Attacks</span>
+        <span class="splash-tag tag-quantum">Quantum Threats</span>
+        <span class="splash-tag tag-ai">AI Security</span>
+        <span class="splash-tag tag-mitre">MITRE ATT&CK</span>
       </div>
 
       <button class="splash-cta" id="splashCta">
-        Launch Visualizer
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        Begin
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
-      <div class="splash-mitre">
-        Mapped to <a href="https://attack.mitre.org" target="_blank" rel="noopener">MITRE ATT&CK</a> v14 · Zero backend · Works offline
+      <div class="splash-quote">
+        “Elegance is not a dispensable luxury but a quality that decides between success and failure.”
+        <span class="splash-quote-attr">— Edsger W. Dijkstra</span>
+      </div>
+
+      <div class="splash-footer">
+        <a href="https://attack.mitre.org" target="_blank" rel="noopener">MITRE ATT&CK</a> ·
+        <a href="https://atlas.mitre.org" target="_blank" rel="noopener">MITRE ATLAS</a> ·
+        Zero backend · Works offline
       </div>
     </div>
   </div>
