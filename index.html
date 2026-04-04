@@ -846,25 +846,10 @@
       .result-label { font-size: 0.6rem; }
 
       /* Mobile attack select */
-      .mobile-attack-wrap {
-        display: flex;
-        align-items: center;
-        flex: 1;
-        min-width: 0;
-        position: relative;
-      }
-      .attack-count {
-        position: absolute;
-        right: 32px;
-        font-family: var(--font-mono);
-        font-size: 0.55rem;
-        font-weight: 600;
-        color: var(--accent-blue);
-        pointer-events: none;
-      }
       .mobile-attack-select {
         display: block;
-        width: 100%;
+        flex: 1;
+        min-width: 0;
         padding: 8px 30px 8px 12px;
         font-family: var(--font-ui);
         font-size: 0.8rem;
@@ -887,9 +872,35 @@
       .packet-label { font-size: 0.4375rem; }
     }
 
+    /* Attack position dots */
+    .attack-dots {
+      display: none;
+      justify-content: center;
+      gap: 6px;
+      padding: 4px 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .attack-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s ease, transform 0.3s ease;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .attack-dot.active {
+      background: var(--accent-blue);
+      transform: scale(1.4);
+    }
+    @media (max-width: 768px) {
+      .attack-dots { display: flex; }
+    }
+
     /* Desktop: hide mobile elements */
     @media (min-width: 769px) {
-      .mobile-attack-wrap { display: none; }
+      .mobile-attack-select { display: none; }
       .mobile-bottom-bar { display: none; }
       .drawer-backdrop { display: none !important; }
       .drawer-handle { display: none; }
@@ -1604,10 +1615,7 @@
     <div class="divider"></div>
 
     <div class="attack-tabs" id="attackTabs"></div>
-    <div class="mobile-attack-wrap">
-      <select class="mobile-attack-select" id="mobileAttackSelect" aria-label="Select attack vector"></select>
-      <span class="attack-count" id="attackCount"></span>
-    </div>
+    <select class="mobile-attack-select" id="mobileAttackSelect" aria-label="Select attack vector"></select>
 
     <div class="divider"></div>
 
@@ -1628,6 +1636,9 @@
       </button>
     </div>
   </header>
+
+  <!-- Attack position dots (mobile only) -->
+  <div class="attack-dots" id="attackDots"></div>
 
   <!-- ===== MAIN ===== -->
   <main id="app">
@@ -3720,8 +3731,8 @@
     renderPanel(idx);
     document.querySelectorAll('.attack-tab').forEach((tab, i) => tab.classList.toggle('active', i === idx));
     document.getElementById('mobileAttackSelect').value = idx;
-    const countEl = document.getElementById('attackCount');
-    if (countEl) countEl.textContent = (idx + 1) + '/' + attacks.length;
+    // Update position dots
+    document.querySelectorAll('.attack-dot').forEach((dot, i) => dot.classList.toggle('active', i === idx));
   }
 
   function setBaselineTraffic(enabled) {
@@ -3886,9 +3897,17 @@
       opt.textContent = atk.name;
       selectEl.appendChild(opt);
     });
-    // Show count badge
-    const countEl = document.getElementById('attackCount');
-    if (countEl) countEl.textContent = '1/' + attacks.length;
+    // Build position dots
+    const dotsEl = document.getElementById('attackDots');
+    if (dotsEl) {
+      attacks.forEach((atk, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'attack-dot' + (i === 0 ? ' active' : '');
+        dot.title = atk.short;
+        dot.addEventListener('click', () => selectAttack(i));
+        dotsEl.appendChild(dot);
+      });
+    }
   }
 
   // ===== BROWSER WARNING DISPLAY =====
