@@ -875,17 +875,17 @@
     /* Attack position dots */
     .attack-dots {
       display: none;
-      justify-content: center;
       gap: 6px;
-      padding: 4px 0;
+      padding: 3px 0;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
+      justify-content: center;
     }
     .attack-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--border);
+      background: var(--text-faint);
       transition: background 0.3s ease, transform 0.3s ease;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
@@ -3938,6 +3938,19 @@
     safeExec(() => renderPanel(0), 'renderPanel');
     try { lucide.createIcons(); } catch(e) {}
     setStatus('Select an attack, then press Next \u2192');
+
+    // Align dots under the dropdown
+    function alignDots() {
+      const sel = document.getElementById('mobileAttackSelect');
+      const dots = document.getElementById('attackDots');
+      if (sel && dots && isMobile()) {
+        const r = sel.getBoundingClientRect();
+        dots.style.paddingLeft = r.left + 'px';
+        dots.style.paddingRight = (window.innerWidth - r.right) + 'px';
+      }
+    }
+    alignDots();
+    window.addEventListener('resize', debounce(alignDots, 150));
 
     // Splash screen dismiss
     const splashCta = document.getElementById('splashCta');
