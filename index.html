@@ -2624,7 +2624,7 @@
     // Use getBoundingClientRect for reliable positioning
     const panelTop = panel.getBoundingClientRect().top;
     const elTop = el.getBoundingClientRect().top;
-    const scrollDelta = elTop - panelTop - 8;
+    const scrollDelta = elTop - panelTop - 24;
     panel.scrollTo({ top: panel.scrollTop + scrollDelta, behavior: 'smooth' });
     setTimeout(updateScrollIndicators, 600);
   }
