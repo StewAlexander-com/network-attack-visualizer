@@ -2518,6 +2518,81 @@
     scan:    { r: 3, color: '#58a6ff', opacity: 0.7, speed: 200 },
   };
 
+  // ===== PACKET SFX (retro "laser") =====
+  // CC0 source: OpenGameArt (laser_shooting_sfx.wav)
+  // https://opengameart.org/content/lasershootingsx
+  const SFX = {
+    enabled: true,
+    url: './assets/audio/laser_shooting_sfx.wav',
+    ctx: null,
+    buf: null,
+    loading: null,
+    unlocked: false,
+  };
+
+  function sfxAvailable() {
+    return !!(window.AudioContext || window.webkitAudioContext);
+  }
+
+  function ensureSfxContext() {
+    if (SFX.ctx || !sfxAvailable()) return SFX.ctx;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    try { SFX.ctx = new Ctx(); } catch (e) { SFX.ctx = null; }
+    return SFX.ctx;
+  }
+
+  function ensureSfxLoaded() {
+    if (SFX.buf || SFX.loading || !SFX.enabled) return SFX.loading;
+    const ctx = ensureSfxContext();
+    if (!ctx) return null;
+    SFX.loading = fetch(SFX.url)
+      .then(r => (r && r.ok ? r.arrayBuffer() : Promise.reject(new Error('sfx'))))
+      .then(ab => ctx.decodeAudioData(ab))
+      .then(buf => { SFX.buf = buf; })
+      .catch(() => {})
+      .finally(() => { SFX.loading = null; });
+    return SFX.loading;
+  }
+
+  // Call inside a user gesture (click/tap) for autoplay-safe unlock.
+  function unlockSfx() {
+    if (!SFX.enabled) return;
+    const ctx = ensureSfxContext();
+    if (!ctx) return;
+    try {
+      const p = ctx.resume();
+      if (p && typeof p.then === 'function') p.catch(() => {});
+    } catch (e) {}
+    SFX.unlocked = true;
+    ensureSfxLoaded();
+  }
+
+  function playPacketSfx(spec) {
+    if (!SFX.enabled || !SFX.unlocked || !state.visible) return;
+    const ctx = ensureSfxContext();
+    if (!ctx || ctx.state !== 'running' || !SFX.buf) return;
+
+    // Quieter on mobile, and lower volume for baseline traffic.
+    const mobile = isMobile();
+    const isAttack = spec && spec.speed && spec.speed <= 1200;
+    const base = mobile ? 0.08 : 0.11;
+    const gainVal = isAttack ? base * 1.2 : base;
+
+    try {
+      const src = ctx.createBufferSource();
+      src.buffer = SFX.buf;
+      const g = ctx.createGain();
+      g.gain.value = gainVal;
+      src.connect(g);
+      g.connect(ctx.destination);
+      src.start(0);
+      src.onended = () => {
+        try { src.disconnect(); } catch (e) {}
+        try { g.disconnect(); } catch (e2) {}
+      };
+    } catch (e3) {}
+  }
+
   // ===== D3 SETUP =====
   const svg = d3.select('#network-svg');
   const container = document.getElementById('canvas-container');
@@ -2808,6 +2883,9 @@
     const r = isMobile() ? Math.max(2, spec.r - 1) : spec.r;
 
     const g = packetGroup.append('g').attr('class', 'packet-dot');
+
+    // SFX: one short "pew" per packet fired (after unlock).
+    safeExec(() => playPacketSfx(spec), 'packet-sfx');
 
     g.append('circle')
       .attr('r', r)
@@ -3696,6 +3774,9 @@
     const steps = attackStepFunctions[state.currentAttack];
     if (!steps) return;
     if (state.step >= steps.length - 1) return;
+
+    // Autoplay policy: unlock audio inside the user gesture.
+    safeExec(() => unlockSfx(), 'unlock-sfx');
 
     _stepLock = true;
     setTimeout(() => { _stepLock = false; }, 400);
