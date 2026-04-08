@@ -600,6 +600,11 @@
       filter: drop-shadow(0 0 10px rgba(210,153,34,0.45));
       animation: pulse-amber 1.8s ease-in-out infinite;
     }
+    /* Outcome screen: stop shape pulsing so end-state halos read clearly. */
+    html.outcome-active .node-owned .node-shape,
+    html.outcome-active .node-impacted .node-shape {
+      animation: none !important;
+    }
 
     @keyframes pulse-red {
       0%, 100% { filter: drop-shadow(0 0 8px rgba(248,81,73,0.4)); }
@@ -1823,6 +1828,7 @@
     baselineTraffic: false,
     owned: new Set(),
     impacted: new Set(),
+    outcomeActive: false,
     animationTimers: [],
     packetAnimations: [],
     baselineInterval: null,
@@ -2735,6 +2741,7 @@
   const nodePulseState = { lastAt: Object.create(null) };
 
   function pulseNodeArrival(nodeId, color) {
+    if (state.outcomeActive) return;
     const n = nodeMap[nodeId];
     if (!n) return;
 
@@ -2777,12 +2784,21 @@
   }
 
   // ===== END-STATE HALOS (safe vs impacted vs owned) =====
+  function clearArrivalPulses() {
+    overlayGroup.selectAll('.arrival-pulse').interrupt().remove();
+  }
+
   function clearEndStateRings() {
     overlayGroup.selectAll('.end-state-ring').remove();
+    state.outcomeActive = false;
+    document.documentElement.classList.remove('outcome-active');
   }
 
   function renderEndStateRings() {
     clearEndStateRings();
+    clearArrivalPulses();
+    state.outcomeActive = true;
+    document.documentElement.classList.add('outcome-active');
     const mobile = isMobile();
     const safeColor = '#3fb950';
     const impactedColor = '#d29922';
@@ -2808,6 +2824,8 @@
         .attr('fill', 'none')
         .attr('stroke', stroke)
         .attr('stroke-width', strokeW)
+        .attr('stroke-dasharray', isOwned ? null : isImpacted ? '5 6' : '2 0')
+        .attr('stroke-linecap', isImpacted ? 'round' : null)
         .attr('opacity', isOwned ? 0.95 : isImpacted ? 0.88 : 0.75)
         .attr('filter', 'url(#glow)')
         .style('pointer-events', 'none');
