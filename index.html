@@ -3069,6 +3069,26 @@
     overlayState.hideTimer = setTimeout(hideNodeOverlay, durationMs);
   }
 
+  function packetKindLabel(spec, label) {
+    if (label) return label;
+    if (!spec) return 'PACKET';
+    const sp = typeof spec.speed === 'number' ? spec.speed : 3000;
+    if (sp <= 650) return 'ATTACK';
+    if (sp <= 900) return 'ROGUE';
+    if (sp <= 1200) return 'MITM';
+    if (sp <= 1600) return 'SCAN';
+    return 'DATA';
+  }
+
+  function shouldFlashOnArrival(spec, label) {
+    // Avoid spam from baseline traffic; still show labeled packets + fast/suspicious ones.
+    if (label) return true;
+    if (!spec) return false;
+    const sp = typeof spec.speed === 'number' ? spec.speed : 3000;
+    if (sp <= 1200) return true; // attack/rogue/mitm
+    return false;
+  }
+
   // ===== PACKET ANIMATION ENGINE =====
   function animatePacket(sourceId, targetId, spec, label, onComplete) {
     if (!state.visible) { if (onComplete) onComplete(); return; }
@@ -3109,6 +3129,17 @@
       .ease(d3.easeLinear)
       .attr('transform', `translate(${t.px}, ${t.py})`)
       .on('end', () => {
+        safeExec(() => {
+          if (!state.visible || state.outcomeActive) return;
+          if (!state.playing) return;
+          if (!shouldFlashOnArrival(hopSpec, label)) return;
+          const srcN = nodeMap[sourceId];
+          const dstN = nodeMap[targetId];
+          const k = packetKindLabel(hopSpec, label);
+          const srcName = srcN ? srcN.label : sourceId;
+          const dstName = dstN ? dstN.label : targetId;
+          flashNodeOverlay(targetId, `Received <b>${k}</b><br>${srcName} → ${dstName}`, 1400);
+        }, 'packet-arrival-overlay');
         safeExec(() => pulseNodeArrival(targetId, hopSpec && hopSpec.color), 'arrival-pulse');
         g.remove();
         if (onComplete) safeExec(onComplete, 'packet-callback');
