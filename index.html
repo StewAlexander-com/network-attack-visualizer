@@ -2764,6 +2764,42 @@
       });
   }
 
+  // ===== END-STATE HALOS (safe vs compromised) =====
+  function clearEndStateRings() {
+    overlayGroup.selectAll('.end-state-ring').remove();
+  }
+
+  function renderEndStateRings() {
+    clearEndStateRings();
+    const mobile = isMobile();
+    const safeColor = '#3fb950';
+    const badColor = '#f85149';
+    const strokeW = mobile ? 2.2 : 2.6;
+
+    nodes.forEach(n => {
+      if (!n || typeof n.px !== 'number' || typeof n.py !== 'number') return;
+      const shape = getNodeShape(n.type);
+      const baseR = (shape && shape.shape === 'rect'
+        ? Math.max(shape.w, shape.h) / 2
+        : (shape && shape.r ? shape.r : 22)) + (mobile ? 9 : 11);
+      const isBad = state.compromised && state.compromised.has(n.id);
+      const stroke = isBad ? badColor : safeColor;
+
+      overlayGroup
+        .append('circle')
+        .attr('class', 'end-state-ring')
+        .attr('cx', n.px)
+        .attr('cy', n.py)
+        .attr('r', baseR)
+        .attr('fill', 'none')
+        .attr('stroke', stroke)
+        .attr('stroke-width', strokeW)
+        .attr('opacity', isBad ? 0.95 : 0.75)
+        .attr('filter', 'url(#glow)')
+        .style('pointer-events', 'none');
+    });
+  }
+
   // ===== NODE SHAPES =====
   function getNodeShape(type) {
     const m = isMobile();
@@ -3261,6 +3297,9 @@
         <div class="result-next">Select another attack from the dropdown above, or press Reset to replay</div>
       `;
       panelResult.classList.add('visible');
+      safeExec(() => renderEndStateRings(), 'end-state-rings');
+    } else {
+      safeExec(() => clearEndStateRings(), 'end-state-rings-clear');
     }
 
     // ===== STEP PROGRESS BAR =====
@@ -3861,6 +3900,7 @@
     overlayGroup.selectAll('*').remove();
     state.compromised.forEach(id => setCompromised(id, false));
     state.compromised.clear();
+    clearEndStateRings();
     hideNodeOverlay();
     hideNodeTooltip();
     clearPacketTable();
@@ -3942,6 +3982,7 @@
     overlayGroup.selectAll('*').remove();
     state.compromised.forEach(id => setCompromised(id, false));
     state.compromised.clear();
+    clearEndStateRings();
     hideNodeOverlay();
     hideNodeTooltip();
     clearPacketTable();
