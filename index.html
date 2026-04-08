@@ -2518,82 +2518,15 @@
     scan:    { r: 3, color: '#58a6ff', opacity: 0.7, speed: 200 },
   };
 
-  // ===== FORWARD HOP COLORING (better mode) =====
+  // ===== FORWARD HOP COLORING (arcade fixed hues) =====
   // Apply recolor on BOTH:
-  // - incoming to forwarder (prev -> router/switch)
-  // - outgoing from forwarder (router/switch -> next)
-  // (If both ends are forwarders, prefer outgoing tint.)
+  // - incoming to forwarder (prev -> router/switch): neon "invader green"
+  // - outgoing from forwarder (router/switch -> next): arcade magenta/purple
+  // (If both ends are forwarders, prefer outgoing color.)
   const FORWARDER_TYPES = new Set(['router', 'switch']);
 
-  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
-
-  function hexToRgb(hex) {
-    if (!hex || typeof hex !== 'string') return null;
-    const h = hex.replace('#', '').trim();
-    const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-    if (v.length !== 6) return null;
-    const n = parseInt(v, 16);
-    if (!isFinite(n)) return null;
-    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-  }
-
-  function rgbToHex(r, g, b) {
-    const to2 = (x) => ('0' + clamp(Math.round(x), 0, 255).toString(16)).slice(-2);
-    return '#' + to2(r) + to2(g) + to2(b);
-  }
-
-  function rgbToHsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h = 0, s = 0;
-    const l = (max + min) / 2;
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
-      }
-      h /= 6;
-    }
-    return { h, s, l };
-  }
-
-  function hslToRgb(h, s, l) {
-    function hue2rgb(p, q, t) {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    }
-    let r, g, b;
-    if (s === 0) {
-      r = g = b = l;
-    } else {
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
-    }
-    return { r: r * 255, g: g * 255, b: b * 255 };
-  }
-
-  function tintForwardColor(hex, mode) {
-    const rgb = hexToRgb(hex);
-    if (!rgb) return hex;
-    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-    // Incoming: slightly cooler. Outgoing: slightly warmer. Both: brighter/saturated.
-    const dh = mode === 'in' ? -0.035 : mode === 'out' ? 0.035 : 0;
-    const h = (hsl.h + dh + 1) % 1;
-    const s = clamp(hsl.s * 1.08 + 0.02, 0, 1);
-    const l = clamp(hsl.l + 0.10, 0, 1);
-    const rr = hslToRgb(h, s, l);
-    return rgbToHex(rr.r, rr.g, rr.b);
-  }
+  const FORWARD_COLOR_IN = '#39ff14';   // neon green
+  const FORWARD_COLOR_OUT = '#bc8cff';  // arcade purple (matches MITM palette)
 
   function getHopColor(sourceId, targetId, baseColor) {
     const s = nodeMap[sourceId];
@@ -2601,8 +2534,8 @@
     if (!s || !t) return baseColor;
     const intoForwarder = FORWARDER_TYPES.has(t.type);
     const outOfForwarder = FORWARDER_TYPES.has(s.type);
-    if (outOfForwarder) return tintForwardColor(baseColor, 'out');
-    if (intoForwarder) return tintForwardColor(baseColor, 'in');
+    if (outOfForwarder) return FORWARD_COLOR_OUT;
+    if (intoForwarder) return FORWARD_COLOR_IN;
     return baseColor;
   }
 
