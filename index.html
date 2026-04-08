@@ -2519,14 +2519,28 @@
   };
 
   // ===== PACKET SFX (retro "laser") =====
-  // CC0 source: OpenGameArt (laser_shooting_sfx.wav)
-  // https://opengameart.org/content/lasershootingsx
+  // CC0 sources:
+  // - OpenGameArt: https://opengameart.org/content/lasershootingsx  (laser_shooting_sfx.wav)
+  // - Kenney Digital SFX (CC0): https://opengameart.org/content/63-digital-sound-effects-lasers-phasers-space-etc
   const SFX = {
     enabled: true,
-    url: './assets/audio/laser_shooting_sfx.wav',
+    urls: {
+      normal: [
+        './assets/audio/kenney_laser1.mp3',
+        './assets/audio/kenney_laser3.mp3',
+      ],
+      attack: [
+        './assets/audio/laser_shooting_sfx.wav',
+        './assets/audio/kenney_phaserUp2.mp3',
+      ],
+      rogue: [
+        './assets/audio/kenney_phaserUp2.mp3',
+        './assets/audio/kenney_laser3.mp3',
+      ],
+    },
     ctx: null,
-    buf: null,
-    loading: null,
+    bufs: Object.create(null),   // url -> AudioBuffer
+    loading: Object.create(null),// url -> Promise
     unlocked: false,
     el: null,
   };
@@ -2546,7 +2560,7 @@
     if (SFX.el || !SFX.enabled) return SFX.el;
     try {
       const a = new Audio();
-      a.src = SFX.url;
+      a.src = pickSfxUrl({ speed: 3000 }); // any valid url for priming
       a.preload = 'auto';
       a.crossOrigin = 'anonymous';
       SFX.el = a;
@@ -2556,17 +2570,19 @@
     return SFX.el;
   }
 
-  function ensureSfxLoaded() {
-    if (SFX.buf || SFX.loading || !SFX.enabled) return SFX.loading;
+  function ensureSfxLoaded(url) {
+    if (!url || !SFX.enabled) return null;
     const ctx = ensureSfxContext();
     if (!ctx) return null;
-    SFX.loading = fetch(SFX.url)
+    if (SFX.bufs[url]) return null;
+    if (SFX.loading[url]) return SFX.loading[url];
+    SFX.loading[url] = fetch(url)
       .then(r => (r && r.ok ? r.arrayBuffer() : Promise.reject(new Error('sfx'))))
       .then(ab => ctx.decodeAudioData(ab))
-      .then(buf => { SFX.buf = buf; })
+      .then(buf => { SFX.bufs[url] = buf; })
       .catch(() => {})
-      .finally(() => { SFX.loading = null; });
-    return SFX.loading;
+      .finally(() => { delete SFX.loading[url]; });
+    return SFX.loading[url];
   }
 
   // Call inside a user gesture (click/tap) for autoplay-safe unlock.
@@ -2583,7 +2599,13 @@
       if (p && typeof p.then === 'function') p.catch(() => {});
     } catch (e) {}
     SFX.unlocked = true;
-    ensureSfxLoaded();
+    // Preload one of each bucket so first packet isn't silent.
+    try {
+      ['normal', 'attack', 'rogue'].forEach(k => {
+        const u = (SFX.urls[k] && SFX.urls[k][0]) || null;
+        if (u) ensureSfxLoaded(u);
+      });
+    } catch (e4) {}
 
     // HTMLAudio unlock assist (some browsers gate first sound until a successful play in-gesture).
     try {
@@ -2603,7 +2625,9 @@
   function playPacketSfx(spec) {
     if (!SFX.enabled || !SFX.unlocked || !state.visible) return;
     const ctx = ensureSfxContext();
-    const hasWebAudio = !!(ctx && ctx.state === 'running' && SFX.buf);
+    const url = pickSfxUrl(spec);
+    const buf = url ? SFX.bufs[url] : null;
+    const hasWebAudio = !!(ctx && ctx.state === 'running' && buf);
 
     // Quieter on mobile, and lower volume for baseline traffic.
     const mobile = isMobile();
@@ -2614,11 +2638,14 @@
     if (hasWebAudio) {
       try {
         const src = ctx.createBufferSource();
-        src.buffer = SFX.buf;
+        src.buffer = buf;
         const g = ctx.createGain();
         g.gain.value = gainVal;
         src.connect(g);
         g.connect(ctx.destination);
+        // Subtle pitch variance to feel more arcade, less repetitive.
+        const jitter = (Math.random() - 0.5) * 0.06; // ±3%
+        src.playbackRate.value = 1 + jitter;
         src.start(0);
         src.onended = () => {
           try { src.disconnect(); } catch (e) {}
@@ -2626,9 +2653,9 @@
         };
         return;
       } catch (e3) {}
-    } else if (ctx && ctx.state === 'running' && !SFX.buf) {
+    } else if (ctx && ctx.state === 'running' && url && !buf) {
       // If the first packets spawn before decode completes, queue a short retry.
-      ensureSfxLoaded();
+      ensureSfxLoaded(url);
       setTimeout(() => { try { playPacketSfx(spec); } catch (e4) {} }, 120);
       return;
     }
@@ -2638,9 +2665,19 @@
     if (!el) return;
     try {
       const a2 = el.cloneNode(true);
+      if (url) a2.src = url;
       a2.volume = Math.min(1, gainVal * 1.6);
+      a2.playbackRate = 1 + ((Math.random() - 0.5) * 0.05);
       a2.play().catch(() => {});
     } catch (e5) {}
+  }
+
+  function pickSfxUrl(spec) {
+    const speed = spec && typeof spec.speed === 'number' ? spec.speed : 3000;
+    const kind = speed <= 900 ? 'attack' : speed <= 1500 ? 'rogue' : 'normal';
+    const list = (SFX.urls[kind] && SFX.urls[kind].length) ? SFX.urls[kind] : (SFX.urls.normal || []);
+    if (!list.length) return null;
+    return list[(Math.random() * list.length) | 0];
   }
 
   // ===== D3 SETUP =====
