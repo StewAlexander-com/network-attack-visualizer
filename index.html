@@ -38,7 +38,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?v=1775226990&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?v=2026040816&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
     /* ===== CSS VARIABLES ===== */
@@ -57,7 +57,7 @@
       --accent-purple: #bc8cff;
       --font-ui: 'Space Grotesk', system-ui, -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
-      --sidebar-width: 340px;
+      --sidebar-width: 400px;
       --topbar-height: 52px;
       --footer-height: 36px;
       --safe-top: env(safe-area-inset-top, 0px);
@@ -270,11 +270,14 @@
     /* ===== SIDEBAR ===== */
     #detail-panel {
       width: var(--sidebar-width);
+      min-width: min(var(--sidebar-width), 100%);
       background: var(--surface);
       border-left: 1px solid var(--border);
       overflow-y: auto;
-      overflow-x: hidden;
+      overflow-x: auto;
       flex-shrink: 0;
+      container-type: inline-size;
+      container-name: detail-panel;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
       scroll-behavior: smooth;
@@ -944,7 +947,7 @@
 
     /* ===== TABLET (iPad) ===== */
     @media (min-width: 769px) and (max-width: 1024px) {
-      :root { --sidebar-width: 300px; }
+      :root { --sidebar-width: 340px; }
       .attack-tab { padding: 6px 8px; font-size: 0.6875rem; }
     }
 
@@ -1342,19 +1345,23 @@
       color: var(--accent-blue);
       padding-top: 2px;
     }
-    .explain-text { color: var(--text-muted); }
+    .explain-text { min-width: 0; color: var(--text-muted); }
 
-    /* SWOT Grid */
+    /* SWOT Grid — minmax(0,1fr) + min-width:0 so columns shrink and text wraps inside the sidebar */
     .swot-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 6px;
       margin-top: 10px;
     }
     @media (max-width: 768px) {
       .swot-grid { grid-template-columns: 1fr; gap: 8px; }
     }
+    @container detail-panel (max-width: 340px) {
+      .swot-grid { grid-template-columns: 1fr; gap: 8px; }
+    }
     .swot-cell {
+      min-width: 0;
       padding: 10px 12px;
       border-radius: 6px;
       font-size: 0.8125rem;
@@ -1367,7 +1374,7 @@
       letter-spacing: 0.05em;
       margin-bottom: 3px;
     }
-    .swot-text { }
+    .swot-text { overflow-wrap: break-word; word-break: break-word; }
     /* Mobile: collapsible SWOT cards */
     @media (max-width: 768px) {
       .swot-cell { padding: 0; overflow: hidden; cursor: pointer; -webkit-tap-highlight-color: transparent; }
@@ -4352,7 +4359,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026040816').catch(function() {});
   });
 }
 </script>
