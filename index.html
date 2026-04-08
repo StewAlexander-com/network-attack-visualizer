@@ -591,14 +591,24 @@
       stroke-opacity: 0.6;
     }
 
-    .node-compromised .node-shape {
+    .node-owned .node-shape {
       filter: drop-shadow(0 0 12px var(--accent-red));
       animation: pulse-red 1.5s ease-in-out infinite;
+    }
+
+    .node-impacted .node-shape {
+      filter: drop-shadow(0 0 10px rgba(210,153,34,0.45));
+      animation: pulse-amber 1.8s ease-in-out infinite;
     }
 
     @keyframes pulse-red {
       0%, 100% { filter: drop-shadow(0 0 8px rgba(248,81,73,0.4)); }
       50% { filter: drop-shadow(0 0 16px rgba(248,81,73,0.8)); }
+    }
+
+    @keyframes pulse-amber {
+      0%, 100% { filter: drop-shadow(0 0 7px rgba(210,153,34,0.28)); }
+      50% { filter: drop-shadow(0 0 14px rgba(210,153,34,0.65)); }
     }
 
     /* Node tooltip */
@@ -640,7 +650,8 @@
       font-weight: 500;
     }
     .tt-status.secure { color: var(--accent-green); }
-    .tt-status.compromised { color: var(--accent-red); }
+    .tt-status.impacted { color: var(--accent-orange); }
+    .tt-status.owned { color: var(--accent-red); }
 
     /* Packets */
     .packet-dot { pointer-events: none; }
@@ -1810,7 +1821,8 @@
     speed: 1,
     step: -1,
     baselineTraffic: false,
-    compromised: new Set(),
+    owned: new Set(),
+    impacted: new Set(),
     animationTimers: [],
     packetAnimations: [],
     baselineInterval: null,
@@ -2764,7 +2776,7 @@
       });
   }
 
-  // ===== END-STATE HALOS (safe vs compromised) =====
+  // ===== END-STATE HALOS (safe vs impacted vs owned) =====
   function clearEndStateRings() {
     overlayGroup.selectAll('.end-state-ring').remove();
   }
@@ -2773,7 +2785,8 @@
     clearEndStateRings();
     const mobile = isMobile();
     const safeColor = '#3fb950';
-    const badColor = '#f85149';
+    const impactedColor = '#d29922';
+    const ownedColor = '#f85149';
     const strokeW = mobile ? 2.2 : 2.6;
 
     nodes.forEach(n => {
@@ -2782,8 +2795,9 @@
       const baseR = (shape && shape.shape === 'rect'
         ? Math.max(shape.w, shape.h) / 2
         : (shape && shape.r ? shape.r : 22)) + (mobile ? 9 : 11);
-      const isBad = state.compromised && state.compromised.has(n.id);
-      const stroke = isBad ? badColor : safeColor;
+      const isOwned = state.owned && state.owned.has(n.id);
+      const isImpacted = !isOwned && state.impacted && state.impacted.has(n.id);
+      const stroke = isOwned ? ownedColor : isImpacted ? impactedColor : safeColor;
 
       overlayGroup
         .append('circle')
@@ -2794,7 +2808,7 @@
         .attr('fill', 'none')
         .attr('stroke', stroke)
         .attr('stroke-width', strokeW)
-        .attr('opacity', isBad ? 0.95 : 0.75)
+        .attr('opacity', isOwned ? 0.95 : isImpacted ? 0.88 : 0.75)
         .attr('filter', 'url(#glow)')
         .style('pointer-events', 'none');
     });
@@ -2934,9 +2948,11 @@
           .text(d.ip);
       }
 
-      // Restore compromised state after re-render
-      if (state.compromised.has(d.id)) {
-        g.classed('node-compromised', true);
+      // Restore state after re-render
+      if (state.owned.has(d.id)) {
+        g.classed('node-owned', true);
+      } else if (state.impacted.has(d.id)) {
+        g.classed('node-impacted', true);
       }
 
       // Event handlers
@@ -2953,14 +2969,17 @@
 
   function showNodeTooltip(event, d) {
     clearTimeout(tooltipTimeout);
-    const isCompromised = state.compromised.has(d.id);
+    const isOwned = state.owned.has(d.id);
+    const isImpacted = !isOwned && state.impacted.has(d.id);
     tooltip.innerHTML = `
       <div class="tt-label">${d.label}</div>
       <div class="tt-row"><span class="tt-key">Type</span><span class="tt-val">${d.type}</span></div>
       ${d.ip ? `<div class="tt-row"><span class="tt-key">IP</span><span class="tt-val">${d.ip}</span></div>` : ''}
       ${d.mac ? `<div class="tt-row"><span class="tt-key">MAC</span><span class="tt-val">${d.mac}</span></div>` : ''}
       <div class="tt-row"><span class="tt-key">Role</span><span class="tt-val">${getRoleName(d.type)}</span></div>
-      <div class="tt-status ${isCompromised ? 'compromised' : 'secure'}">${isCompromised ? '\u26A0 Compromised' : '\u2713 Secure'}</div>
+      <div class="tt-status ${isOwned ? 'owned' : isImpacted ? 'impacted' : 'secure'}">${
+        isOwned ? '\u26A0 Owned' : isImpacted ? '\u26A0 Impacted (MITM)' : '\u2713 Secure'
+      }</div>
       ${isTouchDevice() ? '<div style="font-size:0.6rem;color:var(--text-faint);margin-top:6px;text-align:center">tap elsewhere to dismiss</div>' : ''}
     `;
 
@@ -3100,15 +3119,30 @@
   }
 
   // ===== COMPROMISE STATE =====
-  function setCompromised(nodeId, compromised) {
+  function setOwned(nodeId, owned) {
     const g = nodeGroup.select(`[data-id="${nodeId}"]`);
     if (g.empty()) return;
-    if (compromised) {
-      state.compromised.add(nodeId);
-      g.classed('node-compromised', true);
+    if (owned) {
+      state.owned.add(nodeId);
+      state.impacted.delete(nodeId);
+      g.classed('node-owned', true).classed('node-impacted', false);
     } else {
-      state.compromised.delete(nodeId);
-      g.classed('node-compromised', false);
+      state.owned.delete(nodeId);
+      g.classed('node-owned', false);
+    }
+  }
+
+  function setImpacted(nodeId, impacted) {
+    // Owned wins.
+    if (state.owned.has(nodeId) && impacted) return;
+    const g = nodeGroup.select(`[data-id="${nodeId}"]`);
+    if (g.empty()) return;
+    if (impacted) {
+      state.impacted.add(nodeId);
+      g.classed('node-impacted', true);
+    } else {
+      state.impacted.delete(nodeId);
+      g.classed('node-impacted', false);
     }
   }
 
@@ -3436,7 +3470,7 @@
       function() {
         setStatus('Step 2: Server queue saturated...');
         highlightStep(1);
-        setCompromised('server-a', true);
+        setOwned('server-a', true);
         const sn = nodeMap['server-a'];
         const pg = overlayGroup.append('g').attr('class','progress-overlay').attr('transform','translate('+(sn.px-30)+','+(sn.py-40)+')');
         pg.append('rect').attr('class','progress-bg').attr('width',60).attr('height',8);
@@ -3493,7 +3527,7 @@
       function() {
         setStatus('Step 4: Traffic rerouted through attacker');
         highlightStep(3);
-        setCompromised('ws-b', true);
+        setImpacted('ws-b', true);
         animatePacket('ws-b', 'switch', PACKET.rogue, null, () => {
           animatePacket('switch', 'attacker', PACKET.rogue, 'MITM');
         });
@@ -3539,7 +3573,7 @@
       function() {
         setStatus('Step 1: Compromised foothold on WS-A...');
         highlightStep(0);
-        setCompromised('ws-a', true);
+        setOwned('ws-a', true);
         addPacketRow('ws-a', 'SYS', 'INFO', 'foothold established', 'ATK');
       },
       function() {
@@ -3581,7 +3615,7 @@
       function() {
         setStatus('Step 4: DB Server compromised');
         highlightStep(3);
-        setCompromised('server-b', true);
+        setOwned('server-b', true);
         addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'COMPROMISED', 'ATK');
         for (let i = 0; i < 3; i++) {
           setTimeout(() => {
@@ -3701,7 +3735,7 @@
         }
         setTimeout(function() {
           if (!state.playing) return;
-          setCompromised('server-a', true);
+          setOwned('server-a', true);
           showNodeOverlay('server-a', 'Model Training<br>Backdoor learned');
         }, 2800);
       },
@@ -3770,7 +3804,7 @@
         });
         setTimeout(function() {
           if (!state.playing) return;
-          setCompromised('server-a', true);
+          setImpacted('server-a', true);
           showNodeOverlay('server-a', 'LLM context poisoned<br>Injected instructions active');
         }, 1800);
       },
@@ -3832,7 +3866,7 @@
         setStatus('Step 3: Malicious code executes on model load...');
         highlightStep(2);
         hideNodeOverlay();
-        setCompromised('server-a', true);
+        setOwned('server-a', true);
         addPacketRow('server-a', 'SYS', 'EXEC', 'pickle deserialization RCE', 'ATK');
         showNodeOverlay('server-a', 'Backdoor established<br>Pickle RCE executed');
         setTimeout(function() {
@@ -3849,7 +3883,7 @@
         setStatus('Step 4: Persistent access — data exfiltration begins...');
         highlightStep(3);
         hideNodeOverlay();
-        setCompromised('server-b', true);
+        setImpacted('server-b', true);
         addPacketRow('server-a', 'attacker', 'EXFIL', 'model weights + training data', 'ATK');
         for (var i = 0; i < 3; i++) {
           (function(idx) {
@@ -3880,8 +3914,10 @@
     state.packetAnimations = [];
     packetGroup.selectAll('*').remove();
     overlayGroup.selectAll('*').remove();
-    state.compromised.forEach(id => setCompromised(id, false));
-    state.compromised.clear();
+    state.owned.forEach(id => setOwned(id, false));
+    state.owned.clear();
+    state.impacted.forEach(id => setImpacted(id, false));
+    state.impacted.clear();
     clearEndStateRings();
     hideNodeOverlay();
     hideNodeTooltip();
@@ -3962,8 +3998,10 @@
     stopBaselineTraffic();
     packetGroup.selectAll('*').remove();
     overlayGroup.selectAll('*').remove();
-    state.compromised.forEach(id => setCompromised(id, false));
-    state.compromised.clear();
+    state.owned.forEach(id => setOwned(id, false));
+    state.owned.clear();
+    state.impacted.forEach(id => setImpacted(id, false));
+    state.impacted.clear();
     clearEndStateRings();
     hideNodeOverlay();
     hideNodeTooltip();
