@@ -1,5 +1,5 @@
 // Service Worker — NetAttack.viz PWA
-const CACHE_NAME = 'netattack-v1775328486';
+const CACHE_NAME = 'netattack-v1775328487';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,9 @@ const ASSETS = [
   './icon-180.png',
   './favicon.png',
   './assets/audio/laser_shooting_sfx.wav',
+  './assets/audio/kenney_laser1.mp3',
+  './assets/audio/kenney_laser3.mp3',
+  './assets/audio/kenney_phaserUp2.mp3',
   'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js',
   'https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js',
   'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap'
