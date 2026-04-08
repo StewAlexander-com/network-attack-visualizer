@@ -2697,14 +2697,13 @@
   const nodeGroup = svg.append('g').attr('class', 'nodes');
   const overlayGroup = svg.append('g').attr('class', 'overlays');
 
-  // ===== ARRIVAL HIGHLIGHT (switch/server) =====
-  // Visual pulse when a packet reaches a switch/server to guide the eye.
+  // ===== ARRIVAL HIGHLIGHT (all hops) =====
+  // Visual pulse when a packet reaches any destination node to guide the eye.
   const nodePulseState = { lastAt: Object.create(null) };
 
   function pulseNodeArrival(nodeId, color) {
     const n = nodeMap[nodeId];
     if (!n) return;
-    if (n.type !== 'switch' && n.type !== 'server') return;
 
     // Throttle per-node so bursts don't become a constant strobe.
     const now = performance.now();
@@ -2714,7 +2713,10 @@
 
     const stroke = color || '#58a6ff';
     const mobile = isMobile();
-    const baseR = (n.type === 'switch' ? 30 : 28) * (mobile ? 0.9 : 1);
+    const shape = getNodeShape(n.type);
+    const baseR = (shape && shape.shape === 'rect'
+      ? Math.max(shape.w, shape.h) / 2
+      : (shape && shape.r ? shape.r : 22)) + (mobile ? 6 : 8);
     const expandTo = baseR + (mobile ? 12 : 18);
     const dur = mobile ? 240 : 300;
 
