@@ -3343,7 +3343,6 @@
         setStatus('Step 3: MITM position established...');
         highlightStep(2);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         animatePacket('ws-a', 'switch', PACKET.mitm, 'MITM', () => {
           animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
             animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
@@ -3397,7 +3396,6 @@
         setStatus('Step 3: Switch in hub mode...');
         highlightStep(2);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         ['ws-a','ws-b','attacker','server-a'].forEach((t, i) => {
           setTimeout(() => {
             if (!state.playing) return;
@@ -3485,7 +3483,6 @@
         setStatus('Step 3: Rogue DHCP responding...');
         highlightStep(2);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         animatePacket('ws-b', 'switch', PACKET.normal, 'DISCOVER', () => {
           animatePacket('attacker', 'switch', PACKET.rogue, 'ROGUE DHCP', () => {
             animatePacket('switch', 'ws-b', PACKET.rogue, 'OFFER');
@@ -3519,7 +3516,6 @@
         highlightStep(1);
         showNodeOverlay('ws-a', 'Route Updated<br>10.0.0.11 via 10.0.0.99');
         addPacketRow('ws-a', 'SYS', 'ROUTE', '10.0.0.11 via attacker', 'WARN');
-        setCompromised('attacker', true);
       },
       function() {
         setStatus('Step 3: Traffic redirected through attacker');
@@ -3616,7 +3612,6 @@
         setStatus('Step 2: Capturing encrypted traffic...');
         highlightStep(1);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         var routes = [['ws-a','switch'],['switch','router'],['router','server-a'],['ws-b','switch'],['switch','server-b']];
         routes.forEach(function(r, i) {
           setTimeout(function() {
@@ -3650,16 +3645,7 @@
         setStatus('Step 4: Quantum decryption');
         highlightStep(3);
         hideNodeOverlay();
-        setCompromised('server-a', true);
-        setCompromised('server-b', true);
-        setCompromised('ws-a', true);
         addPacketRow('QUANTUM', 'ALL', 'DECRYPT', 'Shor\'s algorithm', 'ATK');
-        ['gateway', 'router', 'ws-b'].forEach(function(id, i) {
-          setTimeout(function() {
-            if (!state.playing) return;
-            setCompromised(id, true);
-          }, i * 500);
-        });
       }
     ],
 
@@ -3683,7 +3669,6 @@
         setStatus('Step 2: Injecting poisoned training samples...');
         highlightStep(1);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         addPacketRow('attacker', 'server-b', 'WRITE', 'poisoned samples injected', 'ATK');
         animatePacketBurst('attacker', 'switch', { r: 4, color: '#d29922', opacity: 0.9, speed: 600 }, 4, 'POISON', 150);
         setTimeout(function() {
@@ -3734,7 +3719,6 @@
                   animatePacket('switch', 'ws-a', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 });
                 });
               });
-              setCompromised('ws-a', true);
             });
           });
         });
@@ -3794,7 +3778,6 @@
         setStatus('Step 4: AI executes injected instructions...');
         highlightStep(3);
         hideNodeOverlay();
-        setCompromised('ws-a', true);
         addPacketRow('server-a', 'attacker', 'EXFIL', 'data exfiltrated via AI', 'ATK');
         animatePacket('server-a', 'router', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'EXFIL', function() {
           animatePacket('router', 'gateway', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, null, function() {
@@ -3817,7 +3800,6 @@
       function() {
         setStatus('Step 1: Attacker publishes poisoned model to public repository...');
         highlightStep(0);
-        setCompromised('attacker', true);
         addPacketRow('attacker', 'internet', 'HTTP', 'poisoned model published', 'ATK');
         animatePacket('attacker', 'switch', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'PUBLISH', function() {
           animatePacket('switch', 'router', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, null, function() {
