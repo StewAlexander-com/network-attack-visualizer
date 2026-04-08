@@ -668,9 +668,15 @@
       user-select: none;
     }
 
-    /* CAM table / routing overlay on nodes */
-    .node-overlay {
-      position: absolute;
+    /* Node change cards (multi) */
+    .node-overlays{
+      position:absolute;
+      inset:0;
+      z-index:150;
+      pointer-events:none;
+    }
+    .node-overlay-card{
+      position:absolute;
       background: var(--surface);
       border: 1px solid var(--accent-orange);
       border-radius: 6px;
@@ -679,15 +685,19 @@
       font-size: 0.625rem;
       color: var(--accent-orange);
       z-index: 150;
-      pointer-events: none;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.35);
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transform: translateY(4px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
       white-space: nowrap;
       max-width: calc(100vw - 32px);
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .node-overlay.visible { opacity: 1; }
+    .node-overlay-card.visible { opacity: 1; transform: translateY(0); }
+    .node-overlay-card.owned{ border-color: rgba(248,81,73,0.55); color: var(--accent-red); }
+    .node-overlay-card.impacted{ border-color: rgba(210,153,34,0.55); color: var(--accent-orange); }
+    .node-overlay-card.safe{ border-color: rgba(63,185,80,0.45); color: var(--accent-green); }
 
     /* Progress bar overlay on nodes */
     .progress-overlay { pointer-events: none; }
@@ -1662,7 +1672,7 @@
     <div id="canvas-container">
       <svg id="network-svg"></svg>
       <div class="node-tooltip" id="nodeTooltip"></div>
-      <div class="node-overlay" id="nodeOverlay"></div>
+      <div class="node-overlays" id="nodeOverlays"></div>
       <div class="canvas-hint" id="canvasHint">
         <div class="canvas-hint-text">Select an attack, then press <span style="color:var(--accent-blue);font-weight:600">Next →</span></div>
       </div>
@@ -3032,62 +3042,59 @@
     return map[type] || type;
   }
 
-  // ===== NODE OVERLAY =====
-  const overlayEl = document.getElementById('nodeOverlay');
-  const overlayState = { lastAt: Object.create(null), hideTimer: null };
+  // ===== NODE CHANGE CARDS (multi) =====
+  const overlaysEl = document.getElementById('nodeOverlays');
+  const overlayState = { lastAt: Object.create(null) };
 
-  function showNodeOverlay(nodeId, text) {
+  function createNodeOverlayCard(nodeId, html, opts) {
+    if (!overlaysEl) return null;
     const n = nodeMap[nodeId];
-    if (!n) return;
-    overlayEl.innerHTML = text;
+    if (!n) return null;
     const rect = container.getBoundingClientRect();
-    let left = n.px + 30;
-    let top = n.py - 40;
+    var left = n.px + 30;
+    var top = n.py - 40;
+    var maxW = 260;
     // Clamp to viewport
-    if (left + 220 > rect.width) left = Math.max(10, n.px - 220);
+    if (left + maxW > rect.width) left = Math.max(10, n.px - maxW - 10);
     if (top < 10) top = 10;
     if (left < 10) left = 10;
-    overlayEl.style.left = left + 'px';
-    overlayEl.style.top = top + 'px';
-    overlayEl.classList.add('visible');
+
+    const el = document.createElement('div');
+    el.className = 'node-overlay-card' + (opts && opts.kind ? ' ' + opts.kind : '');
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.innerHTML = html;
+    overlaysEl.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('visible'));
+    return el;
+  }
+
+  function showNodeOverlay(nodeId, text, durationMs, kind) {
+    durationMs = durationMs != null ? durationMs : 2600;
+    const card = createNodeOverlayCard(nodeId, text, { kind: kind || '' });
+    if (!card) return;
+    setTimeout(() => {
+      try { card.classList.remove('visible'); } catch (e) {}
+      setTimeout(() => { try { card.remove(); } catch (e2) {} }, 220);
+    }, durationMs);
   }
 
   function hideNodeOverlay() {
-    overlayEl.classList.remove('visible');
+    if (!overlaysEl) return;
+    overlaysEl.querySelectorAll('.node-overlay-card').forEach((el) => {
+      try { el.remove(); } catch (e) {}
+    });
   }
 
-  function flashNodeOverlay(nodeId, text, durationMs) {
+  function flashNodeOverlay(nodeId, text, durationMs, kind) {
     durationMs = durationMs != null ? durationMs : 2200;
     const now = performance.now();
     const last = overlayState.lastAt[nodeId] || 0;
-    if (now - last < 450) return; // per-node throttle
+    if (now - last < 320) return; // per-node throttle
     overlayState.lastAt[nodeId] = now;
-    showNodeOverlay(nodeId, text);
-    if (overlayState.hideTimer) {
-      try { clearTimeout(overlayState.hideTimer); } catch (e) {}
-    }
-    overlayState.hideTimer = setTimeout(hideNodeOverlay, durationMs);
+    showNodeOverlay(nodeId, text, durationMs, kind);
   }
 
-  function packetKindLabel(spec, label) {
-    if (label) return label;
-    if (!spec) return 'PACKET';
-    const sp = typeof spec.speed === 'number' ? spec.speed : 3000;
-    if (sp <= 650) return 'ATTACK';
-    if (sp <= 900) return 'ROGUE';
-    if (sp <= 1200) return 'MITM';
-    if (sp <= 1600) return 'SCAN';
-    return 'DATA';
-  }
-
-  function shouldFlashOnArrival(spec, label) {
-    // Avoid spam from baseline traffic; still show labeled packets + fast/suspicious ones.
-    if (label) return true;
-    if (!spec) return false;
-    const sp = typeof spec.speed === 'number' ? spec.speed : 3000;
-    if (sp <= 1200) return true; // attack/rogue/mitm
-    return false;
-  }
 
   // ===== PACKET ANIMATION ENGINE =====
   function animatePacket(sourceId, targetId, spec, label, onComplete) {
@@ -3129,17 +3136,6 @@
       .ease(d3.easeLinear)
       .attr('transform', `translate(${t.px}, ${t.py})`)
       .on('end', () => {
-        safeExec(() => {
-          if (!state.visible || state.outcomeActive) return;
-          if (!state.playing) return;
-          if (!shouldFlashOnArrival(hopSpec, label)) return;
-          const srcN = nodeMap[sourceId];
-          const dstN = nodeMap[targetId];
-          const k = packetKindLabel(hopSpec, label);
-          const srcName = srcN ? srcN.label : sourceId;
-          const dstName = dstN ? dstN.label : targetId;
-          flashNodeOverlay(targetId, `Received <b>${k}</b><br>${srcName} → ${dstName}`, 1400);
-        }, 'packet-arrival-overlay');
         safeExec(() => pulseNodeArrival(targetId, hopSpec && hopSpec.color), 'arrival-pulse');
         g.remove();
         if (onComplete) safeExec(onComplete, 'packet-callback');
@@ -3190,7 +3186,7 @@
       state.impacted.delete(nodeId);
       g.classed('node-owned', true).classed('node-impacted', false);
       const note = noteHtml || 'System owned<br>Attacker control established';
-      flashNodeOverlay(nodeId, note);
+      flashNodeOverlay(nodeId, note, 2600, 'owned');
     } else {
       state.owned.delete(nodeId);
       g.classed('node-owned', false);
@@ -3206,7 +3202,7 @@
       state.impacted.add(nodeId);
       g.classed('node-impacted', true);
       const note = noteHtml || 'System impacted<br>MITM / reroute / influence';
-      flashNodeOverlay(nodeId, note);
+      flashNodeOverlay(nodeId, note, 2400, 'impacted');
     } else {
       state.impacted.delete(nodeId);
       g.classed('node-impacted', false);
