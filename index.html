@@ -2535,6 +2535,50 @@
   const nodeGroup = svg.append('g').attr('class', 'nodes');
   const overlayGroup = svg.append('g').attr('class', 'overlays');
 
+  // ===== ARRIVAL HIGHLIGHT (switch/server) =====
+  // Visual pulse when a packet reaches a switch/server to guide the eye.
+  const nodePulseState = { lastAt: Object.create(null) };
+
+  function pulseNodeArrival(nodeId, color) {
+    const n = nodeMap[nodeId];
+    if (!n) return;
+    if (n.type !== 'switch' && n.type !== 'server') return;
+
+    // Throttle per-node so bursts don't become a constant strobe.
+    const now = performance.now();
+    const last = nodePulseState.lastAt[nodeId] || 0;
+    if (now - last < 120) return;
+    nodePulseState.lastAt[nodeId] = now;
+
+    const stroke = color || '#58a6ff';
+    const mobile = isMobile();
+    const baseR = (n.type === 'switch' ? 30 : 28) * (mobile ? 0.9 : 1);
+    const expandTo = baseR + (mobile ? 12 : 18);
+    const dur = mobile ? 240 : 300;
+
+    const ring = overlayGroup
+      .append('circle')
+      .attr('class', 'arrival-pulse')
+      .attr('cx', n.px)
+      .attr('cy', n.py)
+      .attr('r', baseR)
+      .attr('fill', 'none')
+      .attr('stroke', stroke)
+      .attr('stroke-width', mobile ? 1.6 : 2.0)
+      .attr('opacity', 0.9)
+      .attr('filter', 'url(#glow)');
+
+    ring
+      .transition()
+      .duration(dur)
+      .ease(d3.easeOutCubic)
+      .attr('r', expandTo)
+      .attr('opacity', 0)
+      .on('end', function () {
+        try { ring.remove(); } catch (e) {}
+      });
+  }
+
   // ===== NODE SHAPES =====
   function getNodeShape(type) {
     const m = isMobile();
@@ -2787,6 +2831,7 @@
       .ease(d3.easeLinear)
       .attr('transform', `translate(${t.px}, ${t.py})`)
       .on('end', () => {
+        safeExec(() => pulseNodeArrival(targetId, spec && spec.color), 'arrival-pulse');
         g.remove();
         if (onComplete) safeExec(onComplete, 'packet-callback');
       });
