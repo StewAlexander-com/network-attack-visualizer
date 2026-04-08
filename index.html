@@ -3034,6 +3034,7 @@
 
   // ===== NODE OVERLAY =====
   const overlayEl = document.getElementById('nodeOverlay');
+  const overlayState = { lastAt: Object.create(null), hideTimer: null };
 
   function showNodeOverlay(nodeId, text) {
     const n = nodeMap[nodeId];
@@ -3053,6 +3054,19 @@
 
   function hideNodeOverlay() {
     overlayEl.classList.remove('visible');
+  }
+
+  function flashNodeOverlay(nodeId, text, durationMs) {
+    durationMs = durationMs != null ? durationMs : 2200;
+    const now = performance.now();
+    const last = overlayState.lastAt[nodeId] || 0;
+    if (now - last < 450) return; // per-node throttle
+    overlayState.lastAt[nodeId] = now;
+    showNodeOverlay(nodeId, text);
+    if (overlayState.hideTimer) {
+      try { clearTimeout(overlayState.hideTimer); } catch (e) {}
+    }
+    overlayState.hideTimer = setTimeout(hideNodeOverlay, durationMs);
   }
 
   // ===== PACKET ANIMATION ENGINE =====
@@ -3137,20 +3151,22 @@
   }
 
   // ===== COMPROMISE STATE =====
-  function setOwned(nodeId, owned) {
+  function setOwned(nodeId, owned, noteHtml) {
     const g = nodeGroup.select(`[data-id="${nodeId}"]`);
     if (g.empty()) return;
     if (owned) {
       state.owned.add(nodeId);
       state.impacted.delete(nodeId);
       g.classed('node-owned', true).classed('node-impacted', false);
+      const note = noteHtml || 'System owned<br>Attacker control established';
+      flashNodeOverlay(nodeId, note);
     } else {
       state.owned.delete(nodeId);
       g.classed('node-owned', false);
     }
   }
 
-  function setImpacted(nodeId, impacted) {
+  function setImpacted(nodeId, impacted, noteHtml) {
     // Owned wins.
     if (state.owned.has(nodeId) && impacted) return;
     const g = nodeGroup.select(`[data-id="${nodeId}"]`);
@@ -3158,6 +3174,8 @@
     if (impacted) {
       state.impacted.add(nodeId);
       g.classed('node-impacted', true);
+      const note = noteHtml || 'System impacted<br>MITM / reroute / influence';
+      flashNodeOverlay(nodeId, note);
     } else {
       state.impacted.delete(nodeId);
       g.classed('node-impacted', false);
