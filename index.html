@@ -3070,7 +3070,7 @@
   }
 
   function showNodeOverlay(nodeId, text, durationMs, kind) {
-    durationMs = durationMs != null ? durationMs : 2600;
+    durationMs = durationMs != null ? durationMs : 4500;
     const card = createNodeOverlayCard(nodeId, text, { kind: kind || '' });
     if (!card) return;
     setTimeout(() => {
@@ -3087,7 +3087,7 @@
   }
 
   function flashNodeOverlay(nodeId, text, durationMs, kind) {
-    durationMs = durationMs != null ? durationMs : 2200;
+    durationMs = durationMs != null ? durationMs : 4200;
     const now = performance.now();
     const last = overlayState.lastAt[nodeId] || 0;
     if (now - last < 320) return; // per-node throttle
@@ -3186,7 +3186,7 @@
       state.impacted.delete(nodeId);
       g.classed('node-owned', true).classed('node-impacted', false);
       const note = noteHtml || 'System owned<br>Attacker control established';
-      flashNodeOverlay(nodeId, note, 2600, 'owned');
+      flashNodeOverlay(nodeId, note, 4800, 'owned');
     } else {
       state.owned.delete(nodeId);
       g.classed('node-owned', false);
@@ -3202,7 +3202,7 @@
       state.impacted.add(nodeId);
       g.classed('node-impacted', true);
       const note = noteHtml || 'System impacted<br>MITM / reroute / influence';
-      flashNodeOverlay(nodeId, note, 2400, 'impacted');
+      flashNodeOverlay(nodeId, note, 4400, 'impacted');
     } else {
       state.impacted.delete(nodeId);
       g.classed('node-impacted', false);
