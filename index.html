@@ -38,7 +38,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?v=1775226990&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?v=2026040816&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
     /* ===== CSS VARIABLES ===== */
@@ -57,7 +57,7 @@
       --accent-purple: #bc8cff;
       --font-ui: 'Space Grotesk', system-ui, -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
-      --sidebar-width: 340px;
+      --sidebar-width: 400px;
       --topbar-height: 52px;
       --footer-height: 36px;
       --safe-top: env(safe-area-inset-top, 0px);
@@ -270,11 +270,14 @@
     /* ===== SIDEBAR ===== */
     #detail-panel {
       width: var(--sidebar-width);
+      min-width: min(var(--sidebar-width), 100%);
       background: var(--surface);
       border-left: 1px solid var(--border);
       overflow-y: auto;
-      overflow-x: hidden;
+      overflow-x: auto;
       flex-shrink: 0;
+      container-type: inline-size;
+      container-name: detail-panel;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
       scroll-behavior: smooth;
@@ -591,14 +594,29 @@
       stroke-opacity: 0.6;
     }
 
-    .node-compromised .node-shape {
+    .node-owned .node-shape {
       filter: drop-shadow(0 0 12px var(--accent-red));
       animation: pulse-red 1.5s ease-in-out infinite;
+    }
+
+    .node-impacted .node-shape {
+      filter: drop-shadow(0 0 10px rgba(210,153,34,0.45));
+      animation: pulse-amber 1.8s ease-in-out infinite;
+    }
+    /* Outcome screen: stop shape pulsing so end-state halos read clearly. */
+    html.outcome-active .node-owned .node-shape,
+    html.outcome-active .node-impacted .node-shape {
+      animation: none !important;
     }
 
     @keyframes pulse-red {
       0%, 100% { filter: drop-shadow(0 0 8px rgba(248,81,73,0.4)); }
       50% { filter: drop-shadow(0 0 16px rgba(248,81,73,0.8)); }
+    }
+
+    @keyframes pulse-amber {
+      0%, 100% { filter: drop-shadow(0 0 7px rgba(210,153,34,0.28)); }
+      50% { filter: drop-shadow(0 0 14px rgba(210,153,34,0.65)); }
     }
 
     /* Node tooltip */
@@ -640,7 +658,8 @@
       font-weight: 500;
     }
     .tt-status.secure { color: var(--accent-green); }
-    .tt-status.compromised { color: var(--accent-red); }
+    .tt-status.impacted { color: var(--accent-orange); }
+    .tt-status.owned { color: var(--accent-red); }
 
     /* Packets */
     .packet-dot { pointer-events: none; }
@@ -652,9 +671,15 @@
       user-select: none;
     }
 
-    /* CAM table / routing overlay on nodes */
-    .node-overlay {
-      position: absolute;
+    /* Node change cards (multi) */
+    .node-overlays{
+      position:absolute;
+      inset:0;
+      z-index:150;
+      pointer-events:none;
+    }
+    .node-overlay-card{
+      position:absolute;
       background: var(--surface);
       border: 1px solid var(--accent-orange);
       border-radius: 6px;
@@ -663,15 +688,19 @@
       font-size: 0.625rem;
       color: var(--accent-orange);
       z-index: 150;
-      pointer-events: none;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.35);
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transform: translateY(4px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
       white-space: nowrap;
       max-width: calc(100vw - 32px);
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .node-overlay.visible { opacity: 1; }
+    .node-overlay-card.visible { opacity: 1; transform: translateY(0); }
+    .node-overlay-card.owned{ border-color: rgba(248,81,73,0.55); color: var(--accent-red); }
+    .node-overlay-card.impacted{ border-color: rgba(210,153,34,0.55); color: var(--accent-orange); }
+    .node-overlay-card.safe{ border-color: rgba(63,185,80,0.45); color: var(--accent-green); }
 
     /* Progress bar overlay on nodes */
     .progress-overlay { pointer-events: none; }
@@ -919,7 +948,7 @@
 
     /* ===== TABLET (iPad) ===== */
     @media (min-width: 769px) and (max-width: 1024px) {
-      :root { --sidebar-width: 300px; }
+      :root { --sidebar-width: 340px; }
       .attack-tab { padding: 6px 8px; font-size: 0.6875rem; }
     }
 
@@ -1317,19 +1346,23 @@
       color: var(--accent-blue);
       padding-top: 2px;
     }
-    .explain-text { color: var(--text-muted); }
+    .explain-text { min-width: 0; color: var(--text-muted); }
 
-    /* SWOT Grid */
+    /* SWOT Grid — minmax(0,1fr) + min-width:0 so columns shrink and text wraps inside the sidebar */
     .swot-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 6px;
       margin-top: 10px;
     }
     @media (max-width: 768px) {
       .swot-grid { grid-template-columns: 1fr; gap: 8px; }
     }
+    @container detail-panel (max-width: 340px) {
+      .swot-grid { grid-template-columns: 1fr; gap: 8px; }
+    }
     .swot-cell {
+      min-width: 0;
       padding: 10px 12px;
       border-radius: 6px;
       font-size: 0.8125rem;
@@ -1342,7 +1375,7 @@
       letter-spacing: 0.05em;
       margin-bottom: 3px;
     }
-    .swot-text { }
+    .swot-text { overflow-wrap: break-word; word-break: break-word; }
     /* Mobile: collapsible SWOT cards */
     @media (max-width: 768px) {
       .swot-cell { padding: 0; overflow: hidden; cursor: pointer; -webkit-tap-highlight-color: transparent; }
@@ -1647,7 +1680,7 @@
     <div id="canvas-container">
       <svg id="network-svg"></svg>
       <div class="node-tooltip" id="nodeTooltip"></div>
-      <div class="node-overlay" id="nodeOverlay"></div>
+      <div class="node-overlays" id="nodeOverlays"></div>
       <div class="canvas-hint" id="canvasHint">
         <div class="canvas-hint-text">Select an attack, then press <span style="color:var(--accent-blue);font-weight:600">Next →</span></div>
       </div>
@@ -1811,7 +1844,9 @@
     speed: 1,
     step: -1,
     baselineTraffic: false,
-    compromised: new Set(),
+    owned: new Set(),
+    impacted: new Set(),
+    outcomeActive: false,
     animationTimers: [],
     packetAnimations: [],
     baselineInterval: null,
@@ -2519,6 +2554,189 @@
     scan:    { r: 3, color: '#58a6ff', opacity: 0.7, speed: 200 },
   };
 
+  // ===== FORWARD HOP COLORING (arcade fixed hues) =====
+  // Apply recolor on BOTH:
+  // - incoming to forwarder (prev -> router/switch): neon "invader green"
+  // - outgoing from forwarder (router/switch -> next): arcade magenta/purple
+  // (If both ends are forwarders, prefer outgoing color.)
+  const FORWARDER_TYPES = new Set(['router', 'switch']);
+
+  const FORWARD_COLOR_IN = '#39ff14';   // neon green
+  const FORWARD_COLOR_OUT = '#bc8cff';  // arcade purple (matches MITM palette)
+
+  function getHopColor(sourceId, targetId, baseColor) {
+    const s = nodeMap[sourceId];
+    const t = nodeMap[targetId];
+    if (!s || !t) return baseColor;
+    const intoForwarder = FORWARDER_TYPES.has(t.type);
+    const outOfForwarder = FORWARDER_TYPES.has(s.type);
+    if (outOfForwarder) return FORWARD_COLOR_OUT;
+    if (intoForwarder) return FORWARD_COLOR_IN;
+    return baseColor;
+  }
+
+  // ===== PACKET SFX (retro "laser") =====
+  // CC0 sources:
+  // - OpenGameArt: https://opengameart.org/content/lasershootingsx  (laser_shooting_sfx.wav)
+  // - Kenney Digital SFX (CC0): https://opengameart.org/content/63-digital-sound-effects-lasers-phasers-space-etc
+  const SFX = {
+    enabled: true,
+    urls: {
+      normal: [
+        './assets/audio/kenney_laser1.mp3',
+        './assets/audio/kenney_laser3.mp3',
+      ],
+      attack: [
+        './assets/audio/laser_shooting_sfx.wav',
+        './assets/audio/kenney_phaserUp2.mp3',
+      ],
+      rogue: [
+        './assets/audio/kenney_phaserUp2.mp3',
+        './assets/audio/kenney_laser3.mp3',
+      ],
+    },
+    ctx: null,
+    bufs: Object.create(null),   // url -> AudioBuffer
+    loading: Object.create(null),// url -> Promise
+    unlocked: false,
+    el: null,
+  };
+
+  function sfxAvailable() {
+    return !!(window.AudioContext || window.webkitAudioContext);
+  }
+
+  function ensureSfxContext() {
+    if (SFX.ctx || !sfxAvailable()) return SFX.ctx;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    try { SFX.ctx = new Ctx(); } catch (e) { SFX.ctx = null; }
+    return SFX.ctx;
+  }
+
+  function ensureSfxElement() {
+    if (SFX.el || !SFX.enabled) return SFX.el;
+    try {
+      const a = new Audio();
+      a.src = pickSfxUrl({ speed: 3000 }); // any valid url for priming
+      a.preload = 'auto';
+      a.crossOrigin = 'anonymous';
+      SFX.el = a;
+    } catch (e) {
+      SFX.el = null;
+    }
+    return SFX.el;
+  }
+
+  function ensureSfxLoaded(url) {
+    if (!url || !SFX.enabled) return null;
+    const ctx = ensureSfxContext();
+    if (!ctx) return null;
+    if (SFX.bufs[url]) return null;
+    if (SFX.loading[url]) return SFX.loading[url];
+    SFX.loading[url] = fetch(url)
+      .then(r => (r && r.ok ? r.arrayBuffer() : Promise.reject(new Error('sfx'))))
+      .then(ab => ctx.decodeAudioData(ab))
+      .then(buf => { SFX.bufs[url] = buf; })
+      .catch(() => {})
+      .finally(() => { delete SFX.loading[url]; });
+    return SFX.loading[url];
+  }
+
+  // Call inside a user gesture (click/tap) for autoplay-safe unlock.
+  function unlockSfx() {
+    if (!SFX.enabled) return;
+    const ctx = ensureSfxContext();
+    ensureSfxElement();
+    if (!ctx) {
+      SFX.unlocked = true;
+      return;
+    }
+    try {
+      const p = ctx.resume();
+      if (p && typeof p.then === 'function') p.catch(() => {});
+    } catch (e) {}
+    SFX.unlocked = true;
+    // Preload one of each bucket so first packet isn't silent.
+    try {
+      ['normal', 'attack', 'rogue'].forEach(k => {
+        const u = (SFX.urls[k] && SFX.urls[k][0]) || null;
+        if (u) ensureSfxLoaded(u);
+      });
+    } catch (e4) {}
+
+    // HTMLAudio unlock assist (some browsers gate first sound until a successful play in-gesture).
+    try {
+      if (SFX.el) {
+        const prevVol = SFX.el.volume;
+        SFX.el.volume = 0;
+        const pp = SFX.el.play();
+        const done = () => {
+          try { SFX.el.pause(); SFX.el.currentTime = 0; } catch (e2) {}
+          SFX.el.volume = prevVol;
+        };
+        if (pp && typeof pp.then === 'function') pp.then(done).catch(() => { SFX.el.volume = prevVol; });
+      }
+    } catch (e3) {}
+  }
+
+  function playPacketSfx(spec) {
+    if (!SFX.enabled || !SFX.unlocked || !state.visible) return;
+    const ctx = ensureSfxContext();
+    const url = pickSfxUrl(spec);
+    const buf = url ? SFX.bufs[url] : null;
+    const hasWebAudio = !!(ctx && ctx.state === 'running' && buf);
+
+    // Quieter on mobile, and lower volume for baseline traffic.
+    const mobile = isMobile();
+    const isAttack = spec && spec.speed && spec.speed <= 1200;
+    const base = mobile ? 0.08 : 0.11;
+    const gainVal = isAttack ? base * 1.2 : base;
+
+    if (hasWebAudio) {
+      try {
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const g = ctx.createGain();
+        g.gain.value = gainVal;
+        src.connect(g);
+        g.connect(ctx.destination);
+        // Subtle pitch variance to feel more arcade, less repetitive.
+        const jitter = (Math.random() - 0.5) * 0.06; // ±3%
+        src.playbackRate.value = 1 + jitter;
+        src.start(0);
+        src.onended = () => {
+          try { src.disconnect(); } catch (e) {}
+          try { g.disconnect(); } catch (e2) {}
+        };
+        return;
+      } catch (e3) {}
+    } else if (ctx && ctx.state === 'running' && url && !buf) {
+      // If the first packets spawn before decode completes, queue a short retry.
+      ensureSfxLoaded(url);
+      setTimeout(() => { try { playPacketSfx(spec); } catch (e4) {} }, 120);
+      return;
+    }
+
+    // Fallback: HTMLAudioElement (works even when AudioContext is restricted).
+    const el = ensureSfxElement();
+    if (!el) return;
+    try {
+      const a2 = el.cloneNode(true);
+      if (url) a2.src = url;
+      a2.volume = Math.min(1, gainVal * 1.6);
+      a2.playbackRate = 1 + ((Math.random() - 0.5) * 0.05);
+      a2.play().catch(() => {});
+    } catch (e5) {}
+  }
+
+  function pickSfxUrl(spec) {
+    const speed = spec && typeof spec.speed === 'number' ? spec.speed : 3000;
+    const kind = speed <= 900 ? 'attack' : speed <= 1500 ? 'rogue' : 'normal';
+    const list = (SFX.urls[kind] && SFX.urls[kind].length) ? SFX.urls[kind] : (SFX.urls.normal || []);
+    if (!list.length) return null;
+    return list[(Math.random() * list.length) | 0];
+  }
+
   // ===== D3 SETUP =====
   const svg = d3.select('#network-svg');
   const container = document.getElementById('canvas-container');
@@ -2535,6 +2753,102 @@
   const packetGroup = svg.append('g').attr('class', 'packets');
   const nodeGroup = svg.append('g').attr('class', 'nodes');
   const overlayGroup = svg.append('g').attr('class', 'overlays');
+
+  // ===== ARRIVAL HIGHLIGHT (all hops) =====
+  // Visual pulse when a packet reaches any destination node to guide the eye.
+  const nodePulseState = { lastAt: Object.create(null) };
+
+  function pulseNodeArrival(nodeId, color) {
+    if (state.outcomeActive) return;
+    const n = nodeMap[nodeId];
+    if (!n) return;
+
+    // Throttle per-node so bursts don't become a constant strobe.
+    const now = performance.now();
+    const last = nodePulseState.lastAt[nodeId] || 0;
+    if (now - last < 120) return;
+    nodePulseState.lastAt[nodeId] = now;
+
+    const stroke = color || '#58a6ff';
+    const mobile = isMobile();
+    const shape = getNodeShape(n.type);
+    const baseR = (shape && shape.shape === 'rect'
+      ? Math.max(shape.w, shape.h) / 2
+      : (shape && shape.r ? shape.r : 22)) + (mobile ? 6 : 8);
+    const expandTo = baseR + (mobile ? 12 : 18);
+    const dur = mobile ? 240 : 300;
+
+    const ring = overlayGroup
+      .append('circle')
+      .attr('class', 'arrival-pulse')
+      .attr('cx', n.px)
+      .attr('cy', n.py)
+      .attr('r', baseR)
+      .attr('fill', 'none')
+      .attr('stroke', stroke)
+      .attr('stroke-width', mobile ? 1.6 : 2.0)
+      .attr('opacity', 0.9)
+      .attr('filter', 'url(#glow)');
+
+    ring
+      .transition()
+      .duration(dur)
+      .ease(d3.easeOutCubic)
+      .attr('r', expandTo)
+      .attr('opacity', 0)
+      .on('end', function () {
+        try { ring.remove(); } catch (e) {}
+      });
+  }
+
+  // ===== END-STATE HALOS (safe vs impacted vs owned) =====
+  function clearArrivalPulses() {
+    overlayGroup.selectAll('.arrival-pulse').interrupt().remove();
+  }
+
+  function clearEndStateRings() {
+    overlayGroup.selectAll('.end-state-ring').remove();
+    state.outcomeActive = false;
+    document.documentElement.classList.remove('outcome-active');
+  }
+
+  function renderEndStateRings() {
+    clearEndStateRings();
+    clearArrivalPulses();
+    state.outcomeActive = true;
+    document.documentElement.classList.add('outcome-active');
+    const mobile = isMobile();
+    const safeColor = '#3fb950';
+    const impactedColor = '#d29922';
+    const ownedColor = '#f85149';
+    const strokeW = mobile ? 2.2 : 2.6;
+
+    nodes.forEach(n => {
+      if (!n || typeof n.px !== 'number' || typeof n.py !== 'number') return;
+      const shape = getNodeShape(n.type);
+      const baseR = (shape && shape.shape === 'rect'
+        ? Math.max(shape.w, shape.h) / 2
+        : (shape && shape.r ? shape.r : 22)) + (mobile ? 9 : 11);
+      const isOwned = state.owned && state.owned.has(n.id);
+      const isImpacted = !isOwned && state.impacted && state.impacted.has(n.id);
+      const stroke = isOwned ? ownedColor : isImpacted ? impactedColor : safeColor;
+
+      overlayGroup
+        .append('circle')
+        .attr('class', 'end-state-ring')
+        .attr('cx', n.px)
+        .attr('cy', n.py)
+        .attr('r', baseR)
+        .attr('fill', 'none')
+        .attr('stroke', stroke)
+        .attr('stroke-width', strokeW)
+        .attr('stroke-dasharray', isOwned ? null : isImpacted ? '5 6' : '2 0')
+        .attr('stroke-linecap', isImpacted ? 'round' : null)
+        .attr('opacity', isOwned ? 0.95 : isImpacted ? 0.88 : 0.75)
+        .attr('filter', 'url(#glow)')
+        .style('pointer-events', 'none');
+    });
+  }
 
   // ===== NODE SHAPES =====
   function getNodeShape(type) {
@@ -2670,9 +2984,11 @@
           .text(d.ip);
       }
 
-      // Restore compromised state after re-render
-      if (state.compromised.has(d.id)) {
-        g.classed('node-compromised', true);
+      // Restore state after re-render
+      if (state.owned.has(d.id)) {
+        g.classed('node-owned', true);
+      } else if (state.impacted.has(d.id)) {
+        g.classed('node-impacted', true);
       }
 
       // Event handlers
@@ -2689,14 +3005,17 @@
 
   function showNodeTooltip(event, d) {
     clearTimeout(tooltipTimeout);
-    const isCompromised = state.compromised.has(d.id);
+    const isOwned = state.owned.has(d.id);
+    const isImpacted = !isOwned && state.impacted.has(d.id);
     tooltip.innerHTML = `
       <div class="tt-label">${d.label}</div>
       <div class="tt-row"><span class="tt-key">Type</span><span class="tt-val">${d.type}</span></div>
       ${d.ip ? `<div class="tt-row"><span class="tt-key">IP</span><span class="tt-val">${d.ip}</span></div>` : ''}
       ${d.mac ? `<div class="tt-row"><span class="tt-key">MAC</span><span class="tt-val">${d.mac}</span></div>` : ''}
       <div class="tt-row"><span class="tt-key">Role</span><span class="tt-val">${getRoleName(d.type)}</span></div>
-      <div class="tt-status ${isCompromised ? 'compromised' : 'secure'}">${isCompromised ? '\u26A0 Compromised' : '\u2713 Secure'}</div>
+      <div class="tt-status ${isOwned ? 'owned' : isImpacted ? 'impacted' : 'secure'}">${
+        isOwned ? '\u26A0 Owned' : isImpacted ? '\u26A0 Impacted (MITM)' : '\u2713 Secure'
+      }</div>
       ${isTouchDevice() ? '<div style="font-size:0.6rem;color:var(--text-faint);margin-top:6px;text-align:center">tap elsewhere to dismiss</div>' : ''}
     `;
 
@@ -2731,28 +3050,59 @@
     return map[type] || type;
   }
 
-  // ===== NODE OVERLAY =====
-  const overlayEl = document.getElementById('nodeOverlay');
+  // ===== NODE CHANGE CARDS (multi) =====
+  const overlaysEl = document.getElementById('nodeOverlays');
+  const overlayState = { lastAt: Object.create(null) };
 
-  function showNodeOverlay(nodeId, text) {
+  function createNodeOverlayCard(nodeId, html, opts) {
+    if (!overlaysEl) return null;
     const n = nodeMap[nodeId];
-    if (!n) return;
-    overlayEl.innerHTML = text;
+    if (!n) return null;
     const rect = container.getBoundingClientRect();
-    let left = n.px + 30;
-    let top = n.py - 40;
+    var left = n.px + 30;
+    var top = n.py - 40;
+    var maxW = 260;
     // Clamp to viewport
-    if (left + 220 > rect.width) left = Math.max(10, n.px - 220);
+    if (left + maxW > rect.width) left = Math.max(10, n.px - maxW - 10);
     if (top < 10) top = 10;
     if (left < 10) left = 10;
-    overlayEl.style.left = left + 'px';
-    overlayEl.style.top = top + 'px';
-    overlayEl.classList.add('visible');
+
+    const el = document.createElement('div');
+    el.className = 'node-overlay-card' + (opts && opts.kind ? ' ' + opts.kind : '');
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.innerHTML = html;
+    overlaysEl.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('visible'));
+    return el;
+  }
+
+  function showNodeOverlay(nodeId, text, durationMs, kind) {
+    durationMs = durationMs != null ? durationMs : 4500;
+    const card = createNodeOverlayCard(nodeId, text, { kind: kind || '' });
+    if (!card) return;
+    setTimeout(() => {
+      try { card.classList.remove('visible'); } catch (e) {}
+      setTimeout(() => { try { card.remove(); } catch (e2) {} }, 220);
+    }, durationMs);
   }
 
   function hideNodeOverlay() {
-    overlayEl.classList.remove('visible');
+    if (!overlaysEl) return;
+    overlaysEl.querySelectorAll('.node-overlay-card').forEach((el) => {
+      try { el.remove(); } catch (e) {}
+    });
   }
+
+  function flashNodeOverlay(nodeId, text, durationMs, kind) {
+    durationMs = durationMs != null ? durationMs : 4200;
+    const now = performance.now();
+    const last = overlayState.lastAt[nodeId] || 0;
+    if (now - last < 320) return; // per-node throttle
+    overlayState.lastAt[nodeId] = now;
+    showNodeOverlay(nodeId, text, durationMs, kind);
+  }
+
 
   // ===== PACKET ANIMATION ENGINE =====
   function animatePacket(sourceId, targetId, spec, label, onComplete) {
@@ -2761,23 +3111,29 @@
     const t = nodeMap[targetId];
     if (!s || !t) { if (onComplete) onComplete(); return; }
 
-    const duration = spec.speed / state.speed;
-    const r = isMobile() ? Math.max(2, spec.r - 1) : spec.r;
+    const hopColor = getHopColor(sourceId, targetId, spec && spec.color);
+    const hopSpec = spec ? { ...spec, color: hopColor } : spec;
+
+    const duration = hopSpec.speed / state.speed;
+    const r = isMobile() ? Math.max(2, hopSpec.r - 1) : hopSpec.r;
 
     const g = packetGroup.append('g').attr('class', 'packet-dot');
 
+    // SFX: one short "pew" per packet fired (after unlock).
+    safeExec(() => playPacketSfx(hopSpec), 'packet-sfx');
+
     g.append('circle')
       .attr('r', r)
-      .attr('fill', spec.color)
-      .attr('opacity', spec.opacity)
-      .attr('filter', spec.opacity > 0.7 ? 'url(#glow)' : null);
+      .attr('fill', hopSpec.color)
+      .attr('opacity', hopSpec.opacity)
+      .attr('filter', hopSpec.opacity > 0.7 ? 'url(#glow)' : null);
 
     if (label && !isMobile()) {
       g.append('text')
         .attr('class', 'packet-label')
         .attr('dy', -r - 4)
         .attr('text-anchor', 'middle')
-        .attr('fill', spec.color)
+        .attr('fill', hopSpec.color)
         .text(label);
     }
 
@@ -2788,6 +3144,7 @@
       .ease(d3.easeLinear)
       .attr('transform', `translate(${t.px}, ${t.py})`)
       .on('end', () => {
+        safeExec(() => pulseNodeArrival(targetId, hopSpec && hopSpec.color), 'arrival-pulse');
         g.remove();
         if (onComplete) safeExec(onComplete, 'packet-callback');
       });
@@ -2829,15 +3186,34 @@
   }
 
   // ===== COMPROMISE STATE =====
-  function setCompromised(nodeId, compromised) {
+  function setOwned(nodeId, owned, noteHtml) {
     const g = nodeGroup.select(`[data-id="${nodeId}"]`);
     if (g.empty()) return;
-    if (compromised) {
-      state.compromised.add(nodeId);
-      g.classed('node-compromised', true);
+    if (owned) {
+      state.owned.add(nodeId);
+      state.impacted.delete(nodeId);
+      g.classed('node-owned', true).classed('node-impacted', false);
+      const note = noteHtml || 'System owned<br>Attacker control established';
+      flashNodeOverlay(nodeId, note, 4800, 'owned');
     } else {
-      state.compromised.delete(nodeId);
-      g.classed('node-compromised', false);
+      state.owned.delete(nodeId);
+      g.classed('node-owned', false);
+    }
+  }
+
+  function setImpacted(nodeId, impacted, noteHtml) {
+    // Owned wins.
+    if (state.owned.has(nodeId) && impacted) return;
+    const g = nodeGroup.select(`[data-id="${nodeId}"]`);
+    if (g.empty()) return;
+    if (impacted) {
+      state.impacted.add(nodeId);
+      g.classed('node-impacted', true);
+      const note = noteHtml || 'System impacted<br>MITM / reroute / influence';
+      flashNodeOverlay(nodeId, note, 4400, 'impacted');
+    } else {
+      state.impacted.delete(nodeId);
+      g.classed('node-impacted', false);
     }
   }
 
@@ -3026,6 +3402,9 @@
         <div class="result-next">Select another attack from the dropdown above, or press Reset to replay</div>
       `;
       panelResult.classList.add('visible');
+      safeExec(() => renderEndStateRings(), 'end-state-rings');
+    } else {
+      safeExec(() => clearEndStateRings(), 'end-state-rings-clear');
     }
 
     // ===== STEP PROGRESS BAR =====
@@ -3069,7 +3448,6 @@
         setStatus('Step 3: MITM position established...');
         highlightStep(2);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         animatePacket('ws-a', 'switch', PACKET.mitm, 'MITM', () => {
           animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
             animatePacket('attacker', 'switch', PACKET.mitm, 'FWD', () => {
@@ -3123,7 +3501,6 @@
         setStatus('Step 3: Switch in hub mode...');
         highlightStep(2);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         ['ws-a','ws-b','attacker','server-a'].forEach((t, i) => {
           setTimeout(() => {
             if (!state.playing) return;
@@ -3164,7 +3541,7 @@
       function() {
         setStatus('Step 2: Server queue saturated...');
         highlightStep(1);
-        setCompromised('server-a', true);
+        setOwned('server-a', true);
         const sn = nodeMap['server-a'];
         const pg = overlayGroup.append('g').attr('class','progress-overlay').attr('transform','translate('+(sn.px-30)+','+(sn.py-40)+')');
         pg.append('rect').attr('class','progress-bg').attr('width',60).attr('height',8);
@@ -3211,7 +3588,6 @@
         setStatus('Step 3: Rogue DHCP responding...');
         highlightStep(2);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         animatePacket('ws-b', 'switch', PACKET.normal, 'DISCOVER', () => {
           animatePacket('attacker', 'switch', PACKET.rogue, 'ROGUE DHCP', () => {
             animatePacket('switch', 'ws-b', PACKET.rogue, 'OFFER');
@@ -3222,7 +3598,7 @@
       function() {
         setStatus('Step 4: Traffic rerouted through attacker');
         highlightStep(3);
-        setCompromised('ws-b', true);
+        setImpacted('ws-b', true);
         animatePacket('ws-b', 'switch', PACKET.rogue, null, () => {
           animatePacket('switch', 'attacker', PACKET.rogue, 'MITM');
         });
@@ -3245,7 +3621,6 @@
         highlightStep(1);
         showNodeOverlay('ws-a', 'Route Updated<br>10.0.0.11 via 10.0.0.99');
         addPacketRow('ws-a', 'SYS', 'ROUTE', '10.0.0.11 via attacker', 'WARN');
-        setCompromised('attacker', true);
       },
       function() {
         setStatus('Step 3: Traffic redirected through attacker');
@@ -3269,7 +3644,7 @@
       function() {
         setStatus('Step 1: Compromised foothold on WS-A...');
         highlightStep(0);
-        setCompromised('ws-a', true);
+        setOwned('ws-a', true);
         addPacketRow('ws-a', 'SYS', 'INFO', 'foothold established', 'ATK');
       },
       function() {
@@ -3311,7 +3686,7 @@
       function() {
         setStatus('Step 4: DB Server compromised');
         highlightStep(3);
-        setCompromised('server-b', true);
+        setOwned('server-b', true);
         addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'COMPROMISED', 'ATK');
         for (let i = 0; i < 3; i++) {
           setTimeout(() => {
@@ -3342,7 +3717,6 @@
         setStatus('Step 2: Capturing encrypted traffic...');
         highlightStep(1);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         var routes = [['ws-a','switch'],['switch','router'],['router','server-a'],['ws-b','switch'],['switch','server-b']];
         routes.forEach(function(r, i) {
           setTimeout(function() {
@@ -3376,16 +3750,7 @@
         setStatus('Step 4: Quantum decryption');
         highlightStep(3);
         hideNodeOverlay();
-        setCompromised('server-a', true);
-        setCompromised('server-b', true);
-        setCompromised('ws-a', true);
         addPacketRow('QUANTUM', 'ALL', 'DECRYPT', 'Shor\'s algorithm', 'ATK');
-        ['gateway', 'router', 'ws-b'].forEach(function(id, i) {
-          setTimeout(function() {
-            if (!state.playing) return;
-            setCompromised(id, true);
-          }, i * 500);
-        });
       }
     ],
 
@@ -3409,7 +3774,6 @@
         setStatus('Step 2: Injecting poisoned training samples...');
         highlightStep(1);
         hideNodeOverlay();
-        setCompromised('attacker', true);
         addPacketRow('attacker', 'server-b', 'WRITE', 'poisoned samples injected', 'ATK');
         animatePacketBurst('attacker', 'switch', { r: 4, color: '#d29922', opacity: 0.9, speed: 600 }, 4, 'POISON', 150);
         setTimeout(function() {
@@ -3442,7 +3806,7 @@
         }
         setTimeout(function() {
           if (!state.playing) return;
-          setCompromised('server-a', true);
+          setOwned('server-a', true);
           showNodeOverlay('server-a', 'Model Training<br>Backdoor learned');
         }, 2800);
       },
@@ -3460,7 +3824,6 @@
                   animatePacket('switch', 'ws-a', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 });
                 });
               });
-              setCompromised('ws-a', true);
             });
           });
         });
@@ -3512,7 +3875,7 @@
         });
         setTimeout(function() {
           if (!state.playing) return;
-          setCompromised('server-a', true);
+          setImpacted('server-a', true);
           showNodeOverlay('server-a', 'LLM context poisoned<br>Injected instructions active');
         }, 1800);
       },
@@ -3520,7 +3883,6 @@
         setStatus('Step 4: AI executes injected instructions...');
         highlightStep(3);
         hideNodeOverlay();
-        setCompromised('ws-a', true);
         addPacketRow('server-a', 'attacker', 'EXFIL', 'data exfiltrated via AI', 'ATK');
         animatePacket('server-a', 'router', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'EXFIL', function() {
           animatePacket('router', 'gateway', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, null, function() {
@@ -3543,7 +3905,6 @@
       function() {
         setStatus('Step 1: Attacker publishes poisoned model to public repository...');
         highlightStep(0);
-        setCompromised('attacker', true);
         addPacketRow('attacker', 'internet', 'HTTP', 'poisoned model published', 'ATK');
         animatePacket('attacker', 'switch', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'PUBLISH', function() {
           animatePacket('switch', 'router', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, null, function() {
@@ -3576,7 +3937,7 @@
         setStatus('Step 3: Malicious code executes on model load...');
         highlightStep(2);
         hideNodeOverlay();
-        setCompromised('server-a', true);
+        setOwned('server-a', true);
         addPacketRow('server-a', 'SYS', 'EXEC', 'pickle deserialization RCE', 'ATK');
         showNodeOverlay('server-a', 'Backdoor established<br>Pickle RCE executed');
         setTimeout(function() {
@@ -3593,7 +3954,7 @@
         setStatus('Step 4: Persistent access — data exfiltration begins...');
         highlightStep(3);
         hideNodeOverlay();
-        setCompromised('server-b', true);
+        setImpacted('server-b', true);
         addPacketRow('server-a', 'attacker', 'EXFIL', 'model weights + training data', 'ATK');
         for (var i = 0; i < 3; i++) {
           (function(idx) {
@@ -3624,8 +3985,11 @@
     state.packetAnimations = [];
     packetGroup.selectAll('*').remove();
     overlayGroup.selectAll('*').remove();
-    state.compromised.forEach(id => setCompromised(id, false));
-    state.compromised.clear();
+    state.owned.forEach(id => setOwned(id, false));
+    state.owned.clear();
+    state.impacted.forEach(id => setImpacted(id, false));
+    state.impacted.clear();
+    clearEndStateRings();
     hideNodeOverlay();
     hideNodeTooltip();
     clearPacketTable();
@@ -3652,6 +4016,9 @@
     const steps = attackStepFunctions[state.currentAttack];
     if (!steps) return;
     if (state.step >= steps.length - 1) return;
+
+    // Autoplay policy: unlock audio inside the user gesture.
+    safeExec(() => unlockSfx(), 'unlock-sfx');
 
     _stepLock = true;
     setTimeout(() => { _stepLock = false; }, 400);
@@ -3708,8 +4075,11 @@
     stopBaselineTraffic();
     packetGroup.selectAll('*').remove();
     overlayGroup.selectAll('*').remove();
-    state.compromised.forEach(id => setCompromised(id, false));
-    state.compromised.clear();
+    state.owned.forEach(id => setOwned(id, false));
+    state.owned.clear();
+    state.impacted.forEach(id => setImpacted(id, false));
+    state.impacted.clear();
+    clearEndStateRings();
     hideNodeOverlay();
     hideNodeTooltip();
     clearPacketTable();
@@ -3835,6 +4205,14 @@
 
   // ===== WIRE CONTROLS =====
   function wireControls() {
+    // SFX unlock: ensure at least one user gesture hits the audio unlock path.
+    const unlockOnce = () => {
+      safeExec(() => unlockSfx(), 'unlock-sfx');
+    };
+    window.addEventListener('pointerdown', unlockOnce, { once: true, passive: true });
+    window.addEventListener('touchstart', unlockOnce, { once: true, passive: true });
+    window.addEventListener('click', unlockOnce, { once: true, passive: true });
+
     // Desktop transport
     document.getElementById('btnPrev').addEventListener('click', stepPrev);
     document.getElementById('btnNext').addEventListener('click', stepNext);
@@ -4008,7 +4386,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026040816').catch(function() {});
   });
 }
 </script>
