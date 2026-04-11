@@ -856,28 +856,35 @@
         overscroll-behavior-y: contain;
       }
       #detail-panel.open { transform: translateY(0); } /* full drawer */
-      #detail-panel.peek { transform: translateY(calc(100% - 200px)); } /* peek: step header + action visible */
+      #detail-panel.peek { transform: translateY(calc(100% - 140px)); }
 
-      /* Poka-yoke: pulsing expand hint on peek drawer handle */
-      #detail-panel.peek .drawer-handle {
-        position: relative;
-        height: 32px;
-        display: flex;
+      /* Poka-yoke: bold expand bar at top of peek */
+      .peek-expand-bar {
+        display: none;
         align-items: center;
         justify-content: center;
+        gap: 8px;
+        padding: 10px 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
       }
-      #detail-panel.peek .drawer-handle::after {
-        content: '\25B2  tap to expand  \25B2';
-        font-family: var(--font-ui);
-        font-size: 11px;
-        font-weight: 500;
+      #detail-panel.peek .peek-expand-bar { display: flex; }
+      #detail-panel.open .peek-expand-bar { display: none; }
+      .peek-expand-bar .peek-chevron {
+        width: 20px;
+        height: 20px;
         color: var(--accent-blue);
-        letter-spacing: 0.05em;
-        animation: peek-pulse 1.5s ease-in-out infinite;
+        animation: peek-bounce 1s ease-in-out infinite;
       }
-      @keyframes peek-pulse {
-        0%, 100% { opacity: 0.5; }
-        50% { opacity: 1; }
+      .peek-expand-bar .peek-label {
+        font-family: var(--font-ui);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-blue);
+      }
+      @keyframes peek-bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
       }
 
       .drawer-handle { display: block; }
@@ -1717,6 +1724,11 @@
 
     <aside id="detail-panel" aria-label="Attack detail panel">
       <div class="drawer-handle"></div>
+      <div class="peek-expand-bar" id="peekExpandBar">
+        <svg class="peek-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        <span class="peek-label">Details</span>
+        <svg class="peek-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
       <div class="step-progress" id="stepProgress">
         <div class="step-progress-fill" id="stepProgressFill"></div>
         <div class="step-progress-label" id="stepProgressLabel"></div>
@@ -4268,12 +4280,14 @@
       if (state.drawerOpen) closeDrawer();
     });
 
-    // Tap the peek drawer handle area to expand to full
-    document.querySelector('.drawer-handle')?.addEventListener('click', () => {
-      const panel = document.getElementById('detail-panel');
-      if (panel && panel.classList.contains('peek')) {
-        openDrawer();
-      }
+    // Tap the peek drawer handle or expand bar to open full drawer
+    ['drawer-handle', 'peek-expand-bar'].forEach(cls => {
+      document.querySelector('.' + cls)?.addEventListener('click', () => {
+        const panel = document.getElementById('detail-panel');
+        if (panel && panel.classList.contains('peek')) {
+          openDrawer();
+        }
+      });
     });
 
     // Mobile attack select
