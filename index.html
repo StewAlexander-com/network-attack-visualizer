@@ -856,7 +856,7 @@
         overscroll-behavior-y: contain;
       }
       #detail-panel.open { transform: translateY(0); } /* full drawer */
-      #detail-panel.peek { transform: translateY(calc(100% - 110px)); }
+      #detail-panel.peek { transform: translateY(calc(100% - 180px - var(--safe-bottom))); }
 
       /* In peek mode: hide everything except expand bar + active step title */
       #detail-panel.peek .panel-section,
