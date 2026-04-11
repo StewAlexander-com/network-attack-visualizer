@@ -855,7 +855,8 @@
         padding-bottom: calc(64px + var(--safe-bottom));
         overscroll-behavior-y: contain;
       }
-      #detail-panel.open { transform: translateY(0); }
+      #detail-panel.open { transform: translateY(0); } /* full drawer */
+      #detail-panel.peek { transform: translateY(calc(100% - 120px)); } /* peek: just step header visible */
 
       .drawer-handle { display: block; }
 
@@ -4033,11 +4034,17 @@
     state.step = nextStep;
     state.playing = true;
 
-    // On mobile: auto-open the detail drawer on first step
-    if (nextStep === 0 && isMobile() && !state.drawerOpen) {
-      openDrawer();
+    // On mobile: open drawer in peek mode (just step header visible)
+    if (isMobile()) {
+      const panel = document.getElementById('detail-panel');
       const infoBtn = document.getElementById('mobileInfoBtn');
-      if (infoBtn) infoBtn.classList.remove('glow');
+      if (panel) {
+        // Switch to peek mode — shows step title, animation stays visible
+        panel.classList.remove('open');
+        panel.classList.add('peek');
+        state.drawerOpen = false; // not fully open
+      }
+      if (infoBtn && nextStep === 0) infoBtn.classList.remove('glow');
     }
 
     // Hide the canvas empty-state hint on first step
@@ -4169,7 +4176,9 @@
     const splash = document.getElementById('splashScreen');
     if (splash && !splash.classList.contains('hidden')) return;
     state.drawerOpen = true;
-    document.getElementById('detail-panel').classList.add('open');
+    const panel = document.getElementById('detail-panel');
+    panel.classList.remove('peek'); // exit peek mode
+    panel.classList.add('open');
     document.getElementById('drawerBackdrop').style.display = 'block';
     requestAnimationFrame(() => document.getElementById('drawerBackdrop').classList.add('visible'));
     // Stop the glow once the user has seen the panel
@@ -4186,7 +4195,9 @@
 
   function closeDrawer() {
     state.drawerOpen = false;
-    document.getElementById('detail-panel').classList.remove('open');
+    const panel = document.getElementById('detail-panel');
+    panel.classList.remove('open');
+    panel.classList.remove('peek');
     document.getElementById('drawerBackdrop').classList.remove('visible');
     setTimeout(() => document.getElementById('drawerBackdrop').style.display = 'none', 300);
     hideChevrons();
@@ -4220,11 +4231,27 @@
 
     // Mobile drawer
     document.getElementById('mobileInfoBtn').addEventListener('click', () => {
-      if (state.drawerOpen) closeDrawer(); else openDrawer();
+      const panel = document.getElementById('detail-panel');
+      if (state.drawerOpen) {
+        closeDrawer();
+      } else if (panel && panel.classList.contains('peek')) {
+        // Expand from peek to full
+        openDrawer();
+      } else {
+        openDrawer();
+      }
     });
 
     document.getElementById('drawerBackdrop').addEventListener('click', () => {
       if (state.drawerOpen) closeDrawer();
+    });
+
+    // Tap the peek drawer handle area to expand to full
+    document.querySelector('.drawer-handle')?.addEventListener('click', () => {
+      const panel = document.getElementById('detail-panel');
+      if (panel && panel.classList.contains('peek')) {
+        openDrawer();
+      }
     });
 
     // Mobile attack select
