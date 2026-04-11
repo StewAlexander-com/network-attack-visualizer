@@ -856,7 +856,7 @@
         overscroll-behavior-y: contain;
       }
       #detail-panel.open { transform: translateY(0); } /* full drawer */
-      #detail-panel.peek { transform: translateY(calc(100% - 180px - var(--safe-bottom))); }
+      #detail-panel.peek { transform: translateY(calc(100% - 120px - var(--safe-bottom))); }
 
       /* In peek mode: hide everything except expand bar + active step title */
       #detail-panel.peek .panel-section,
@@ -890,7 +890,7 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        padding: 10px 0;
+        padding: 6px 0 4px;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
       }
@@ -2949,20 +2949,30 @@
     const pad = isMobile() ? 30 : 40;
 
     if (isMobile()) {
+      // Reserve space for peek bar + bottom bar so nodes never hide behind overlays
+      const panel = document.getElementById('detail-panel');
+      const peekActive = panel && (panel.classList.contains('peek') || panel.classList.contains('open'));
+      const bottomBarH = 64; // bottom bar height (48px button + 16px padding)
+      const peekH = 120;     // peek strip visible height
+      const safeB = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 0;
+      // When peek/bottom bar are visible, shrink usable canvas height
+      const occluded = peekActive ? (peekH + safeB) : (bottomBarH + safeB);
+      const usableH = height - occluded;
+
       const mobilePositions = {
         'internet':  { x: 0.25, y: 0.04 },
         'gateway':   { x: 0.75, y: 0.04 },
-        'router':    { x: 0.50, y: 0.18 },
-        'server-a':  { x: 0.20, y: 0.32 },
-        'server-b':  { x: 0.80, y: 0.32 },
-        'switch':    { x: 0.50, y: 0.46 },
-        'ws-a':      { x: 0.15, y: 0.60 },
-        'ws-b':      { x: 0.50, y: 0.60 },
-        'attacker':  { x: 0.85, y: 0.60 },
+        'router':    { x: 0.50, y: 0.20 },
+        'server-a':  { x: 0.20, y: 0.38 },
+        'server-b':  { x: 0.80, y: 0.38 },
+        'switch':    { x: 0.50, y: 0.56 },
+        'ws-a':      { x: 0.15, y: 0.76 },
+        'ws-b':      { x: 0.50, y: 0.76 },
+        'attacker':  { x: 0.85, y: 0.76 },
       };
       nodes.forEach(n => {
         const mp = mobilePositions[n.id];
-        if (mp) { n.px = pad + mp.x * (width - pad*2); n.py = pad + mp.y * (height - pad*2); }
+        if (mp) { n.px = pad + mp.x * (width - pad*2); n.py = pad + mp.y * (usableH - pad*2); }
       });
     } else {
       nodes.forEach(n => {
@@ -4098,6 +4108,7 @@
     if (isMobile()) {
       const panel = document.getElementById('detail-panel');
       const infoBtn = document.getElementById('mobileInfoBtn');
+      const wasPeek = panel && panel.classList.contains('peek');
       if (panel) {
         // Switch to peek mode — shows step title, animation stays visible
         panel.classList.remove('open');
@@ -4105,6 +4116,8 @@
         state.drawerOpen = false; // not fully open
       }
       if (infoBtn && nextStep === 0) infoBtn.classList.remove('glow');
+      // Re-layout nodes on first peek activation so topology clears the peek bar
+      if (!wasPeek) renderGraph();
     }
 
     // Hide the canvas empty-state hint on first step
@@ -4150,8 +4163,15 @@
     hideChevrons();
     // Reset dropdown to show 'Attacks' placeholder
     document.getElementById('mobileAttackSelect').value = '__title';
-    // Close drawer on reset (mobile)
-    if (isMobile() && state.drawerOpen) closeDrawer();
+    // Close drawer on reset (mobile) and re-layout for full canvas
+    if (isMobile()) {
+      if (state.drawerOpen) closeDrawer();
+      const panel = document.getElementById('detail-panel');
+      if (panel && panel.classList.contains('peek')) {
+        panel.classList.remove('peek');
+        renderGraph(); // nodes can use full canvas again
+      }
+    }
     setStatus('Select an attack, then press Next →');
     // Restore canvas empty-state hint
     const canvasHint = document.getElementById('canvasHint');
@@ -4448,7 +4468,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026040816').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041104').catch(function() {});
   });
 }
 </script>
