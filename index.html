@@ -856,7 +856,33 @@
         overscroll-behavior-y: contain;
       }
       #detail-panel.open { transform: translateY(0); } /* full drawer */
-      #detail-panel.peek { transform: translateY(calc(100% - 140px)); }
+      #detail-panel.peek { transform: translateY(calc(100% - 110px)); }
+
+      /* In peek mode: hide everything except expand bar + active step title */
+      #detail-panel.peek .panel-section,
+      #detail-panel.peek .step-progress,
+      #detail-panel.peek .drawer-handle { display: none; }
+      #detail-panel.peek #panelSteps { display: block; }
+      #detail-panel.peek .step-item:not(.active) { display: none; }
+      #detail-panel.peek .step-item.active .step-detail { display: none; }
+      #detail-panel.peek .step-item.active {
+        border-left: none;
+        padding: 6px 16px 6px 16px;
+        background: none;
+      }
+      #detail-panel.peek .step-item.active::before { display: none; }
+      #detail-panel.peek .step-item.active .step-meta {
+        font-size: 0.55rem;
+        margin-bottom: 2px;
+      }
+      #detail-panel.peek .step-item.active .step-action {
+        font-size: 0.85rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      #detail-panel.peek .section-label { display: none; }
 
       /* Poka-yoke: bold expand bar at top of peek */
       .peek-expand-bar {
