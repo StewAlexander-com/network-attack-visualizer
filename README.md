@@ -37,7 +37,7 @@
 
 ## Overview
 
-NetAttack.viz is a single-file, zero-backend interactive visualization of six classic Layer 2/3 network attacks. Each attack is broken into discrete steps that animate packet flow across a network topology while explaining:
+NetAttack.viz is a single-file, zero-backend interactive visualization of 10 network attack scenarios — classic L2/L3 exploits, quantum-era threats, and AI/ML attack vectors. Each attack is broken into discrete steps that animate packet flow across a network topology while explaining:
 
 - **What** is happening at the protocol level
 - **Why** the attack works (which vulnerability is exploited)
@@ -149,12 +149,14 @@ Tap any node during an attack to see its IP, MAC, role, and compromise state.
 ### Design
 - **Poka-yoke controls** — invalid actions are disabled, not hidden
 - **Self-documenting UI** — every state tells you what to do next
-- **Dark/Light mode** toggle
+- **Peek mode** — minimal info strip during animation, tap to expand full details
+- **Layout-aware canvas** — topology auto-scales to clear UI overlays on every screen size
+- **Dark/Light mode** toggle (warm gray light theme, not blinding white)
 - **Responsive** — portrait mobile, landscape, tablet, desktop
 - **PWA** — add to home screen, works offline
 
 ### Engineering
-- **Single file** — all HTML/CSS/JS inline (~130KB)
+- **Single file** — all HTML/CSS/JS inline (~200KB)
 - **Zero backend** — pure static, no build step, no bundler
 - **CDN fallbacks** — jsDelivr → cdnjs/unpkg with graceful degradation
 - **Fault-tolerant** — `safeExec` wraps all animation chains
@@ -162,6 +164,7 @@ Tap any node during an attack to see its IP, MAC, role, and compromise state.
 - **Debounced resize** — no layout thrashing
 - **`prefers-reduced-motion`** respected
 - **Safe area insets** for notched phones
+- **Proportional glows** — ring effects scale with node size per viewport
 
 ---
 
@@ -223,8 +226,10 @@ Open Graph and Twitter Card meta tags are included. Sharing the link on LinkedIn
 | SWOT per step (not per attack) | Defenses are context-dependent. ARP step 1 needs different controls than step 3. |
 | Poka-yoke button states | Disabled buttons > hidden buttons. User sees the full control set, understands the flow. |
 | 125% base font on mobile | Tested with users wearing glasses. Readability > information density. |
-| Collapsible SWOT on mobile | 4 stacked cards exceed 40vh drawer. Collapse keeps the drawer manageable. |
+| Collapsible SWOT on mobile | 4 stacked cards exceed 40vh drawer. Accordion keeps the drawer manageable. |
 | CDN with fallback chain | jsDelivr → cdnjs → unpkg. App must load even if one CDN is down. |
+| Peek mode vs. full drawer | Animation must stay visible. Peek shows step counter + title; tap expands details. |
+| Layout-aware node positioning | Canvas subtracts peek bar + bottom bar height so nodes never render behind overlays. |
 | No framework | D3 is the only dependency that earns its place. Everything else is vanilla. |
 
 ---
