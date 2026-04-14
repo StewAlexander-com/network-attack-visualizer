@@ -881,13 +881,25 @@
       #canvas-container {
         flex: 1;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      #network-svg {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        height: auto;
       }
 
-      /* Empty-state hint: anchor above the fixed bottom bar (was % — felt “stuck” mid-canvas) */
+      /* Empty-state hint: pin to lower canvas (flex) instead of % from bottom */
       .canvas-hint {
-        bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-        left: 10px;
-        right: 10px;
+        position: static;
+        margin-top: auto;
+        margin-bottom: calc(8px + 72px + env(safe-area-inset-bottom, 0px));
+        left: auto;
+        right: auto;
+        bottom: auto;
+        padding: 0 10px;
       }
       .canvas-hint-text { max-width: 100%; }
       .canvas-hint-next {
@@ -904,25 +916,33 @@
       /* Mobile bottom control bar */
       .mobile-bottom-bar { display: flex; }
 
-      /* Detail panel — bottom drawer */
+      /* Dim layer above nav while drawer is open */
+      .drawer-backdrop {
+        z-index: 255;
+      }
+
+      /* Detail panel — full-height drawer above bottom nav (z-index), standard translateY hide/show */
       #detail-panel {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
         width: 100%;
-        max-height: 45vh;
+        max-height: min(92dvh, calc(100dvh - var(--topbar-height) - 8px));
+        min-height: 0;
         border-left: none;
         border-top: 1px solid var(--border);
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 200;
+        z-index: 260;
         border-radius: 16px 16px 0 0;
-        padding-bottom: calc(64px + var(--safe-bottom));
+        padding-bottom: max(24px, env(safe-area-inset-bottom));
         overscroll-behavior-y: contain;
+        box-shadow: 0 -12px 40px rgba(0,0,0,0.45);
       }
-      #detail-panel.open { transform: translateY(0); } /* full drawer */
-      #detail-panel.peek { transform: translateY(calc(100% - 120px - var(--safe-bottom))); }
+      #detail-panel.open { transform: translateY(0); }
+      /* Taller peek strip so title + expand affordance stay readable */
+      #detail-panel.peek { transform: translateY(calc(100% - min(240px, 44vh) - env(safe-area-inset-bottom, 0px))); }
 
       /* In peek mode: hide everything except expand bar + active step title */
       #detail-panel.peek .panel-section,
@@ -956,7 +976,8 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        padding: 6px 0 4px;
+        min-height: 48px;
+        padding: 10px 12px 8px;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
       }
@@ -1076,14 +1097,14 @@
     /* ===== LANDSCAPE MOBILE ===== */
     @media (max-width: 768px) and (not (any-pointer: fine)) and (orientation: landscape) {
       :root { --topbar-height: 40px; }
-      #detail-panel { max-height: 50vh; }
+      #detail-panel { max-height: min(88dvh, calc(100dvh - var(--topbar-height) - 88px)); }
       .mobile-bottom-bar { padding: 4px 8px; padding-bottom: calc(4px + var(--safe-bottom)); }
       .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
     }
 
     /* ===== SCROLL INDICATOR CHEVRONS ===== */
     /* Chevrons are positioned outside the scroll flow, overlaid on the panel */
-    #detail-panel { position: relative; }
+    /* Do not set #detail-panel position here — it would override touch-mobile `position:fixed`. */
     .scroll-indicator {
       position: fixed;
       left: 0;
@@ -4656,7 +4677,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041427').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041428').catch(function() {});
   });
 }
 </script>
