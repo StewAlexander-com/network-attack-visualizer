@@ -253,9 +253,20 @@
       min-height: 0;
     }
 
+    /* Owns the graph + overlays only — keeps flex sizing independent of fixed drawer / scroll chrome */
+    .app-canvas-grow {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
     #canvas-container {
       flex: 1;
       min-width: 0;
+      min-height: 0;
       position: relative;
       overflow: hidden;
     }
@@ -851,6 +862,20 @@
       }
 
       #app { flex-direction: column; }
+
+      /* Fixed drawer must not reserve column height (WebKit/Blink flex + fixed quirk) */
+      #app > #detail-panel {
+        flex: 0 0 0;
+        min-height: 0;
+        align-self: stretch;
+        overflow: visible;
+      }
+      /* Fixed scroll chevrons sit out of flow — zero flex footprint */
+      #app > .scroll-indicator {
+        flex: 0 0 0;
+        min-height: 0;
+        overflow: visible;
+      }
 
       #canvas-container {
         flex: 1;
@@ -1810,6 +1835,7 @@
 
   <!-- ===== MAIN ===== -->
   <main id="app">
+    <div class="app-canvas-grow">
     <div id="canvas-container">
       <svg id="network-svg"></svg>
       <div class="node-tooltip" id="nodeTooltip"></div>
@@ -1817,6 +1843,7 @@
       <div class="canvas-hint" id="canvasHint">
         <div class="canvas-hint-text">Select an attack, then press <button type="button" class="canvas-hint-next" id="canvasHintNext" aria-label="Next step">Next →</button></div>
       </div>
+    </div>
     </div>
     <!-- Scroll chevrons (positioned fixed, outside the scrollable panel) -->
     <div class="scroll-indicator scroll-indicator-up" id="scrollUp">
@@ -4613,7 +4640,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041424').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041425').catch(function() {});
   });
 }
 </script>
