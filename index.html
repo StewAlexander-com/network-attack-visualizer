@@ -699,6 +699,7 @@
       font-size: 0.625rem;
       color: var(--accent-orange);
       z-index: 150;
+      pointer-events: none; /* display-only — do not steal taps from canvas hint / graph */
       box-shadow: 0 10px 26px rgba(0,0,0,0.35);
       opacity: 0;
       transform: translateY(4px);
@@ -880,6 +881,21 @@
       #canvas-container {
         flex: 1;
         min-height: 0;
+      }
+
+      /* Empty-state hint: anchor above the fixed bottom bar (was % — felt “stuck” mid-canvas) */
+      .canvas-hint {
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+        left: 10px;
+        right: 10px;
+      }
+      .canvas-hint-text { max-width: 100%; }
+      .canvas-hint-next {
+        min-height: 40px;
+        padding: 4px 12px;
+        margin: -4px -4px -4px 2px;
+        border-radius: 8px;
+        touch-action: manipulation;
       }
 
       /* Footer hidden on mobile — controls move to bottom bar */
@@ -1605,7 +1621,7 @@
       bottom: 15%;
       display: flex;
       justify-content: center;
-      z-index: 5;
+      z-index: 230; /* above node-overlays (150) / tooltip (200), below mobile bar (250) */
       pointer-events: none;
       opacity: 1;
       transition: opacity 0.5s ease;
@@ -4640,7 +4656,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041425').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041426').catch(function() {});
   });
 }
 </script>
