@@ -796,7 +796,8 @@
     }
 
     /* ===== MOBILE BREAKPOINT ===== */
-    @media (max-width: 768px) {
+    /* Touch phones/tablets only — narrow desktop (e.g. DevTools docked) keeps desktop chrome */
+    @media (max-width: 768px) and (pointer: coarse) {
       html { font-size: 125%; } /* 20px base on mobile — all rem values scale up */
       :root {
         --topbar-height: 48px;
@@ -995,12 +996,12 @@
       background: var(--accent-blue);
       transform: scale(1.4);
     }
-    @media (max-width: 768px) {
+    @media (max-width: 768px) and (pointer: coarse) {
       .attack-dots { display: flex; }
     }
 
-    /* Desktop: hide mobile elements */
-    @media (min-width: 769px) {
+    /* Desktop / fine-pointer narrow viewports: hide mobile-only chrome */
+    @media (min-width: 769px), (max-width: 768px) and (pointer: fine) {
       .mobile-attack-select { display: none; }
       .mobile-bottom-bar { display: none; }
       .drawer-backdrop { display: none !important; }
@@ -1008,7 +1009,7 @@
     }
 
     /* ===== VERY SMALL SCREENS (iPhone SE, 320px) ===== */
-    @media (max-width: 374px) {
+    @media (max-width: 374px) and (pointer: coarse) {
       .logo-text { display: none; }
       .ctrl-btn { width: 36px; height: 36px; }
       .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
@@ -1024,7 +1025,7 @@
     }
 
     /* ===== LANDSCAPE MOBILE ===== */
-    @media (max-width: 768px) and (orientation: landscape) {
+    @media (max-width: 768px) and (pointer: coarse) and (orientation: landscape) {
       :root { --topbar-height: 40px; }
       #detail-panel { max-height: 50vh; }
       .mobile-bottom-bar { padding: 4px 8px; padding-bottom: calc(4px + var(--safe-bottom)); }
@@ -1088,13 +1089,9 @@
       50% { transform: translateY(-6px); }
     }
 
-    /* Position the detail panel as relative anchor for chevrons */
-    @media (max-width: 768px) {
-      #detail-panel { position: fixed; } /* already set, but ensure scroll indicators anchor correctly */
-    }
-    @media (min-width: 769px) {
+    /* Desktop / fine-pointer narrow viewports: sidebar layout; never show scroll chevrons */
+    @media (min-width: 769px), (max-width: 768px) and (pointer: fine) {
       #detail-panel { position: relative; }
-      /* Desktop: disable scroll chevrons entirely (prevents click interception) */
       .scroll-indicator { display: none !important; pointer-events: none !important; }
     }
 
@@ -1454,7 +1451,7 @@
     }
     .swot-text { overflow-wrap: break-word; word-break: break-word; }
     /* Mobile: collapsible SWOT cards */
-    @media (max-width: 768px) {
+    @media (max-width: 768px) and (pointer: coarse) {
       .swot-cell { padding: 0; overflow: hidden; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       .swot-label {
         padding: 10px 12px;
@@ -1908,8 +1905,20 @@
   }
 
   // ===== DEVICE DETECTION =====
+  /** Narrow viewport — used for graph density, labels, padding (not for mobile-only chrome). */
   const isMobile = () => window.innerWidth <= 768;
   const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  /**
+   * Touch-first mobile chrome only (bottom drawer, peek, bottom bar, scroll chevrons).
+   * False on mouse/trackpad desktops even if the viewport is narrow (e.g. DevTools docked).
+   */
+  function useMobileChrome() {
+    if (!isMobile()) return false;
+    try {
+      if (window.matchMedia('(pointer: coarse)').matches) return true;
+    } catch (e) {}
+    return isTouchDevice();
+  }
 
   // ===== STATE =====
   const state = {
@@ -2963,7 +2972,7 @@
     // Add padding so nodes never clip edges
     const pad = isMobile() ? 30 : 40;
 
-    if (isMobile()) {
+    if (useMobileChrome()) {
       // Reserve space for peek bar + bottom bar so nodes never hide behind overlays
       const panel = document.getElementById('detail-panel');
       const peekActive = panel && (panel.classList.contains('peek') || panel.classList.contains('open'));
@@ -3213,7 +3222,7 @@
       .attr('opacity', hopSpec.opacity)
       .attr('filter', hopSpec.opacity > 0.7 ? 'url(#glow)' : null);
 
-    if (label && !isMobile()) {
+    if (label && !useMobileChrome()) {
       g.append('text')
         .attr('class', 'packet-label')
         .attr('dy', -r - 4)
@@ -3397,8 +3406,7 @@
   const scrollDownEl = document.getElementById('scrollDown');
 
   function updateScrollIndicators() {
-    // Mobile-only affordance. Desktop has enough space and these can intercept clicks.
-    if (!isMobile()) return;
+    if (!useMobileChrome()) return;
     const panel = document.getElementById('detail-panel');
     if (!panel || !scrollUpEl || !scrollDownEl) return;
     const tolerance = 8;
@@ -4127,7 +4135,7 @@
     state.playing = true;
 
     // On mobile: open drawer in peek mode (just step header visible)
-    if (isMobile()) {
+    if (useMobileChrome()) {
       const panel = document.getElementById('detail-panel');
       const infoBtn = document.getElementById('mobileInfoBtn');
       const wasPeek = panel && panel.classList.contains('peek');
@@ -4186,7 +4194,7 @@
     // Reset dropdown to show 'Attacks' placeholder
     document.getElementById('mobileAttackSelect').value = '__title';
     // Close drawer on reset (mobile) and re-layout for full canvas
-    if (isMobile()) {
+    if (useMobileChrome()) {
       if (state.drawerOpen) closeDrawer();
       const panel = document.getElementById('detail-panel');
       if (panel && panel.classList.contains('peek')) {
@@ -4276,6 +4284,7 @@
 
   // ===== DRAWER MANAGEMENT =====
   function openDrawer() {
+    if (!useMobileChrome()) return;
     // Poka-yoke: don't open drawer if splash is visible
     const splash = document.getElementById('splashScreen');
     if (splash && !splash.classList.contains('hidden')) return;
@@ -4335,6 +4344,7 @@
 
     // Mobile drawer
     document.getElementById('mobileInfoBtn').addEventListener('click', () => {
+      if (!useMobileChrome()) return;
       const panel = document.getElementById('detail-panel');
       if (state.drawerOpen) {
         closeDrawer();
@@ -4347,12 +4357,14 @@
     });
 
     document.getElementById('drawerBackdrop').addEventListener('click', () => {
+      if (!useMobileChrome()) return;
       if (state.drawerOpen) closeDrawer();
     });
 
     // Tap the peek drawer handle or expand bar to open full drawer
     ['drawer-handle', 'peek-expand-bar'].forEach(cls => {
       document.querySelector('.' + cls)?.addEventListener('click', () => {
+        if (!useMobileChrome()) return;
         const panel = document.getElementById('detail-panel');
         if (panel && panel.classList.contains('peek')) {
           openDrawer();
@@ -4370,7 +4382,19 @@
     // Debounced resize
     window.addEventListener('resize', debounce(() => {
       renderGraph();
-      if (state.drawerOpen) closeDrawer();
+      if (useMobileChrome()) {
+        if (state.drawerOpen) closeDrawer();
+      } else {
+        state.drawerOpen = false;
+        hideChevrons();
+        const panel = document.getElementById('detail-panel');
+        if (panel) panel.classList.remove('open', 'peek');
+        const backdrop = document.getElementById('drawerBackdrop');
+        if (backdrop) {
+          backdrop.classList.remove('visible');
+          backdrop.style.display = 'none';
+        }
+      }
     }, 150));
 
     // Close tooltip on canvas tap
@@ -4381,7 +4405,7 @@
     // SWOT card collapse/expand on mobile — accordion: only one open at a time
     document.getElementById('detail-panel').addEventListener('click', (e) => {
       const cell = e.target.closest('.swot-cell');
-      if (cell && isMobile()) {
+      if (cell && useMobileChrome()) {
         const wasOpen = cell.classList.contains('open');
         // Close all siblings in the same swot-grid
         const grid = cell.closest('.swot-grid');
@@ -4460,7 +4484,7 @@
     function alignDots() {
       const sel = document.getElementById('mobileAttackSelect');
       const dots = document.getElementById('attackDots');
-      if (sel && dots && isMobile()) {
+      if (sel && dots && useMobileChrome()) {
         const r = sel.getBoundingClientRect();
         dots.style.paddingLeft = r.left + 'px';
         dots.style.paddingRight = (window.innerWidth - r.right) + 'px';
@@ -4492,7 +4516,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041416').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041422').catch(function() {});
   });
 }
 </script>
