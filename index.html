@@ -1875,17 +1875,9 @@
 })();
 </script>
 
-<!-- CDN: D3.js with fallback -->
-<script>
-  // CDN resilience: try primary, then fallback, then degrade gracefully
-  window._cdnStatus = { d3: false, lucide: false };
-</script>
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"
-  onerror="document.write('<script src=\'https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js\' onerror=\'window._cdnStatus.d3=false\'><\/script>')"
-  onload="window._cdnStatus.d3=true"></script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"
-  onerror="document.write('<script src=\'https://unpkg.com/lucide@latest/dist/umd/lucide.min.js\' onerror=\'window._cdnStatus.lucide=false\'><\/script>')"
-  onload="window._cdnStatus.lucide=true"></script>
+<!-- D3 + Lucide: vendored so the app works when third-party CDNs are blocked or flaky -->
+<script src="./vendor/d3.min.js"></script>
+<script src="./vendor/lucide.min.js"></script>
 
 <script>
 // ============================================================
@@ -4492,7 +4484,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041105').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041416').catch(function() {});
   });
 }
 </script>
