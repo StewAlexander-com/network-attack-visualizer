@@ -1042,8 +1042,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      pointer-events: auto;
-      cursor: pointer;
+      /* Never block interactions with the app beneath. Only the arrow itself should be clickable. */
+      pointer-events: none;
       z-index: 210;
       opacity: 0;
       transition: opacity 0.3s ease;
@@ -1069,6 +1069,10 @@
       color: #f5e6a3;
       filter: drop-shadow(0 0 8px rgba(245,230,163,0.6));
       animation: chevron-bob 1.2s ease-in-out infinite;
+      pointer-events: auto;
+      cursor: pointer;
+      max-width: 36px;
+      max-height: 36px;
     }
     .scroll-indicator:active .scroll-chevron {
       transform: scale(0.85);
@@ -3398,8 +3402,8 @@
     const panel = document.getElementById('detail-panel');
     if (!panel || !scrollUpEl || !scrollDownEl) return;
     const tolerance = 8;
-    // Only show chevrons when the drawer is actually open on mobile (or always on desktop)
-    const drawerVisible = state.drawerOpen;
+    // Only show chevrons when the drawer is actually open on mobile.
+    const drawerVisible = state.drawerOpen && panel.classList.contains('open');
     const canScrollUp = panel.scrollTop > tolerance;
     const canScrollDown = (panel.scrollHeight - panel.scrollTop - panel.clientHeight) > tolerance;
     scrollUpEl.classList.toggle('visible', drawerVisible && canScrollUp);
