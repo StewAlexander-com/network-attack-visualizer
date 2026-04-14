@@ -1587,6 +1587,7 @@
     }
     .canvas-hint.hidden { opacity: 0; }
     .canvas-hint-text {
+      pointer-events: auto; /* parent .canvas-hint is none — allow clicks on the hint pill */
       font-family: var(--font-ui);
       font-size: 0.95rem;
       font-weight: 500;
@@ -1601,6 +1602,50 @@
     }
     [data-theme="light"] .canvas-hint-text {
       background: rgba(255,255,255,0.85);
+    }
+    .canvas-hint-next {
+      margin: 0;
+      padding: 0 2px;
+      border: none;
+      background: transparent;
+      font: inherit;
+      font-weight: 600;
+      color: var(--accent-blue);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .canvas-hint-next:hover:not(:disabled) {
+      color: var(--text);
+    }
+    .canvas-hint-next:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      text-decoration: none;
+    }
+    .status-next-link {
+      margin: 0;
+      padding: 0 2px;
+      border: none;
+      background: transparent;
+      font: inherit;
+      font-size: inherit;
+      color: var(--accent-blue);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      vertical-align: baseline;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .status-next-link:hover:not(:disabled) {
+      color: var(--accent-blue);
+      filter: brightness(1.15);
+    }
+    .status-next-link:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      text-decoration: none;
     }
 
     /* ===== STEP PROGRESS BAR ===== */
@@ -1770,7 +1815,7 @@
       <div class="node-tooltip" id="nodeTooltip"></div>
       <div class="node-overlays" id="nodeOverlays"></div>
       <div class="canvas-hint" id="canvasHint">
-        <div class="canvas-hint-text">Select an attack, then press <span style="color:var(--accent-blue);font-weight:600">Next →</span></div>
+        <div class="canvas-hint-text">Select an attack, then press <button type="button" class="canvas-hint-next" id="canvasHintNext" aria-label="Next step">Next →</button></div>
       </div>
     </div>
     <!-- Scroll chevrons (positioned fixed, outside the scrollable panel) -->
@@ -4280,11 +4325,39 @@
         setStatus(atEnd ? 'Complete — try another attack or Reset' : 'Step ' + stepNum + ' of ' + total + ' — press Next → to continue');
       }
     }
+    const hintNext = document.getElementById('canvasHintNext');
+    if (hintNext) {
+      hintNext.disabled = nextDisabled;
+      hintNext.classList.toggle('disabled', nextDisabled);
+    }
+    const statusNext = document.querySelector('#statusText .status-next-link');
+    if (statusNext) statusNext.disabled = nextDisabled;
   }
 
   function setStatus(text) {
     const el = document.getElementById('statusText');
-    if (el) el.textContent = text;
+    if (!el) return;
+    const nextCtl = document.getElementById('btnNext');
+    const nextDisabled = !!(nextCtl && nextCtl.disabled);
+    if (useMobileChrome() || text.indexOf('Next →') === -1) {
+      el.textContent = text;
+      return;
+    }
+    el.textContent = '';
+    const parts = text.split('Next →');
+    el.appendChild(document.createTextNode(parts[0]));
+    const nextLink = document.createElement('button');
+    nextLink.type = 'button';
+    nextLink.className = 'status-next-link';
+    nextLink.textContent = 'Next →';
+    nextLink.setAttribute('aria-label', 'Next step');
+    nextLink.disabled = nextDisabled;
+    nextLink.onclick = function(ev) {
+      ev.preventDefault();
+      if (!this.disabled) stepNext();
+    };
+    el.appendChild(nextLink);
+    if (parts[1]) el.appendChild(document.createTextNode(parts[1]));
   }
 
   function toggleTheme() {
@@ -4346,6 +4419,13 @@
     // Desktop transport
     document.getElementById('btnPrev').addEventListener('click', stepPrev);
     document.getElementById('btnNext').addEventListener('click', stepNext);
+    const canvasHintNext = document.getElementById('canvasHintNext');
+    if (canvasHintNext) {
+      canvasHintNext.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!canvasHintNext.disabled) stepNext();
+      });
+    }
     document.getElementById('btnReset').addEventListener('click', reset);
 
     // Mobile transport
@@ -4495,7 +4575,7 @@
     safeExec(renderGraph, 'renderGraph');
     safeExec(() => renderPanel(0), 'renderPanel');
     try { lucide.createIcons(); } catch(e) {}
-    setStatus('Select an attack, then press Next \u2192');
+    safeExec(() => updateControlState(), 'initControls');
 
     // Align dots under the dropdown
     function alignDots() {
@@ -4533,7 +4613,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041423').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041424').catch(function() {});
   });
 }
 </script>
