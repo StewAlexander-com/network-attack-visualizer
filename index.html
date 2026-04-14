@@ -794,8 +794,49 @@
       opacity: 0;
       transition: opacity 0.3s ease;
       -webkit-tap-highlight-color: transparent;
+      pointer-events: none;
     }
-    .drawer-backdrop.visible { opacity: 1; }
+    .drawer-backdrop.visible { opacity: 1; pointer-events: auto; }
+
+    /* Full-drawer close row (touch mobile only; shown via media query when .open) */
+    .drawer-sheet-header {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 12px 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .drawer-sheet-title {
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+    .drawer-sheet-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+      margin: -6px -8px -6px 0;
+      padding: 0;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text);
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .drawer-sheet-close:active {
+      background: var(--surface-2);
+    }
 
     /* Drawer handle */
     .drawer-handle {
@@ -919,6 +960,8 @@
       /* Dim layer above nav while drawer is open */
       .drawer-backdrop {
         z-index: 255;
+        cursor: pointer;
+        touch-action: manipulation;
       }
 
       /* Detail panel — full-height drawer above bottom nav (z-index), standard translateY hide/show */
@@ -940,7 +983,18 @@
         overscroll-behavior-y: contain;
         box-shadow: 0 -12px 40px rgba(0,0,0,0.45);
       }
-      #detail-panel.open { transform: translateY(0); }
+      #detail-panel.open {
+        transform: translateY(0);
+        /* Leave a dimmed band above the sheet so backdrop taps work; still scrolls inside */
+        max-height: min(76dvh, calc(100dvh - var(--topbar-height) - 88px));
+      }
+      #detail-panel.open .drawer-sheet-header {
+        display: flex;
+        position: sticky;
+        top: 0;
+        z-index: 4;
+      }
+      #detail-panel.peek .drawer-sheet-header { display: none !important; }
       /* Taller peek strip so title + expand affordance stay readable */
       #detail-panel.peek { transform: translateY(calc(100% - min(240px, 44vh) - env(safe-area-inset-bottom, 0px))); }
 
@@ -1098,6 +1152,7 @@
     @media (max-width: 768px) and (not (any-pointer: fine)) and (orientation: landscape) {
       :root { --topbar-height: 40px; }
       #detail-panel { max-height: min(88dvh, calc(100dvh - var(--topbar-height) - 88px)); }
+      #detail-panel.open { max-height: min(70dvh, calc(100dvh - var(--topbar-height) - 96px)); }
       .mobile-bottom-bar { padding: 4px 8px; padding-bottom: calc(4px + var(--safe-bottom)); }
       .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
     }
@@ -1896,6 +1951,10 @@
         <svg class="peek-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
         <span class="peek-label">Details</span>
         <svg class="peek-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="drawer-sheet-header" id="drawerSheetHeader">
+        <span class="drawer-sheet-title">Attack details</span>
+        <button type="button" class="drawer-sheet-close" id="drawerCloseBtn" aria-label="Close details panel"><span aria-hidden="true">×</span></button>
       </div>
       <div class="step-progress" id="stepProgress">
         <div class="step-progress-fill" id="stepProgressFill"></div>
@@ -4270,6 +4329,12 @@
         panel.classList.remove('open');
         panel.classList.add('peek');
         state.drawerOpen = false; // not fully open
+        // If the dim layer was left up from a full drawer, clear it (closeDrawer would also remove peek)
+        const backdrop = document.getElementById('drawerBackdrop');
+        if (backdrop && backdrop.style.display === 'block') {
+          backdrop.classList.remove('visible');
+          setTimeout(() => { backdrop.style.display = 'none'; }, 300);
+        }
       }
       if (infoBtn && nextStep === 0) infoBtn.classList.remove('glow');
       // Re-layout nodes on first peek activation so topology clears the peek bar
@@ -4522,6 +4587,16 @@
       if (state.drawerOpen) closeDrawer();
     });
 
+    const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+    if (drawerCloseBtn) {
+      drawerCloseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!useMobileChrome()) return;
+        if (state.drawerOpen) closeDrawer();
+      });
+    }
+
     // Tap the peek drawer handle or expand bar to open full drawer
     ['drawer-handle', 'peek-expand-bar'].forEach(cls => {
       document.querySelector('.' + cls)?.addEventListener('click', () => {
@@ -4677,7 +4752,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041429').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041430').catch(function() {});
   });
 }
 </script>
