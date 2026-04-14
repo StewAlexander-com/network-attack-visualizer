@@ -1090,6 +1090,8 @@
     }
     @media (min-width: 769px) {
       #detail-panel { position: relative; }
+      /* Desktop: disable scroll chevrons entirely (prevents click interception) */
+      .scroll-indicator { display: none !important; pointer-events: none !important; }
     }
 
     /* ===== BROWSER WARNING BANNER ===== */
@@ -3391,11 +3393,13 @@
   const scrollDownEl = document.getElementById('scrollDown');
 
   function updateScrollIndicators() {
+    // Mobile-only affordance. Desktop has enough space and these can intercept clicks.
+    if (!isMobile()) return;
     const panel = document.getElementById('detail-panel');
     if (!panel || !scrollUpEl || !scrollDownEl) return;
     const tolerance = 8;
     // Only show chevrons when the drawer is actually open on mobile (or always on desktop)
-    const drawerVisible = !isMobile() || state.drawerOpen;
+    const drawerVisible = state.drawerOpen;
     const canScrollUp = panel.scrollTop > tolerance;
     const canScrollDown = (panel.scrollHeight - panel.scrollTop - panel.clientHeight) > tolerance;
     scrollUpEl.classList.toggle('visible', drawerVisible && canScrollUp);
