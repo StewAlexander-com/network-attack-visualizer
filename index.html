@@ -795,9 +795,17 @@
       margin: 8px auto 4px;
     }
 
+    /* Peek strip lives in the DOM for touch mode only — default hidden so stray .peek never paints huge SVGs */
+    .peek-expand-bar { display: none; }
+    .peek-expand-bar .peek-chevron {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
     /* ===== MOBILE BREAKPOINT ===== */
-    /* Touch phones/tablets only — narrow desktop (e.g. DevTools docked) keeps desktop chrome */
-    @media (max-width: 768px) and (pointer: coarse) {
+    /* Touch-primary only: any mouse/trackpad/pen with fine control keeps desktop chrome, even on hybrid laptops */
+    @media (max-width: 768px) and (not (any-pointer: fine)) {
       html { font-size: 125%; } /* 20px base on mobile — all rem values scale up */
       :root {
         --topbar-height: 48px;
@@ -996,12 +1004,12 @@
       background: var(--accent-blue);
       transform: scale(1.4);
     }
-    @media (max-width: 768px) and (pointer: coarse) {
+    @media (max-width: 768px) and (not (any-pointer: fine)) {
       .attack-dots { display: flex; }
     }
 
-    /* Desktop / fine-pointer narrow viewports: hide mobile-only chrome */
-    @media (min-width: 769px), (max-width: 768px) and (pointer: fine) {
+    /* Desktop / hybrid with fine pointer: hide mobile-only chrome */
+    @media (min-width: 769px), (max-width: 768px) and (any-pointer: fine) {
       .mobile-attack-select { display: none; }
       .mobile-bottom-bar { display: none; }
       .drawer-backdrop { display: none !important; }
@@ -1009,7 +1017,7 @@
     }
 
     /* ===== VERY SMALL SCREENS (iPhone SE, 320px) ===== */
-    @media (max-width: 374px) and (pointer: coarse) {
+    @media (max-width: 374px) and (not (any-pointer: fine)) {
       .logo-text { display: none; }
       .ctrl-btn { width: 36px; height: 36px; }
       .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
@@ -1025,7 +1033,7 @@
     }
 
     /* ===== LANDSCAPE MOBILE ===== */
-    @media (max-width: 768px) and (pointer: coarse) and (orientation: landscape) {
+    @media (max-width: 768px) and (not (any-pointer: fine)) and (orientation: landscape) {
       :root { --topbar-height: 40px; }
       #detail-panel { max-height: 50vh; }
       .mobile-bottom-bar { padding: 4px 8px; padding-bottom: calc(4px + var(--safe-bottom)); }
@@ -1089,8 +1097,14 @@
       50% { transform: translateY(-6px); }
     }
 
-    /* Desktop / fine-pointer narrow viewports: sidebar layout; never show scroll chevrons */
-    @media (min-width: 769px), (max-width: 768px) and (pointer: fine) {
+    /* Never show scroll chevrons when any fine pointer exists (covers hybrid / mis-reported pointer) */
+    @media (any-pointer: fine) {
+      .scroll-indicator { display: none !important; pointer-events: none !important; }
+      .peek-expand-bar { display: none !important; }
+    }
+
+    /* Desktop / hybrid narrow viewports: sidebar layout; never show scroll chevrons */
+    @media (min-width: 769px), (max-width: 768px) and (any-pointer: fine) {
       #detail-panel { position: relative; }
       .scroll-indicator { display: none !important; pointer-events: none !important; }
     }
@@ -1451,7 +1465,7 @@
     }
     .swot-text { overflow-wrap: break-word; word-break: break-word; }
     /* Mobile: collapsible SWOT cards */
-    @media (max-width: 768px) and (pointer: coarse) {
+    @media (max-width: 768px) and (not (any-pointer: fine)) {
       .swot-cell { padding: 0; overflow: hidden; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       .swot-label {
         padding: 10px 12px;
@@ -1909,15 +1923,18 @@
   const isMobile = () => window.innerWidth <= 768;
   const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   /**
-   * Touch-first mobile chrome only (bottom drawer, peek, bottom bar, scroll chevrons).
-   * False on mouse/trackpad desktops even if the viewport is narrow (e.g. DevTools docked).
+   * Touch-primary mobile chrome (bottom drawer, peek, bottom bar, scroll chevrons).
+   * False if any fine pointer exists (mouse / trackpad / pen), including hybrid touch laptops.
    */
   function useMobileChrome() {
     if (!isMobile()) return false;
     try {
+      if (window.matchMedia('(any-pointer: fine)').matches) return false;
+    } catch (e) {}
+    try {
       if (window.matchMedia('(pointer: coarse)').matches) return true;
     } catch (e) {}
-    return isTouchDevice();
+    return false;
   }
 
   // ===== STATE =====
@@ -4516,7 +4533,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041422').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041423').catch(function() {});
   });
 }
 </script>
