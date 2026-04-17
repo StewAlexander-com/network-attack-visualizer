@@ -730,7 +730,7 @@
       border-top: 1px solid var(--border);
       padding: 8px 0;
       padding-bottom: calc(8px + var(--safe-bottom));
-      z-index: 250;
+      z-index: 270; /* above detail-panel (260) so buttons always work */
       align-items: center;
       justify-content: center;
       gap: 16px;
@@ -801,17 +801,25 @@
     /* Full-drawer close row (touch mobile only; shown via media query when .open) */
     .drawer-sheet-header {
       display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 6px 12px 8px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      padding: 10px 16px 8px;
       border-bottom: 1px solid var(--border);
       background: var(--surface);
       flex-shrink: 0;
     }
+    .drawer-sheet-header .drawer-handle-pill {
+      width: 36px;
+      height: 5px;
+      background: var(--text-muted);
+      border-radius: 3px;
+      margin: 0 auto 8px;
+      opacity: 0.45;
+    }
     .drawer-sheet-title {
       font-family: var(--font-ui);
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: var(--text-muted);
       letter-spacing: 0.02em;
@@ -827,7 +835,7 @@
       border: none;
       border-radius: 10px;
       background: transparent;
-      color: var(--text);
+      color: var(--text-muted);
       font-size: 1.5rem;
       line-height: 1;
       cursor: pointer;
@@ -836,9 +844,10 @@
     }
     .drawer-sheet-close:active {
       background: var(--surface-2);
+      color: var(--text);
     }
 
-    /* Drawer handle */
+    /* Drawer handle (outside header — for peek mode only) */
     .drawer-handle {
       display: none;
       width: 36px;
@@ -846,6 +855,19 @@
       background: var(--border);
       border-radius: 2px;
       margin: 8px auto 4px;
+    }
+
+    /* Bottom scroll-fade hint when drawer content overflows */
+    .drawer-scroll-fade {
+      display: none;
+      position: sticky;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 32px;
+      background: linear-gradient(transparent, var(--surface));
+      pointer-events: none;
+      flex-shrink: 0;
     }
 
     /* Peek strip lives in the DOM for touch mode only — default hidden so stray .peek never paints huge SVGs */
@@ -910,13 +932,19 @@
         flex: 0 0 0;
         min-height: 0;
         align-self: stretch;
-        overflow: visible;
+        overflow: hidden; /* prevent flex height reservation; hidden not visible to avoid content spill */
+      }
+      /* Restore scroll when drawer is open */
+      #app > #detail-panel.open {
+        overflow: hidden; /* shorthand reset */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       /* Fixed scroll chevrons sit out of flow — zero flex footprint */
       #app > .scroll-indicator {
         flex: 0 0 0;
         min-height: 0;
-        overflow: visible;
+        overflow: hidden;
       }
 
       #canvas-container {
@@ -987,6 +1015,8 @@
         transform: translateY(0);
         /* Leave a dimmed band above the sheet so backdrop taps work; still scrolls inside */
         max-height: min(76dvh, calc(100dvh - var(--topbar-height) - 88px));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
       #detail-panel.open .drawer-sheet-header {
         display: flex;
@@ -1953,8 +1983,11 @@
         <svg class="peek-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
       </div>
       <div class="drawer-sheet-header" id="drawerSheetHeader">
-        <span class="drawer-sheet-title">Attack details</span>
-        <button type="button" class="drawer-sheet-close" id="drawerCloseBtn" aria-label="Close details panel"><span aria-hidden="true">×</span></button>
+        <div class="drawer-handle-pill"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <span class="drawer-sheet-title">Attack details</span>
+          <button type="button" class="drawer-sheet-close" id="drawerCloseBtn" aria-label="Close details panel">✕</button>
+        </div>
       </div>
       <div class="step-progress" id="stepProgress">
         <div class="step-progress-fill" id="stepProgressFill"></div>
@@ -1983,6 +2016,7 @@
       </div>
       <div class="panel-section" id="panelDetection"></div>
       <div class="panel-section" id="panelMitigation"></div>
+      <div class="drawer-scroll-fade"></div>
     </aside>
   </main>
 
@@ -3701,7 +3735,7 @@
     // Update peek bar label with step counter
     const peekLbl = document.querySelector('.peek-label');
     if (peekLbl && steps) {
-      peekLbl.textContent = 'Step ' + (stepIdx + 1) + ' of ' + steps.length + ' — Details';
+      peekLbl.textContent = 'Step ' + (stepIdx + 1) + ' of ' + steps.length + ' — tap for details';
     }
 
   }
@@ -4511,6 +4545,14 @@
     const panel = document.getElementById('detail-panel');
     panel.classList.remove('peek'); // exit peek mode
     panel.classList.add('open');
+    panel.scrollTop = 0; // always start at top
+    // Show scroll-fade if content overflows
+    const fade = panel.querySelector('.drawer-scroll-fade');
+    if (fade) {
+      requestAnimationFrame(() => {
+        fade.style.display = panel.scrollHeight > panel.clientHeight + 8 ? 'block' : 'none';
+      });
+    }
     document.getElementById('drawerBackdrop').style.display = 'block';
     requestAnimationFrame(() => document.getElementById('drawerBackdrop').classList.add('visible'));
     // Stop the glow once the user has seen the panel
@@ -4529,10 +4571,15 @@
     state.drawerOpen = false;
     const panel = document.getElementById('detail-panel');
     panel.classList.remove('open');
-    panel.classList.remove('peek');
     document.getElementById('drawerBackdrop').classList.remove('visible');
     setTimeout(() => document.getElementById('drawerBackdrop').style.display = 'none', 300);
     hideChevrons();
+    // If mid-attack, return to peek mode instead of fully hiding
+    if (state.step >= 0 && useMobileChrome()) {
+      panel.classList.add('peek');
+    } else {
+      panel.classList.remove('peek');
+    }
   }
 
   // ===== WIRE CONTROLS =====
@@ -4607,6 +4654,30 @@
         }
       });
     });
+
+    // Swipe-down on drawer header to close
+    const sheetHeader = document.getElementById('drawerSheetHeader');
+    if (sheetHeader) {
+      let startY = 0;
+      sheetHeader.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+      }, { passive: true });
+      sheetHeader.addEventListener('touchend', (e) => {
+        const dy = e.changedTouches[0].clientY - startY;
+        if (dy > 40 && state.drawerOpen) closeDrawer(); // swipe down > 40px
+      }, { passive: true });
+    }
+
+    // Scroll-fade: show/hide bottom gradient when content overflows
+    const panel = document.getElementById('detail-panel');
+    if (panel) {
+      panel.addEventListener('scroll', () => {
+        const fade = panel.querySelector('.drawer-scroll-fade');
+        if (!fade) return;
+        const atBottom = panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 8;
+        fade.style.display = atBottom ? 'none' : 'block';
+      }, { passive: true });
+    }
 
     // Mobile attack select
     document.getElementById('mobileAttackSelect').addEventListener('change', (e) => {
@@ -4752,7 +4823,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041430').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026041741').catch(function() {});
   });
 }
 </script>
