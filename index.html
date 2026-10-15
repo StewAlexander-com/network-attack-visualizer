@@ -880,7 +880,7 @@
 
     /* ===== MOBILE BREAKPOINT ===== */
     /* Touch-primary only: any mouse/trackpad/pen with fine control keeps desktop chrome, even on hybrid laptops */
-    @media (max-width: 768px) and (not (any-pointer: fine)) {
+    @media (max-width: 1000px) {
       html { font-size: 125%; } /* 20px base on mobile — all rem values scale up */
       :root {
         --topbar-height: 48px;
@@ -1150,12 +1150,12 @@
       background: var(--accent-blue);
       transform: scale(1.4);
     }
-    @media (max-width: 768px) and (not (any-pointer: fine)) {
+    @media (max-width: 1000px) {
       .attack-dots { display: flex; }
     }
 
     /* Desktop / hybrid with fine pointer: hide mobile-only chrome */
-    @media (min-width: 769px), (max-width: 768px) and (any-pointer: fine) {
+    @media (min-width: 1001px) {
       .mobile-attack-select { display: none; }
       .mobile-bottom-bar { display: none; }
       .drawer-backdrop { display: none !important; }
@@ -1163,7 +1163,7 @@
     }
 
     /* ===== VERY SMALL SCREENS (iPhone SE, 320px) ===== */
-    @media (max-width: 374px) and (not (any-pointer: fine)) {
+    @media (max-width: 374px) {
       .logo-text { display: none; }
       .ctrl-btn { width: 36px; height: 36px; }
       .mobile-bottom-bar .ctrl-btn { width: 36px; height: 36px; min-width: 36px; }
@@ -1179,7 +1179,7 @@
     }
 
     /* ===== LANDSCAPE MOBILE ===== */
-    @media (max-width: 768px) and (not (any-pointer: fine)) and (orientation: landscape) {
+    @media (max-width: 1000px) and (orientation: landscape) {
       :root { --topbar-height: 40px; }
       #detail-panel { max-height: min(88dvh, calc(100dvh - var(--topbar-height) - 88px)); }
       #detail-panel.open { max-height: min(70dvh, calc(100dvh - var(--topbar-height) - 96px)); }
@@ -1251,7 +1251,7 @@
     }
 
     /* Desktop / hybrid narrow viewports: sidebar layout; never show scroll chevrons */
-    @media (min-width: 769px), (max-width: 768px) and (any-pointer: fine) {
+    @media (min-width: 1001px) {
       #detail-panel { position: relative; }
       .scroll-indicator { display: none !important; pointer-events: none !important; }
     }
@@ -1612,7 +1612,7 @@
     }
     .swot-text { overflow-wrap: break-word; word-break: break-word; }
     /* Mobile: collapsible SWOT cards */
-    @media (max-width: 768px) and (not (any-pointer: fine)) {
+    @media (max-width: 1000px) {
       .swot-cell { padding: 0; overflow: hidden; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       .swot-label {
         padding: 10px 12px;
@@ -1822,6 +1822,104 @@
       z-index: 1;
     }
 
+
+    .swot-label { width: 100%; border: none; background: transparent; color: inherit; font-family: inherit; text-align: left; cursor: pointer; }
+    .rotate-overlay { display: none !important; }
+    /* ===== SCENE COMPOSITION ===== */
+    :root { --nav-height: calc(68px + var(--safe-bottom)); }
+    button, select { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, select:focus-visible, [tabindex]:focus-visible, a:focus-visible {
+      outline: 2px solid var(--accent-blue); outline-offset: 3px;
+    }
+    .ctrl-btn, .theme-toggle { min-width: 44px; min-height: 44px; }
+    .attack-tab { min-height: 44px; }
+    .scene-header { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
+    .scene-eyebrow { font: 500 10px/1.4 var(--font-mono); letter-spacing: .12em; color: var(--text-muted); }
+    .scene-key { display: flex; align-items: center; gap: 6px; font: 11px var(--font-ui); color: var(--text-muted); white-space: nowrap; }
+    .scene-key b { width: 6px; height: 6px; border-radius: 2px; background: var(--accent-blue); transform: rotate(45deg); }
+    .key-dash { width: 16px; height: 1px; background: var(--text-faint); margin-left: 8px; }
+    #canvas-container { background: radial-gradient(ellipse at 45% 40%, rgba(88,166,255,.055), transparent 65%), radial-gradient(var(--border) .65px, transparent .65px); background-size: auto, 24px 24px; overflow: auto; overscroll-behavior: contain; }
+    #network-svg { min-height: 320px; flex: 1 0 auto; height: 100%; }
+    .node-shape { fill: var(--surface); stroke-width: 1.5; filter: drop-shadow(0 4px 5px rgba(0,0,0,.22)); }
+    .node-group:hover .node-shape, .node-group:focus-visible .node-shape { stroke: var(--accent-blue); stroke-width: 2.5; }
+    .node-group:focus-visible { outline: none; }
+    .node-label { font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+    .node-ip { font-size: 10px; fill: var(--text-muted); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+    .node-status { font: 700 9px var(--font-mono); fill: var(--text); text-anchor: middle; pointer-events: none; }
+    .node-owned .node-shape, .node-impacted .node-shape { animation: none; }
+    .node-owned .node-shape { stroke: var(--accent-red); }
+    .node-impacted .node-shape { stroke: var(--accent-orange); }
+    .link-line { stroke: var(--text-faint); stroke-width: 1.2; stroke-opacity: .5; }
+    .flow-trail { pointer-events: none; }
+    .scene-brief { flex: 0 0 auto; padding: 16px 24px 18px; border-top: 1px solid var(--border); background: var(--surface); }
+    .brief-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    #sceneDetails { display: none; border: 0; background: transparent; color: var(--accent-blue); font: 500 12px var(--font-ui); min-height: 44px; padding: 0 4px; }
+    .scene-title { font-size: 16px; line-height: 1.4; margin: 8px 0 12px; max-width: 75ch; }
+    .scene-progress { display: flex; gap: 5px; }
+    .scene-progress span { height: 3px; flex: 1; border-radius: 2px; background: var(--border); }
+    .scene-progress span.done { background: var(--accent-blue); }
+    .canvas-hint { display: none !important; }
+    .attack-dots { display: none !important; }
+    .node-overlay-card { white-space: normal; width: max-content; max-width: min(240px, calc(100% - 20px)); font-size: 11px; line-height: 1.5; }
+    .scroll-indicator { display: none !important; }
+    #detail-panel { overflow-x: hidden; }
+    .step-action, .callout-text, .explain-text { overflow-wrap: anywhere; }
+    .mobile-bottom-bar .mobile-info-btn.glow { animation: none; box-shadow: none; }
+    .mobile-bottom-bar .mobile-info-btn.glow::after { display: none; }
+    .swot-label { min-height: 32px; }
+    @media (max-width: 1000px) {
+      html { font-size: 100%; }
+      :root { --topbar-height: 108px; }
+      #topbar { height: auto; min-height: 108px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: 44px 44px; gap: 4px 12px; padding: 6px 14px 10px; }
+      .logo-text { display: inline; font-size: 15px; }
+      .logo svg { width: 24px; height: 24px; }
+      .controls { grid-column: 2; grid-row: 1; }
+      .mobile-attack-select { grid-column: 1 / -1; grid-row: 2; width: 100%; height: 44px; border: 1px solid var(--border); font-size: 16px; }
+      .scene-header { min-height: 40px; padding: 10px 14px; gap: 8px; }
+      .scene-eyebrow { font-size: 9px; letter-spacing: .08em; }
+      .scene-key { font-size: 10px; }
+      #canvas-container { display: block; }
+      #network-svg { height: 100%; min-height: 240px; }
+      .node-label { font-size: 11px; }
+      .node-ip { font-size: 9px; display: block; }
+      .scene-brief { padding: 0 14px 12px; }
+      .scene-title { font-size: 14px; margin: 0 0 10px; line-height: 1.4; }
+      #sceneDetails { display: inline-flex; align-items: center; gap: 6px; }
+      .mobile-bottom-bar { position: relative; flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1.5fr 1fr 1fr; gap: 8px; padding: 8px 12px; padding-bottom: calc(8px + var(--safe-bottom)); z-index: 240; }
+      .mobile-bottom-bar .ctrl-btn, .mobile-bottom-bar .mobile-info-btn { width: 100%; min-width: 44px; height: 52px; min-height: 52px; border-radius: 10px; gap: 4px; flex-direction: column; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+      .control-label { font: 500 11px var(--font-ui); }
+      #detail-panel, #app > #detail-panel { bottom: var(--nav-height); padding-bottom: 20px; max-height: calc(100dvh - var(--nav-height) - var(--safe-top) - 60px); min-height: 0; visibility: hidden; }
+      #detail-panel.peek { transform: translateY(calc(100% + var(--nav-height))); visibility: hidden; }
+      #app > #detail-panel.open { visibility: visible; transform: translateY(0); max-height: calc(100dvh - var(--nav-height) - var(--safe-top) - 60px); }
+      .drawer-backdrop { z-index: 250; }
+      .drawer-sheet-header { padding: 10px 16px; }
+      #detail-panel.open .drawer-sheet-header { top: 0; }
+      .step-item { font-size: 16px; }
+      .explain-row, .callout, .result-details, .swot-cell { font-size: 15px; line-height: 1.6; }
+      .swot-label { font-size: 12px; min-height: 44px; display: flex; align-items: center; }
+      .attack-title { font-size: 20px; }
+      .section-label, .step-meta { font-size: 11px; }
+    }
+    @media (max-width: 1000px) and (orientation: landscape) {
+      :root { --topbar-height: 56px; }
+      #topbar { min-height: 56px; grid-template-columns: auto minmax(160px, 1fr) auto; grid-template-rows: 44px; padding: 6px 12px; gap: 10px; }
+      .mobile-attack-select { grid-column: 2; grid-row: 1; }
+      .controls { grid-column: 3; }
+      .app-canvas-grow { display: grid; grid-template-columns: minmax(0, 1fr) 230px; grid-template-rows: 36px minmax(0, 1fr); }
+      .scene-header { grid-column: 1; min-height: 36px; }
+      #canvas-container { grid-column: 1; }
+      #network-svg { min-height: 230px; }
+      .scene-brief { grid-column: 2; grid-row: 1 / 3; border-top: none; border-left: 1px solid var(--border); padding: 12px; overflow-y: auto; }
+      .brief-top { flex-wrap: wrap; gap: 0; }
+      .scene-key { display: none; }
+      .node-ip { display: none; }
+      .mobile-bottom-bar { grid-template-columns: repeat(4, minmax(44px, 120px)); justify-content: center; }
+      .mobile-bottom-bar .ctrl-btn, .mobile-bottom-bar .mobile-info-btn { height: 44px; min-height: 44px; flex-direction: row; gap: 8px; }
+      :root { --nav-height: calc(60px + var(--safe-bottom)); }
+    }
+
+    @media (max-width: 1000px) and (max-height: 650px) { .node-ip { display: none; } }
+    #detail-panel.open > .drawer-handle { display: none; }
   </style>
 </head>
 <body>
@@ -1946,6 +2044,7 @@
         </label>
       </div>
 
+      <button class="ctrl-btn sound-toggle" id="soundToggle" aria-label="Enable sound effects" aria-pressed="false" title="Sound off"><i data-lucide="volume-x" style="width:18px;height:18px"></i></button>
       <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle dark/light mode">
         <i data-lucide="moon" style="width:16px;height:16px" id="themeIcon"></i>
       </button>
@@ -1958,14 +2057,20 @@
   <!-- ===== MAIN ===== -->
   <main id="app">
     <div class="app-canvas-grow">
+    <div class="scene-header"><span class="scene-eyebrow">NETWORK TOPOLOGY</span><span class="scene-key"><b></b> Packet flow <span class="key-dash"></span> Connection</span></div>
     <div id="canvas-container">
-      <svg id="network-svg"></svg>
-      <div class="node-tooltip" id="nodeTooltip"></div>
+      <svg id="network-svg" role="group" aria-label="Interactive network topology. Select a device to inspect it."></svg>
+      <div class="node-tooltip" id="nodeTooltip" role="status"></div>
       <div class="node-overlays" id="nodeOverlays"></div>
       <div class="canvas-hint" id="canvasHint">
         <div class="canvas-hint-text">Select an attack, then press <button type="button" class="canvas-hint-next" id="canvasHintNext" aria-label="Next step">Next →</button></div>
       </div>
     </div>
+    <section class="scene-brief" aria-label="Current scenario step">
+      <div class="brief-top"><span id="sceneStep" class="scene-eyebrow">READY · 4 STEPS</span><button type="button" id="sceneDetails" aria-controls="detail-panel" aria-expanded="false">Read details <span aria-hidden="true">↗</span></button></div>
+      <div id="sceneTitle" class="scene-title" aria-live="polite"></div>
+      <div id="sceneProgress" class="scene-progress" aria-hidden="true"></div>
+    </section>
     </div>
     <!-- Scroll chevrons (positioned fixed, outside the scrollable panel) -->
     <div class="scroll-indicator scroll-indicator-up" id="scrollUp">
@@ -2025,10 +2130,10 @@
 
   <!-- Mobile bottom bar -->
   <div class="mobile-bottom-bar" id="mobileBottomBar">
-    <button class="ctrl-btn" id="mBtnPrev" title="Previous step" aria-label="Previous step"><i data-lucide="chevron-left" style="width:18px;height:18px"></i></button>
-    <button class="ctrl-btn" id="mBtnNext" title="Next step" aria-label="Next step" style="background:var(--accent-blue);color:#0d1117;border-color:var(--accent-blue)"><i data-lucide="chevron-right" style="width:18px;height:18px"></i></button>
-    <button class="ctrl-btn" id="mBtnReset" title="Reset" aria-label="Reset"><i data-lucide="rotate-ccw" style="width:18px;height:18px"></i></button>
-    <button class="mobile-info-btn glow" id="mobileInfoBtn" aria-label="Attack details"><i data-lucide="info" style="width:18px;height:18px"></i></button>
+    <button class="ctrl-btn" id="mBtnPrev" title="Previous step" aria-label="Previous step"><i data-lucide="chevron-left" style="width:18px;height:18px"></i><span class="control-label">Back</span></button>
+    <button class="ctrl-btn" id="mBtnNext" title="Next step" aria-label="Next step" style="background:var(--accent-blue);color:#0d1117;border-color:var(--accent-blue)"><i data-lucide="chevron-right" style="width:18px;height:18px"></i><span class="control-label">Start</span></button>
+    <button class="ctrl-btn" id="mBtnReset" title="Reset" aria-label="Reset"><i data-lucide="rotate-ccw" style="width:18px;height:18px"></i><span class="control-label">Reset</span></button>
+    <button class="mobile-info-btn" id="mobileInfoBtn" aria-label="Attack details" aria-controls="detail-panel" aria-expanded="false"><i data-lucide="info" style="width:18px;height:18px"></i><span class="control-label">Details</span></button>
   </div>
 
   <!-- ===== FOOTER (desktop only) ===== -->
@@ -2044,7 +2149,7 @@
       </span>
     </div>
     <div class="footer-right">
-      <span id="statusText">Ready</span>
+      <span id="statusText" role="status">Ready</span>
       <span class="footer-quote">“Elegance decides between success and failure” — Dijkstra</span>
       <a class="footer-link" href="https://github.com/StewAlexander-com/network-attack-visualizer" target="_blank" rel="noopener">
         <i data-lucide="github" style="width:14px;height:14px"></i>
@@ -2121,23 +2226,11 @@
   }
 
   // ===== DEVICE DETECTION =====
-  /** Narrow viewport — used for graph density, labels, padding (not for mobile-only chrome). */
-  const isMobile = () => window.innerWidth <= 768;
+  const isMobile = () => window.innerWidth <= 1000;
   const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  /**
-   * Touch-primary mobile chrome (bottom drawer, peek, bottom bar, scroll chevrons).
-   * False if any fine pointer exists (mouse / trackpad / pen), including hybrid touch laptops.
-   */
-  function useMobileChrome() {
-    if (!isMobile()) return false;
-    try {
-      if (window.matchMedia('(any-pointer: fine)').matches) return false;
-    } catch (e) {}
-    try {
-      if (window.matchMedia('(pointer: coarse)').matches) return true;
-    } catch (e) {}
-    return false;
-  }
+  const useMobileChrome = isMobile;
+  const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reducedMotion = () => motionPreference.matches;
 
   // ===== STATE =====
   const state = {
@@ -2856,25 +2949,8 @@
     scan:    { r: 3, color: '#58a6ff', opacity: 0.7, speed: 200 },
   };
 
-  // ===== FORWARD HOP COLORING (arcade fixed hues) =====
-  // Apply recolor on BOTH:
-  // - incoming to forwarder (prev -> router/switch): neon "invader green"
-  // - outgoing from forwarder (router/switch -> next): arcade magenta/purple
-  // (If both ends are forwarders, prefer outgoing color.)
-  const FORWARDER_TYPES = new Set(['router', 'switch']);
-
-  const FORWARD_COLOR_IN = '#39ff14';   // neon green
-  const FORWARD_COLOR_OUT = '#bc8cff';  // arcade purple (matches MITM palette)
-
   function getHopColor(sourceId, targetId, baseColor) {
-    const s = nodeMap[sourceId];
-    const t = nodeMap[targetId];
-    if (!s || !t) return baseColor;
-    const intoForwarder = FORWARDER_TYPES.has(t.type);
-    const outOfForwarder = FORWARDER_TYPES.has(s.type);
-    if (outOfForwarder) return FORWARD_COLOR_OUT;
-    if (intoForwarder) return FORWARD_COLOR_IN;
-    return baseColor;
+    return baseColor || '#58a6ff';
   }
 
   // ===== PACKET SFX (retro "laser") =====
@@ -2882,7 +2958,7 @@
   // - OpenGameArt: https://opengameart.org/content/lasershootingsx  (laser_shooting_sfx.wav)
   // - Kenney Digital SFX (CC0): https://opengameart.org/content/63-digital-sound-effects-lasers-phasers-space-etc
   const SFX = {
-    enabled: true,
+    enabled: false,
     urls: {
       normal: [
         './assets/audio/kenney_laser1.mp3',
@@ -3062,7 +3138,7 @@
   const nodePulseState = { lastAt: Object.create(null) };
 
   function pulseNodeArrival(nodeId, color) {
-    if (state.outcomeActive) return;
+    if (state.outcomeActive || reducedMotion() || restoringStep) return;
     const n = nodeMap[nodeId];
     if (!n) return;
 
@@ -3096,7 +3172,7 @@
     ring
       .transition()
       .duration(dur)
-      .ease(d3.easeOutCubic)
+      .ease(d3.easeCubicOut)
       .attr('r', expandTo)
       .attr('opacity', 0)
       .on('end', function () {
@@ -3121,7 +3197,7 @@
     state.outcomeActive = true;
     document.documentElement.classList.add('outcome-active');
     const mobile = isMobile();
-    const safeColor = '#3fb950';
+    const safeColor = '#8b949e';
     const impactedColor = '#d29922';
     const ownedColor = '#f85149';
     const strokeW = mobile ? 1.8 : 2.6;
@@ -3145,9 +3221,9 @@
         .attr('fill', 'none')
         .attr('stroke', stroke)
         .attr('stroke-width', strokeW)
-        .attr('stroke-dasharray', isOwned ? null : isImpacted ? '5 6' : '2 0')
+        .attr('stroke-dasharray', isOwned ? null : isImpacted ? '5 6' : '2 4')
         .attr('stroke-linecap', isImpacted ? 'round' : null)
-        .attr('opacity', isOwned ? 0.95 : isImpacted ? 0.88 : 0.75)
+        .attr('opacity', isOwned ? 0.95 : isImpacted ? 0.88 : 0.4)
         .attr('filter', 'url(#glow)')
         .style('pointer-events', 'none');
     });
@@ -3168,61 +3244,47 @@
     }
   }
 
-  function getIconChar(type) {
-    switch(type) {
-      case 'cloud': return '\u2601';
-      case 'router': return '\u25C9';
-      case 'switch': return '\u2263';
-      case 'server': return '\u25A3';
-      case 'workstation': return '\u25A1';
-      case 'attacker': return '\u2620';
-      default: return '\u25CF';
-    }
+  const devicePaths = {
+    cloud: 'M6 18a4 4 0 0 1-.4-8A6.5 6.5 0 0 1 18 8a5 5 0 0 1 0 10Z',
+    router: 'M4 12h16M12 4v16M4 12l3-3M4 12l3 3M20 12l-3-3M20 12l-3 3M12 4l-3 3M12 4l3 3M12 20l-3-3M12 20l3-3',
+    switch: 'M3 7h18v10H3ZM6 11v2M10 11v2M14 11v2M18 11v2',
+    server: 'M4 3h16v7H4ZM4 14h16v7H4ZM7 6h1M7 17h1M12 6h5M12 17h5',
+    workstation: 'M3 4h18v13H3ZM8 21h8M12 17v4',
+    attacker: 'M12 2l8 4v6c0 5-8 10-8 10S4 17 4 12V6ZM12 7v6M12 16v1'
+  };
+
+  function renderNodeStatus(d, g) {
+    const owned = state.owned.has(d.id), impacted = state.impacted.has(d.id);
+    g.attr('aria-label', d.label + ', ' + getRoleName(d.type) + (owned ? ', compromised' : impacted ? ', impacted' : ', no compromise shown'));
+    g.selectAll('.status-badge').remove();
+    if (!owned && !impacted) return;
+    const badge = g.append('g').attr('class', 'status-badge').attr('transform', 'translate(20,-18)');
+    badge.append('circle').attr('r', 8).attr('fill', owned ? '#f85149' : '#d29922').attr('stroke', 'var(--bg)').attr('stroke-width', 2);
+    badge.append('text').attr('class','node-status').attr('dy',3).text('!');
   }
 
   // ===== RENDER GRAPH =====
   function renderGraph() {
-    const rect = container.getBoundingClientRect();
+    const rect = document.getElementById('network-svg').getBoundingClientRect();
     width = rect.width;
     height = rect.height;
-
-    if (width < 10 || height < 10) return; // guard against collapsed container
-
-    // Add padding so nodes never clip edges
-    const pad = isMobile() ? 30 : 40;
-
-    if (useMobileChrome()) {
-      // Reserve space for peek bar + bottom bar so nodes never hide behind overlays
-      const panel = document.getElementById('detail-panel');
-      const peekActive = panel && (panel.classList.contains('peek') || panel.classList.contains('open'));
-      const bottomBarH = 64; // bottom bar height (48px button + 16px padding)
-      const peekH = 120;     // peek strip visible height
-      const safeB = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 0;
-      // When peek/bottom bar are visible, shrink usable canvas height
-      const occluded = peekActive ? (peekH + safeB) : (bottomBarH + safeB);
-      const usableH = height - occluded;
-
-      const mobilePositions = {
-        'internet':  { x: 0.25, y: 0.04 },
-        'gateway':   { x: 0.75, y: 0.04 },
-        'router':    { x: 0.50, y: 0.20 },
-        'server-a':  { x: 0.20, y: 0.38 },
-        'server-b':  { x: 0.80, y: 0.38 },
-        'switch':    { x: 0.50, y: 0.56 },
-        'ws-a':      { x: 0.15, y: 0.76 },
-        'ws-b':      { x: 0.50, y: 0.76 },
-        'attacker':  { x: 0.85, y: 0.76 },
-      };
-      nodes.forEach(n => {
-        const mp = mobilePositions[n.id];
-        if (mp) { n.px = pad + mp.x * (width - pad*2); n.py = pad + mp.y * (usableH - pad*2); }
-      });
-    } else {
-      nodes.forEach(n => {
-        n.px = pad + n.x * (width - pad * 2);
-        n.py = pad + n.y * (height - pad * 2);
-      });
-    }
+    if (width < 10 || height < 10) return;
+    const portrait = useMobileChrome() && width < 650 && window.innerHeight > window.innerWidth;
+    const pad = portrait ? 34 : 48;
+    const graphPositions = portrait ? {
+      internet: [.20,.06], gateway: [.80,.06], router: [.50,.28],
+      'server-a': [.12,.45], 'server-b': [.88,.45], switch: [.50,.59],
+      'ws-a': [.12,.86], 'ws-b': [.50,.86], attacker: [.88,.86]
+    } : {
+      internet: [0,.25], gateway: [.24,.25], router: [.49,.25],
+      'server-a': [.83,.08], 'server-b': [.97,.56], switch: [.49,.63],
+      'ws-a': [.16,.83], 'ws-b': [.49,.94], attacker: [.79,.87]
+    };
+    nodes.forEach(n => {
+      const pos = graphPositions[n.id];
+      n.px = pad + pos[0] * (width - pad * 2);
+      n.py = 28 + pos[1] * (height - 80);
+    });
 
     // Links
     linkGroup.selectAll('.link-line').remove();
@@ -3243,12 +3305,13 @@
       const g = nodeGroup.append('g')
         .attr('class', 'node-group')
         .attr('data-id', d.id)
+        .attr('tabindex', 0).attr('role', 'button')
         .attr('transform', `translate(${d.px}, ${d.py})`);
 
       // Enlarge touch target on mobile
       if (isTouchDevice()) {
         g.append('circle')
-          .attr('r', 30)
+          .attr('r', 24)
           .attr('fill', 'transparent')
           .attr('class', 'touch-target');
       }
@@ -3272,14 +3335,11 @@
           .attr('stroke', shape.stroke);
       }
 
-      const iconSize = isMobile() ? '11px' : '14px';
-      g.append('text')
-        .attr('class', 'node-icon')
-        .attr('text-anchor', 'middle')
-        .attr('dy', '0.35em')
-        .attr('font-size', iconSize)
-        .attr('fill', shape.stroke)
-        .text(getIconChar(d.type));
+      g.append('path').attr('class', 'node-icon')
+        .attr('d', devicePaths[d.type]).attr('transform', 'translate(-10,-10) scale(.8333)')
+        .attr('fill', 'none').attr('stroke', shape.stroke).attr('stroke-width', 1.6)
+        .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      renderNodeStatus(d, g);
 
       const labelDy = d.type === 'switch' ? (isMobile() ? 22 : 28) :
         (shape.shape === 'circle' ? shape.r + (isMobile() ? 12 : 16) : shape.h/2 + (isMobile() ? 12 : 16));
@@ -3305,11 +3365,13 @@
       }
 
       // Event handlers
+      g.on('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showNodeTooltip(event, d); } });
       g.on('click', (event) => {
         event.stopPropagation();
         showNodeTooltip(event, d);
       });
     });
+    if (state.outcomeActive) renderEndStateRings();
   }
 
   // ===== NODE TOOLTIP =====
@@ -3327,30 +3389,17 @@
       ${d.mac ? `<div class="tt-row"><span class="tt-key">MAC</span><span class="tt-val">${d.mac}</span></div>` : ''}
       <div class="tt-row"><span class="tt-key">Role</span><span class="tt-val">${getRoleName(d.type)}</span></div>
       <div class="tt-status ${isOwned ? 'owned' : isImpacted ? 'impacted' : 'secure'}">${
-        isOwned ? '\u26A0 Owned' : isImpacted ? '\u26A0 Impacted (MITM)' : '\u2713 Secure'
+        isOwned ? '\u26A0 Owned' : isImpacted ? '\u26A0 Impacted' : 'No compromise shown'
       }</div>
       ${isTouchDevice() ? '<div style="font-size:0.6rem;color:var(--text-faint);margin-top:6px;text-align:center">tap elsewhere to dismiss</div>' : ''}
     `;
 
-    const rect = container.getBoundingClientRect();
-    const ttW = 200, ttH = 150;
-    let left = d.px + 30;
-    let top = d.py - 20;
-
-    // Clamp to viewport
-    if (left + ttW > rect.width) left = Math.max(10, d.px - ttW - 10);
-    if (top + ttH > rect.height) top = rect.height - ttH - 10;
-    if (top < 0) top = 10;
-    if (left < 0) left = 10;
-
+    tooltip.classList.add('visible');
+    const ttW = tooltip.offsetWidth, ttH = tooltip.offsetHeight;
+    const left = Math.max(10, Math.min(d.px + 26, container.clientWidth - ttW - 10));
+    const top = Math.max(container.scrollTop + 10, Math.min(d.py - ttH / 2, container.scrollTop + container.clientHeight - ttH - 10));
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
-    tooltip.classList.add('visible');
-
-    // Auto-dismiss on mobile after 4s
-    if (isTouchDevice()) {
-      tooltipTimeout = setTimeout(hideNodeTooltip, 4000);
-    }
   }
 
   function hideNodeTooltip() {
@@ -3368,7 +3417,7 @@
   const overlayState = { lastAt: Object.create(null) };
 
   function createNodeOverlayCard(nodeId, html, opts) {
-    if (!overlaysEl) return null;
+    if (!overlaysEl || restoringStep) return null;
     const n = nodeMap[nodeId];
     if (!n) return null;
     const rect = container.getBoundingClientRect();
@@ -3380,12 +3429,16 @@
     if (top < 10) top = 10;
     if (left < 10) left = 10;
 
+    overlaysEl.querySelectorAll('[data-node="' + nodeId + '"]').forEach(el => el.remove());
     const el = document.createElement('div');
+    el.dataset.node = nodeId;
     el.className = 'node-overlay-card' + (opts && opts.kind ? ' ' + opts.kind : '');
-    el.style.left = left + 'px';
-    el.style.top = top + 'px';
     el.innerHTML = html;
     overlaysEl.appendChild(el);
+    left = Math.max(10, Math.min(left, container.clientWidth - el.offsetWidth - 10));
+    top = Math.max(container.scrollTop + 10, Math.min(top, container.scrollTop + container.clientHeight - el.offsetHeight - 10));
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
     requestAnimationFrame(() => el.classList.add('visible'));
     return el;
   }
@@ -3417,9 +3470,33 @@
   }
 
 
+  let playbackGeneration = 0;
+  let restoringStep = false;
+  function scheduleStep(fn, delay) {
+    if (restoringStep) { fn(); return; }
+    const generation = playbackGeneration;
+    const timer = setTimeout(() => {
+      state.animationTimers = state.animationTimers.filter(t => t !== timer);
+      if (generation === playbackGeneration && state.playing) safeExec(fn, 'scheduled-step');
+    }, reducedMotion() ? 0 : delay);
+    state.animationTimers.push(timer);
+    return timer;
+  }
+  function cancelStepAnimation() {
+    playbackGeneration++;
+    state.animationTimers.forEach(clearTimeout);
+    state.animationTimers = [];
+    packetGroup.selectAll('*').interrupt().remove();
+    overlayGroup.selectAll('*').interrupt().remove();
+    state.packetAnimations = [];
+    hideNodeOverlay();
+    hideNodeTooltip();
+  }
+
   // ===== PACKET ANIMATION ENGINE =====
   function animatePacket(sourceId, targetId, spec, label, onComplete) {
-    if (!state.visible) { if (onComplete) onComplete(); return; }
+    if (restoringStep || !state.visible) { if (onComplete) onComplete(); return; }
+    const generation = playbackGeneration;
     const s = nodeMap[sourceId];
     const t = nodeMap[targetId];
     if (!s || !t) { if (onComplete) onComplete(); return; }
@@ -3427,10 +3504,23 @@
     const hopColor = getHopColor(sourceId, targetId, spec && spec.color);
     const hopSpec = spec ? { ...spec, color: hopColor } : spec;
 
-    const duration = hopSpec.speed / state.speed;
+    const duration = reducedMotion() ? 0 : hopSpec.speed / state.speed;
     const r = isMobile() ? Math.max(2, hopSpec.r - 1) : hopSpec.r;
 
     const g = packetGroup.append('g').attr('class', 'packet-dot');
+
+    const angle = Math.atan2(t.py - s.py, t.px - s.px) * 180 / Math.PI;
+    const direction = g.append('path').attr('d', 'M-15,0 L-5,0 M-3,-3 L1,0 L-3,3')
+      .attr('transform', `rotate(${angle})`).attr('fill','none').attr('stroke',hopSpec.color)
+      .attr('stroke-width',1.5).attr('opacity',.8);
+    const directLink = links.some(link => (link.source === sourceId && link.target === targetId) || (link.target === sourceId && link.source === targetId));
+    const mx = (s.px + t.px) / 2, my = (s.py + t.py) / 2;
+    const bend = directLink ? 0 : Math.min(54, Math.hypot(t.px-s.px, t.py-s.py) * .24);
+    const route = `M${s.px},${s.py} Q${mx},${my-bend} ${t.px},${t.py}`;
+    const trail = packetGroup.append('path').attr('class','flow-trail')
+      .attr('d', route).attr('fill','none')
+      .attr('stroke',hopSpec.color).attr('stroke-width',2).attr('opacity',.16);
+    const routeLength = trail.node().getTotalLength();
 
     // SFX: one short "pew" per packet fired (after unlock).
     safeExec(() => playPacketSfx(hopSpec), 'packet-sfx');
@@ -3450,13 +3540,26 @@
         .text(label);
     }
 
+    if (reducedMotion()) {
+      g.remove(); trail.attr('stroke-dasharray', '5 5');
+      if (onComplete) onComplete();
+      return;
+    }
     g.attr('transform', `translate(${s.px}, ${s.py})`);
 
     g.transition()
       .duration(duration)
       .ease(d3.easeLinear)
-      .attr('transform', `translate(${t.px}, ${t.py})`)
+      .attrTween('transform', () => progress => {
+        const point = trail.node().getPointAtLength(routeLength * progress);
+        const ahead = trail.node().getPointAtLength(Math.min(routeLength, routeLength * progress + 1));
+        direction.attr('transform', `rotate(${Math.atan2(ahead.y-point.y, ahead.x-point.x)*180/Math.PI})`);
+        return `translate(${point.x},${point.y})`;
+      })
       .on('end', () => {
+        if (generation !== playbackGeneration) { g.remove(); trail.remove(); return; }
+        trail.remove();
+        state.packetAnimations = state.packetAnimations.filter(packet => packet !== g);
         safeExec(() => pulseNodeArrival(targetId, hopSpec && hopSpec.color), 'arrival-pulse');
         g.remove();
         if (onComplete) safeExec(onComplete, 'packet-callback');
@@ -3467,13 +3570,11 @@
   }
 
   function animatePacketBurst(sourceId, targetId, spec, count, label, stagger) {
+    if (restoringStep) return;
+    if (reducedMotion()) count = 1;
     stagger = (stagger || 50) / state.speed;
     for (let i = 0; i < count; i++) {
-      const timer = setTimeout(() => {
-        if (!state.playing || !state.visible) return;
-        animatePacket(sourceId, targetId, spec, i === 0 ? label : null);
-      }, i * stagger);
-      state.animationTimers.push(timer);
+      scheduleStep(() => animatePacket(sourceId, targetId, spec, i === 0 ? label : null), i * stagger);
     }
   }
 
@@ -3485,7 +3586,7 @@
       ['ws-b','switch'], ['switch','server-a'],
     ];
     state.baselineInterval = setInterval(() => {
-      if (!state.playing || !state.visible) return;
+      if (!state.playing || !state.visible || reducedMotion()) return;
       const route = routes[Math.floor(Math.random() * routes.length)];
       animatePacket(route[0], route[1], PACKET.normal);
     }, 2500 / state.speed);
@@ -3512,6 +3613,8 @@
       state.owned.delete(nodeId);
       g.classed('node-owned', false);
     }
+    renderNodeStatus(nodeMap[nodeId], g);
+    if (state.outcomeActive && !restoringStep) renderEndStateRings();
   }
 
   function setImpacted(nodeId, impacted, noteHtml) {
@@ -3528,6 +3631,8 @@
       state.impacted.delete(nodeId);
       g.classed('node-impacted', false);
     }
+    renderNodeStatus(nodeMap[nodeId], g);
+    if (state.outcomeActive && !restoringStep) renderEndStateRings();
   }
 
   // ===== PACKET TABLE =====
@@ -3583,10 +3688,10 @@
           </div>
           ${step.swot && (step.swot.strength || step.swot.weakness || step.swot.opportunity || step.swot.threat) ? `
           <div class="swot-grid">
-            <div class="swot-cell swot-s"><div class="swot-label">Strength <span class="swot-tap-hint">tap to read</span></div><div class="swot-text">${step.swot.strength || ''}</div></div>
-            <div class="swot-cell swot-w"><div class="swot-label">Weakness <span class="swot-tap-hint">tap to read</span></div><div class="swot-text">${step.swot.weakness || ''}</div></div>
-            <div class="swot-cell swot-o"><div class="swot-label">Opportunity <span class="swot-tap-hint">tap to read</span></div><div class="swot-text">${step.swot.opportunity || ''}</div></div>
-            <div class="swot-cell swot-t"><div class="swot-label">Threat <span class="swot-tap-hint">tap to read</span></div><div class="swot-text">${step.swot.threat || ''}</div></div>
+            <div class="swot-cell swot-s"><button type="button" class="swot-label" aria-expanded="false">Strength <span class="swot-tap-hint">read more</span></button><div class="swot-text">${step.swot.strength || ''}</div></div>
+            <div class="swot-cell swot-w"><button type="button" class="swot-label" aria-expanded="false">Weakness <span class="swot-tap-hint">read more</span></button><div class="swot-text">${step.swot.weakness || ''}</div></div>
+            <div class="swot-cell swot-o"><button type="button" class="swot-label" aria-expanded="false">Opportunity <span class="swot-tap-hint">read more</span></button><div class="swot-text">${step.swot.opportunity || ''}</div></div>
+            <div class="swot-cell swot-t"><button type="button" class="swot-label" aria-expanded="false">Threat <span class="swot-tap-hint">read more</span></button><div class="swot-text">${step.swot.threat || ''}</div></div>
           </div>` : ''}
         </div>
       </li>`;
@@ -3679,7 +3784,8 @@
     // Use getBoundingClientRect for reliable positioning
     const panelTop = panel.getBoundingClientRect().top;
     const elTop = el.getBoundingClientRect().top;
-    const scrollDelta = elTop - panelTop - 24;
+    const headerH = useMobileChrome() ? document.getElementById('drawerSheetHeader').offsetHeight : 0;
+    const scrollDelta = elTop - panelTop - headerH - 16;
     panel.scrollTo({ top: panel.scrollTop + scrollDelta, behavior: 'smooth' });
     setTimeout(updateScrollIndicators, 600);
   }
@@ -3693,9 +3799,14 @@
       if (i === stepIdx) {
         el.classList.add('active');
         // Wait for collapse/expand transitions to settle, then scroll
-        setTimeout(() => scrollPanelToStep(el), 450);
+        if (!restoringStep) {
+          const generation = playbackGeneration;
+          setTimeout(() => { if (generation === playbackGeneration && (!useMobileChrome() || state.drawerOpen)) scrollPanelToStep(el); }, 100);
+        }
       }
     });
+
+    if (restoringStep) return;
 
     // Show finalResult when the last step is active
     const atk = attacks[state.currentAttack];
@@ -3752,7 +3863,7 @@
         addPacketRow('10.0.0.99', 'broadcast', 'ARP', 'who-has 10.0.0.20?', 'ATK');
         animatePacketBurst('attacker', 'ws-a', { ...PACKET.attack, color: '#d29922' }, 5, 'ARP Reply', 120);
         animatePacketBurst('attacker', 'switch', { ...PACKET.attack, color: '#d29922' }, 5, null, 120);
-        setTimeout(() => {
+        scheduleStep(() => {
           animatePacketBurst('switch', 'gateway', { ...PACKET.attack, color: '#d29922' }, 3, 'ARP', 120);
           addPacketRow('10.0.0.99', '192.168.1.1', 'ARP', 'is-at 00:0c:29:at:tk:er', 'ATK');
         }, 1500);
@@ -3760,6 +3871,8 @@
       function() { // Step 1
         setStatus('Step 2: ARP tables poisoned...');
         highlightStep(1);
+        setImpacted('ws-a', true);
+        setImpacted('gateway', true);
         showNodeOverlay('ws-a', 'ARP Table Updated<br>192.168.1.1 → 00:0c:29:at:tk:er');
         addPacketRow('ws-a', 'ARP', 'TABLE', 'gw MAC → attacker', 'WARN');
       },
@@ -3783,7 +3896,7 @@
         highlightStep(3);
         addPacketRow('10.0.0.20', '10.0.0.99', 'HTTP', 'credentials visible', 'ATK');
         for (let i = 0; i < 3; i++) {
-          setTimeout(() => {
+          scheduleStep(() => {
             if (!state.playing) return;
             animatePacket('ws-a', 'switch', PACKET.mitm, null, () => {
               animatePacket('switch', 'attacker', PACKET.mitm, null, () => {
@@ -3804,7 +3917,7 @@
         highlightStep(0);
         addPacketRow('RANDOM', 'switch', 'ETH', 'src=rand MAC', 'ATK');
         for (let i = 0; i < 20; i++) {
-          setTimeout(() => {
+          scheduleStep(() => {
             if (!state.playing) return;
             animatePacket('attacker', 'switch', { ...PACKET.attack, r: 2, speed: 300 });
           }, i * 100);
@@ -3813,6 +3926,7 @@
       function() {
         setStatus('Step 2: CAM table overflow...');
         highlightStep(1);
+        setImpacted('switch', true);
         showNodeOverlay('switch', 'CAM OVERFLOW<br>8192/8192 — FULL');
         addPacketRow('switch', 'ALL', 'WARN', 'CAM overflow', 'WARN');
       },
@@ -3821,7 +3935,7 @@
         highlightStep(2);
         hideNodeOverlay();
         ['ws-a','ws-b','attacker','server-a'].forEach((t, i) => {
-          setTimeout(() => {
+          scheduleStep(() => {
             if (!state.playing) return;
             animatePacket('switch', t, { ...PACKET.attack, color: '#d29922', r: 3 });
           }, i * 300);
@@ -3846,7 +3960,7 @@
         highlightStep(0);
         const ips = ['172.16.99.1','10.255.0.42','203.0.113.7','198.51.100.3','192.0.2.99'];
         for (let i = 0; i < 15; i++) {
-          setTimeout(() => {
+          scheduleStep(() => {
             if (!state.playing) return;
             animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 400 }, i === 0 ? 'SYN' : null, () => {
               animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 400 }, null, () => {
@@ -3860,11 +3974,11 @@
       function() {
         setStatus('Step 2: Server queue saturated...');
         highlightStep(1);
-        setOwned('server-a', true);
+        setImpacted('server-a', true, 'Service impacted<br>Connection queue exhausted');
         const sn = nodeMap['server-a'];
         const pg = overlayGroup.append('g').attr('class','progress-overlay').attr('transform','translate('+(sn.px-30)+','+(sn.py-40)+')');
         pg.append('rect').attr('class','progress-bg').attr('width',60).attr('height',8);
-        pg.append('rect').attr('class','progress-fill').attr('width',0).attr('height',8).transition().duration(3000).attr('width',60);
+        pg.append('rect').attr('class','progress-fill').attr('width',0).attr('height',8).transition().duration(reducedMotion() || restoringStep ? 0 : 3000).attr('width',60);
         pg.append('text').attr('x',30).attr('y',-4).attr('text-anchor','middle').attr('font-family','var(--font-mono)').attr('font-size','9px').attr('fill','#f85149').text('QUEUE FULL');
         addPacketRow('10.0.0.10', 'SYS', 'WARN', 'queue 100%', 'WARN');
       },
@@ -3886,7 +4000,7 @@
         setStatus('Step 1: Exhausting DHCP pool...');
         highlightStep(0);
         for (let i = 0; i < 12; i++) {
-          setTimeout(() => {
+          scheduleStep(() => {
             if (!state.playing) return;
             animatePacket('attacker', 'switch', { ...PACKET.attack, r: 3, speed: 360 }, i === 0 ? 'DISCOVER' : null, () => {
               animatePacket('switch', 'router', { ...PACKET.attack, r: 3, speed: 360 }, null, () => {
@@ -3900,6 +4014,7 @@
       function() {
         setStatus('Step 2: DHCP pool exhausted...');
         highlightStep(1);
+        setImpacted('server-a', true);
         showNodeOverlay('server-a', 'DHCP Pool Exhausted<br>0/254 available');
         addPacketRow('10.0.0.10', 'SYS', 'DHCP', 'pool exhausted', 'WARN');
       },
@@ -3938,6 +4053,7 @@
       function() {
         setStatus('Step 2: Routing table poisoned...');
         highlightStep(1);
+        setImpacted('ws-a', true);
         showNodeOverlay('ws-a', 'Route Updated<br>10.0.0.11 via 10.0.0.99');
         addPacketRow('ws-a', 'SYS', 'ROUTE', '10.0.0.11 via attacker', 'WARN');
       },
@@ -3971,7 +4087,7 @@
         highlightStep(1);
         const targets = ['switch','router','server-a','server-b','ws-b'];
         targets.forEach((t, i) => {
-          setTimeout(() => {
+          scheduleStep(() => {
             if (!state.playing) return;
             animatePacket('ws-a', 'switch', { ...PACKET.scan, speed: 500 }, i === 0 ? 'SCAN' : null, () => {
               if (t === 'switch') return;
@@ -3993,7 +4109,7 @@
           });
         });
         addPacketRow('10.0.0.11', '10.0.0.20', 'TCP', 'SYN-ACK 445 (SMB)', 'WARN');
-        setTimeout(() => {
+        scheduleStep(() => {
           animatePacket('ws-a', 'switch', PACKET.mitm, 'SMB', () => {
             animatePacket('switch', 'router', PACKET.mitm, null, () => {
               animatePacket('router', 'server-b', PACKET.mitm, 'CONNECT');
@@ -4008,7 +4124,7 @@
         setOwned('server-b', true);
         addPacketRow('10.0.0.20', '10.0.0.11', 'SMB', 'COMPROMISED', 'ATK');
         for (let i = 0; i < 3; i++) {
-          setTimeout(() => {
+          scheduleStep(() => {
             if (!state.playing) return;
             animatePacket('server-b', 'router', PACKET.mitm, i === 0 ? 'EXFIL' : null, () => {
               animatePacket('router', 'switch', PACKET.mitm, null, () => {
@@ -4027,7 +4143,7 @@
         highlightStep(0);
         addPacketRow('attacker', 'switch', 'TAP', 'SPAN port mirror', 'ATK');
         animatePacket('attacker', 'switch', { r: 4, color: '#f85149', opacity: 0.8, speed: 800 }, 'TAP');
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           showNodeOverlay('switch', 'SPAN Port Active<br>Mirroring all traffic');
         }, 1000);
@@ -4038,11 +4154,11 @@
         hideNodeOverlay();
         var routes = [['ws-a','switch'],['switch','router'],['router','server-a'],['ws-b','switch'],['switch','server-b']];
         routes.forEach(function(r, i) {
-          setTimeout(function() {
+          scheduleStep(function() {
             if (!state.playing) return;
             animatePacket(r[0], r[1], { r: 3, color: '#58a6ff', opacity: 0.5, speed: 1000 });
             if (r[0] === 'switch' || r[1] === 'switch') {
-              setTimeout(function() {
+              scheduleStep(function() {
                 if (!state.playing) return;
                 animatePacket('switch', 'attacker', { r: 3, color: '#d29922', opacity: 0.7, speed: 600 }, i === 0 ? 'CAPTURE' : null);
               }, 300);
@@ -4084,7 +4200,7 @@
             animatePacket('router', 'server-b', { r: 4, color: '#f85149', opacity: 0.9, speed: 700 }, 'ACCESS');
           });
         });
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           showNodeOverlay('server-b', 'Training DB<br>Access Established');
         }, 2200);
@@ -4095,15 +4211,15 @@
         hideNodeOverlay();
         addPacketRow('attacker', 'server-b', 'WRITE', 'poisoned samples injected', 'ATK');
         animatePacketBurst('attacker', 'switch', { r: 4, color: '#d29922', opacity: 0.9, speed: 600 }, 4, 'POISON', 150);
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           animatePacketBurst('switch', 'router', { r: 4, color: '#d29922', opacity: 0.9, speed: 600 }, 4, null, 150);
         }, 300);
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           animatePacketBurst('router', 'server-b', { r: 4, color: '#d29922', opacity: 0.9, speed: 600 }, 4, null, 150);
         }, 600);
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           showNodeOverlay('server-b', 'Training Data Modified<br>Backdoor trigger planted');
         }, 1800);
@@ -4115,7 +4231,7 @@
         addPacketRow('server-b', 'server-a', 'TRAIN', 'poisoned dataset loaded', 'WARN');
         for (var i = 0; i < 3; i++) {
           (function(idx) {
-            setTimeout(function() {
+            scheduleStep(function() {
               if (!state.playing) return;
               animatePacket('server-b', 'router', { r: 3, color: '#d29922', opacity: 0.6, speed: 900 }, idx === 0 ? 'DATASET' : null, function() {
                 animatePacket('router', 'server-a', { r: 3, color: '#d29922', opacity: 0.6, speed: 900 });
@@ -4123,7 +4239,7 @@
             }, idx * 800);
           })(i);
         }
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           setOwned('server-a', true);
           showNodeOverlay('server-a', 'Model Training<br>Backdoor learned');
@@ -4162,7 +4278,7 @@
             });
           });
         });
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           showNodeOverlay('internet', 'Poisoned doc live<br>Awaiting RAG retrieval');
         }, 3000);
@@ -4177,7 +4293,7 @@
             animatePacket('router', 'server-a', { r: 3, color: '#58a6ff', opacity: 0.7, speed: 800 }, 'AI');
           });
         });
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           addPacketRow('server-a', 'server-b', 'RAG', 'retrieving context docs', 'WARN');
           animatePacket('server-a', 'router', { r: 4, color: '#d29922', opacity: 0.8, speed: 700 }, 'RAG', function() {
@@ -4192,7 +4308,7 @@
         animatePacket('server-b', 'router', { r: 5, color: '#f85149', opacity: 0.9, speed: 700 }, 'POISON', function() {
           animatePacket('router', 'server-a', { r: 5, color: '#f85149', opacity: 0.9, speed: 700 }, 'CONTEXT');
         });
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           setImpacted('server-a', true);
           showNodeOverlay('server-a', 'LLM context poisoned<br>Injected instructions active');
@@ -4208,7 +4324,7 @@
             animatePacket('gateway', 'internet', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'EXFIL');
           });
         });
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           animatePacket('server-a', 'router', { r: 4, color: '#f85149', opacity: 0.8, speed: 800 }, 'RESP', function() {
             animatePacket('router', 'switch', { r: 4, color: '#f85149', opacity: 0.8, speed: 800 }, null, function() {
@@ -4232,7 +4348,7 @@
             });
           });
         });
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           showNodeOverlay('internet', 'Poisoned model live<br>HuggingFace / PyPI');
         }, 3200);
@@ -4247,7 +4363,7 @@
             animatePacket('router', 'server-a', { r: 4, color: '#d29922', opacity: 0.8, speed: 900 }, 'INSTALL');
           });
         });
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           showNodeOverlay('server-a', 'Installing dependency<br>No hash verification');
         }, 2800);
@@ -4259,7 +4375,7 @@
         setOwned('server-a', true);
         addPacketRow('server-a', 'SYS', 'EXEC', 'pickle deserialization RCE', 'ATK');
         showNodeOverlay('server-a', 'Backdoor established<br>Pickle RCE executed');
-        setTimeout(function() {
+        scheduleStep(function() {
           if (!state.playing) return;
           animatePacket('server-a', 'router', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, 'C2 BEACON', function() {
             animatePacket('router', 'gateway', { r: 5, color: '#f85149', opacity: 1.0, speed: 600 }, null, function() {
@@ -4277,7 +4393,7 @@
         addPacketRow('server-a', 'attacker', 'EXFIL', 'model weights + training data', 'ATK');
         for (var i = 0; i < 3; i++) {
           (function(idx) {
-            setTimeout(function() {
+            scheduleStep(function() {
               if (!state.playing) return;
               animatePacket('server-b', 'router', { r: 4, color: '#f85149', opacity: 0.85, speed: 700 }, idx === 0 ? 'STEAL' : null, function() {
                 animatePacket('router', 'server-a', { r: 4, color: '#f85149', opacity: 0.85, speed: 700 }, null, function() {
@@ -4297,6 +4413,7 @@
 
   // ===== TRANSPORT CONTROLS =====
   function replayUpToStep(targetStep) {
+    cancelStepAnimation();
     // Reset visual state
     state.animationTimers.forEach(t => clearTimeout(t));
     state.animationTimers = [];
@@ -4320,10 +4437,13 @@
     const steps = attackStepFunctions[state.currentAttack];
     state.step = -1;
     state.playing = true;
-    for (let i = 0; i <= targetStep; i++) {
-      state.step = i;
-      safeExec(() => steps[i](), 'replay-step-' + i);
-    }
+    restoringStep = true;
+    try {
+      for (let i = 0; i < targetStep; i++) safeExec(() => steps[i](), 'restore-step-' + i);
+    } finally { restoringStep = false; }
+    overlayGroup.selectAll('*').interrupt().remove();
+    state.step = targetStep;
+    safeExec(() => steps[targetStep](), 'replay-step-' + targetStep);
     updateControlState();
   }
 
@@ -4344,6 +4464,7 @@
 
     const nextStep = state.step + 1;
 
+    cancelStepAnimation();
     // Clear animations from current step
     state.animationTimers.forEach(t => clearTimeout(t));
     state.animationTimers = [];
@@ -4353,28 +4474,7 @@
     state.step = nextStep;
     state.playing = true;
 
-    // On mobile: open drawer in peek mode (just step header visible)
-    if (useMobileChrome()) {
-      const panel = document.getElementById('detail-panel');
-      const infoBtn = document.getElementById('mobileInfoBtn');
-      const wasPeek = panel && panel.classList.contains('peek');
-      if (panel) {
-        // Switch to peek mode — shows step title, animation stays visible
-        panel.classList.remove('open');
-        panel.classList.add('peek');
-        state.drawerOpen = false; // not fully open
-        // If the dim layer was left up from a full drawer, clear it (closeDrawer would also remove peek)
-        const backdrop = document.getElementById('drawerBackdrop');
-        if (backdrop && backdrop.style.display === 'block') {
-          backdrop.classList.remove('visible');
-          setTimeout(() => { backdrop.style.display = 'none'; }, 300);
-        }
-      }
-      if (infoBtn && nextStep === 0) infoBtn.classList.remove('glow');
-      // Re-layout nodes on first peek activation so topology clears the peek bar
-      if (!wasPeek) renderGraph();
-    }
-
+    if (state.drawerOpen) closeDrawer(false);
     // Hide the canvas empty-state hint on first step
     if (nextStep === 0) {
       const canvasHint = document.getElementById('canvasHint');
@@ -4394,6 +4494,7 @@
   }
 
   function reset() {
+    cancelStepAnimation();
     state.playing = false;
     state.step = -1;
     state.animationTimers.forEach(t => clearTimeout(t));
@@ -4417,7 +4518,7 @@
     updateControlState();
     hideChevrons();
     // Reset dropdown to show 'Attacks' placeholder
-    document.getElementById('mobileAttackSelect').value = '__title';
+    document.getElementById('mobileAttackSelect').value = state.currentAttack;
     // Close drawer on reset (mobile) and re-layout for full canvas
     if (useMobileChrome()) {
       if (state.drawerOpen) closeDrawer();
@@ -4446,6 +4547,7 @@
     renderPanel(idx);
     document.querySelectorAll('.attack-tab').forEach((tab, i) => tab.classList.toggle('active', i === idx));
     document.getElementById('mobileAttackSelect').value = idx;
+    updateControlState();
     // Update position dots
     document.querySelectorAll('.attack-dot').forEach((dot, i) => dot.classList.toggle('active', i === idx));
   }
@@ -4457,7 +4559,17 @@
     if (!enabled) stopBaselineTraffic();
   }
 
+  function updateSceneBrief() {
+    const attack = attacks[state.currentAttack];
+    const started = state.step >= 0;
+    document.getElementById('sceneStep').textContent = started ? 'STEP ' + (state.step + 1) + ' / ' + attack.steps.length : 'READY · ' + attack.steps.length + ' STEPS';
+    document.getElementById('sceneTitle').textContent = started ? attack.steps[state.step].action : attack.name + ' — follow the packet path, one step at a time.';
+    document.getElementById('sceneProgress').innerHTML = attack.steps.map((_,i) => '<span class="' + (i <= state.step ? 'done' : '') + '"></span>').join('');
+    document.querySelector('#mBtnNext .control-label').textContent = !started ? 'Start' : state.step === attack.steps.length - 1 ? 'Done' : 'Next';
+  }
+
   function updateControlState() {
+    updateSceneBrief();
     const steps = attackStepFunctions[state.currentAttack];
     const atEnd = steps && state.step >= steps.length - 1;
     const prevDisabled = state.step <= 0;
@@ -4536,15 +4648,25 @@
   }
 
   // ===== DRAWER MANAGEMENT =====
+  let drawerReturnFocus = null;
   function openDrawer() {
     if (!useMobileChrome()) return;
     // Poka-yoke: don't open drawer if splash is visible
     const splash = document.getElementById('splashScreen');
     if (splash && !splash.classList.contains('hidden')) return;
+    drawerReturnFocus = document.activeElement;
     state.drawerOpen = true;
     const panel = document.getElementById('detail-panel');
     panel.classList.remove('peek'); // exit peek mode
     panel.classList.add('open');
+    panel.inert = false;
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    document.getElementById('app').querySelector('.app-canvas-grow').inert = true;
+    document.getElementById('topbar').inert = true;
+    document.getElementById('mobileBottomBar').inert = true;
+    ['sceneDetails','mobileInfoBtn'].forEach(id => document.getElementById(id).setAttribute('aria-expanded','true'));
+    document.getElementById('drawerCloseBtn').focus({preventScroll:true});
     panel.scrollTop = 0; // always start at top
     // Show scroll-fade if content overflows
     const fade = panel.querySelector('.drawer-scroll-fade');
@@ -4567,19 +4689,22 @@
     if (scrollDownEl) scrollDownEl.classList.remove('visible');
   }
 
-  function closeDrawer() {
+  function closeDrawer(restoreFocus = true) {
     state.drawerOpen = false;
     const panel = document.getElementById('detail-panel');
-    panel.classList.remove('open');
-    document.getElementById('drawerBackdrop').classList.remove('visible');
-    setTimeout(() => document.getElementById('drawerBackdrop').style.display = 'none', 300);
+    panel.classList.remove('open', 'peek');
+    panel.removeAttribute('role');
+    panel.removeAttribute('aria-modal');
+    panel.inert = useMobileChrome();
+    document.querySelector('.app-canvas-grow').inert = false;
+    document.getElementById('topbar').inert = false;
+    document.getElementById('mobileBottomBar').inert = false;
+    const backdrop = document.getElementById('drawerBackdrop');
+    backdrop.classList.remove('visible');
+    backdrop.style.display = 'none';
+    ['sceneDetails','mobileInfoBtn'].forEach(id => document.getElementById(id).setAttribute('aria-expanded','false'));
     hideChevrons();
-    // If mid-attack, return to peek mode instead of fully hiding
-    if (state.step >= 0 && useMobileChrome()) {
-      panel.classList.add('peek');
-    } else {
-      panel.classList.remove('peek');
-    }
+    if (restoreFocus && drawerReturnFocus && drawerReturnFocus.isConnected) drawerReturnFocus.focus({preventScroll:true});
   }
 
   // ===== WIRE CONTROLS =====
@@ -4592,6 +4717,26 @@
     window.addEventListener('touchstart', unlockOnce, { once: true, passive: true });
     window.addEventListener('click', unlockOnce, { once: true, passive: true });
 
+    document.getElementById('sceneDetails').addEventListener('click', openDrawer);
+    document.getElementById('soundToggle').addEventListener('click', (event) => {
+      SFX.enabled = !SFX.enabled;
+      const button = event.currentTarget;
+      button.setAttribute('aria-pressed', String(SFX.enabled));
+      button.setAttribute('aria-label', SFX.enabled ? 'Mute sound effects' : 'Enable sound effects');
+      button.title = SFX.enabled ? 'Sound on' : 'Sound off';
+      button.innerHTML = '<i data-lucide="' + (SFX.enabled ? 'volume-2' : 'volume-x') + '" style="width:18px;height:18px"></i>';
+      lucide.createIcons();
+      if (SFX.enabled) unlockSfx();
+      else { if (SFX.ctx) SFX.ctx.suspend(); if (SFX.el) SFX.el.pause(); }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') { hideNodeTooltip(); if (state.drawerOpen) closeDrawer(); }
+      if (event.key !== 'Tab' || !state.drawerOpen) return;
+      const focusable = [...document.getElementById('detail-panel').querySelectorAll('button, a, [tabindex="0"]')].filter(el => el.getClientRects().length);
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
     // Desktop transport
     document.getElementById('btnPrev').addEventListener('click', stepPrev);
     document.getElementById('btnNext').addEventListener('click', stepNext);
@@ -4686,23 +4831,17 @@
       selectAttack(parseInt(val));
     });
 
-    // Debounced resize
-    window.addEventListener('resize', debounce(() => {
+    // Observe the actual scene so wrapping, browser chrome and font changes cannot hide nodes.
+    const resizeScene = debounce(() => {
+      if (state.drawerOpen) closeDrawer(false);
+      document.getElementById('detail-panel').inert = useMobileChrome();
+      cancelStepAnimation();
       renderGraph();
-      if (useMobileChrome()) {
-        if (state.drawerOpen) closeDrawer();
-      } else {
-        state.drawerOpen = false;
-        hideChevrons();
-        const panel = document.getElementById('detail-panel');
-        if (panel) panel.classList.remove('open', 'peek');
-        const backdrop = document.getElementById('drawerBackdrop');
-        if (backdrop) {
-          backdrop.classList.remove('visible');
-          backdrop.style.display = 'none';
-        }
-      }
-    }, 150));
+      if (state.step >= 0) replayUpToStep(state.step);
+    }, 100);
+    window.addEventListener('resize', resizeScene);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(resizeScene).observe(container);
+    motionPreference.addEventListener('change', resizeScene);
 
     // Close tooltip on canvas tap
     document.getElementById('canvas-container').addEventListener('click', (e) => {
@@ -4716,9 +4855,10 @@
         const wasOpen = cell.classList.contains('open');
         // Close all siblings in the same swot-grid
         const grid = cell.closest('.swot-grid');
-        if (grid) grid.querySelectorAll('.swot-cell.open').forEach(c => c.classList.remove('open'));
+        if (grid) grid.querySelectorAll('.swot-cell.open').forEach(c => { c.classList.remove('open'); c.querySelector('button').setAttribute('aria-expanded', 'false'); });
         // Toggle the tapped one (if it was closed, open it; if it was open, leave all closed)
         if (!wasOpen) cell.classList.add('open');
+        cell.querySelector('button').setAttribute('aria-expanded', String(!wasOpen));
       }
     });
   }
@@ -4727,12 +4867,6 @@
   function buildTabs() {
     const tabsEl = document.getElementById('attackTabs');
     const selectEl = document.getElementById('mobileAttackSelect');
-    // Default placeholder — shows "Attacks" until user picks one
-    const placeholder = document.createElement('option');
-    placeholder.value = '__title';
-    placeholder.textContent = 'Attacks';
-    placeholder.selected = true;
-    selectEl.appendChild(placeholder);
     attacks.forEach((atk, i) => {
       const tab = document.createElement('button');
       tab.className = 'attack-tab' + (i === 0 ? ' active' : '');
@@ -4745,6 +4879,7 @@
       opt.textContent = atk.name;
       selectEl.appendChild(opt);
     });
+    selectEl.value = state.currentAttack;
     // Build position dots
     const dotsEl = document.getElementById('attackDots');
     if (dotsEl) {
@@ -4786,6 +4921,7 @@
     safeExec(() => renderPanel(0), 'renderPanel');
     try { lucide.createIcons(); } catch(e) {}
     safeExec(() => updateControlState(), 'initControls');
+    document.getElementById('detail-panel').inert = useMobileChrome();
 
     // Align dots under the dropdown
     function alignDots() {
@@ -4806,6 +4942,8 @@
     if (splashCta && splashScreen) {
       splashCta.addEventListener('click', () => {
         splashScreen.classList.add('hidden');
+        splashScreen.inert = true;
+        (useMobileChrome() ? document.getElementById('mobileAttackSelect') : document.getElementById('btnNext')).focus({preventScroll:true});
       });
     }
   }
@@ -4823,7 +4961,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js?v=2026041741').catch(function() {});
+    navigator.serviceWorker.register('./sw.js?v=2026101501').catch(function() {});
   });
 }
 </script>

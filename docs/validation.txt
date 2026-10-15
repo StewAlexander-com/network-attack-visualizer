@@ -1,0 +1,18 @@
+Scenario 1: 4 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 2: 4 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 3: 3 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 4: 4 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 5: 3 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 6: 4 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 7: 4 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 8: 4 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 9: 4 steps, Back, outcome, Reset, reduced motion PASS
+Scenario 10: 4 steps, Back, outcome, Reset, reduced motion PASS
+Animation cancellation, rapid input, rotation, drawer keyboard/scroll, tooltips, theme, sound PASS
+small 320×568: bounds, labels, controls, drawer PASS
+mobile 390×844: bounds, labels, controls, drawer PASS
+landscape 844×390: bounds, labels, controls, drawer PASS
+narrow-mouse 600×800: bounds, labels, controls, drawer PASS
+tablet 1024×768: bounds, labels, controls, drawer PASS
+desktop 1440×900: bounds, labels, controls, drawer PASS
+WebKit unavailable: browserType.launch: Executable doesn't exist at /Users/stewartalexander/Library/Caches/ms-playwright/webkit-2336/pw_run.sh
