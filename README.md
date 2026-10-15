@@ -63,9 +63,9 @@ Every attack maps to a real [MITRE ATT&CK](https://attack.mitre.org) technique I
   <img src="screenshots/desktop-step.png" alt="Desktop view showing ARP Spoofing step 2 with SWOT grid" width="700">
 </p>
 
-### Mobile — Step-Through with Detail Drawer
+### Mobile — Step-Through with Persistent Summary
 <p align="center">
-  <img src="screenshots/mobile-step.png" alt="Mobile view showing attack step detail in bottom drawer" width="300">
+  <img src="screenshots/mobile-step.png" alt="Mobile topology with a persistent step summary and labeled controls" width="300">
 </p>
 
 ---
@@ -149,8 +149,8 @@ Tap any node during an attack to see its IP, MAC, role, and compromise state.
 ### Design
 - **Poka-yoke controls** — invalid actions are disabled, not hidden
 - **Self-documenting UI** — every state tells you what to do next
-- **Peek mode** — minimal info strip during animation, tap to expand full details
-- **Layout-aware canvas** — topology auto-scales to clear UI overlays on every screen size
+- **Persistent step summary** — full current action and progress stay beside the graph; Details opens a keyboard-accessible drawer
+- **Layout-aware canvas** — graph, summary, and controls occupy separate layout regions; portrait and landscape use dedicated compositions
 - **Dark/Light mode** toggle (warm gray light theme, not blinding white)
 - **Responsive** — portrait mobile, landscape, tablet, desktop
 - **PWA** — add to home screen, works offline
@@ -164,7 +164,9 @@ Tap any node during an attack to see its IP, MAC, role, and compromise state.
 - **Debounced resize** — no layout thrashing
 - **`prefers-reduced-motion`** respected
 - **Safe area insets** for notched phones
-- **Proportional glows** — ring effects scale with node size per viewport
+- **Professional vector graphics** — equipment icons, directional packet trails, restrained arrival feedback, and explicit device-state badges
+- **Opt-in sound** — a visible sound toggle starts muted
+- **Reliable step changes** — playback timers and transitions are cancelled when changing steps or scenarios
 
 ---
 
@@ -181,6 +183,10 @@ Tap any node during an attack to see its IP, MAC, role, and compromise state.
 No React. No build step. No bundler. No Node.
 
 ---
+
+## Mobile and Visual Review
+
+The [ten-pass review](docs/ten-pass-review.md) records the mobile fixes, graphics decisions, regression results, and testing limits. The app still runs as a static page without a build step.
 
 ## Run Locally
 
@@ -225,11 +231,11 @@ Open Graph and Twitter Card meta tags are included. Sharing the link on LinkedIn
 | Step-through (not auto-play) | Users absorb more when they control pace. Based on user testing. |
 | SWOT per step (not per attack) | Defenses are context-dependent. ARP step 1 needs different controls than step 3. |
 | Poka-yoke button states | Disabled buttons > hidden buttons. User sees the full control set, understands the flow. |
-| 125% base font on mobile | Tested with users wearing glasses. Readability > information density. |
+| Dedicated compact layout | Full-width scenario selector, labeled controls, readable step summary, and separate portrait/landscape graph compositions. |
 | Collapsible SWOT on mobile | 4 stacked cards exceed 40vh drawer. Accordion keeps the drawer manageable. |
 | CDN with fallback chain | jsDelivr → cdnjs → unpkg. App must load even if one CDN is down. |
-| Peek mode vs. full drawer | Animation must stay visible. Peek shows step counter + title; tap expands details. |
-| Layout-aware node positioning | Canvas subtracts peek bar + bottom bar height so nodes never render behind overlays. |
+| Summary vs. full drawer | Current step stays in normal layout flow. Details opens a modal sheet with keyboard focus management. |
+| Layout-aware node positioning | Nodes use the rendered SVG dimensions. The graph does not reserve guessed heights for overlays. |
 | No framework | D3 is the only dependency that earns its place. Everything else is vanilla. |
 
 ---
