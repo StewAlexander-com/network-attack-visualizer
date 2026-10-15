@@ -150,4 +150,4 @@ Built by **[Stew Alexander](https://www.stewalexander.com/)**: infrastructure, s
 
 ## License
 
-The project’s existing license declaration is **MIT**. A standalone `LICENSE` file is not currently included in the repository.
+Licensed under the [MIT License](LICENSE). Copyright (c) 2026 Stew Alexander.
