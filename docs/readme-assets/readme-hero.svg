@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="370" viewBox="0 0 1000 370" role="img" aria-labelledby="title desc">
+<title id="title">Follow the packet. Understand the risk.</title><desc id="desc">Editorial artwork for NetAttack.viz in navy, ivory, muted gold and pale teal. Abstract connections suggest a network; this is not a topology diagram.</desc>
+<rect width="1000" height="370" rx="16" fill="#131e26"/>
+<path d="M28 1L972 1" fill="none" stroke="#d9bd8e" stroke-width="2" />
+<text x="32" y="46" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="1.5">STEW ALEXANDER  /  PRACTICAL TOOLS</text>
+<text x="32" y="112" fill="#f7f3e9" font-family="Georgia, Times New Roman, serif" font-size="58" >Follow the packet.</text>
+<text x="32" y="178" fill="#f7f3e9" font-family="Georgia, Times New Roman, serif" font-size="58" >Understand the risk.</text>
+<text x="34" y="228" fill="#bfccd3" font-family="Arial, Helvetica, sans-serif" font-size="22" >Network security, one visible step at a time.</text>
+<path d="M650 158L735 122" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M735 122L820 185" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M820 185L900 112" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M900 112L954 169" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<circle cx="650" cy="158" r="10" fill="#1e2d36" stroke="#b9dcd6" stroke-width="2"/>
+<circle cx="735" cy="122" r="10" fill="#1e2d36" stroke="#b9dcd6" stroke-width="2"/>
+<circle cx="820" cy="185" r="14" fill="#1e2d36" stroke="#d9bd8e" stroke-width="2"/>
+<circle cx="900" cy="112" r="10" fill="#1e2d36" stroke="#b9dcd6" stroke-width="2"/>
+<circle cx="954" cy="169" r="10" fill="#1e2d36" stroke="#b9dcd6" stroke-width="2"/>
+<path d="M32 294L968 294" fill="none" stroke="#354953" stroke-width="2" />
+<text x="32" y="328" fill="#b9dcd6" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="1">10 SCENARIOS</text>
+<text x="250" y="328" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="1">38 GUIDED STEPS</text>
+<text x="640" y="328" fill="#bfccd3" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="1.5">LEARN AT YOUR OWN PACE</text>
+</svg>

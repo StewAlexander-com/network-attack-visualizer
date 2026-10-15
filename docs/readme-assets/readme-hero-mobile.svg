@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480" role="img" aria-labelledby="title desc">
+<title id="title">Follow the packet. Understand the risk.</title><desc id="desc">Editorial artwork for NetAttack.viz in navy, ivory, muted gold and pale teal. Abstract connections suggest a network; this is not a topology diagram.</desc>
+<rect width="480" height="480" rx="16" fill="#131e26"/>
+<path d="M28 1L452 1" fill="none" stroke="#d9bd8e" stroke-width="2" />
+<text x="32" y="46" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="1.5">STEW ALEXANDER  /  PRACTICAL TOOLS</text>
+<text x="32" y="112" fill="#f7f3e9" font-family="Georgia, Times New Roman, serif" font-size="42" >Follow the packet.</text>
+<text x="32" y="168" fill="#f7f3e9" font-family="Georgia, Times New Roman, serif" font-size="42" >Understand the risk.</text>
+<text x="32" y="213" fill="#bfccd3" font-family="Arial, Helvetica, sans-serif" font-size="18" >Network security, one visible step at a time.</text>
+<path d="M54 323L150 294" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M150 294L242 345" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M242 345L346 284" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M346 284L425 332" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<circle cx="54" cy="323" r="10" fill="#1e2d36" stroke="#b9dcd6" stroke-width="2"/>
+<circle cx="150" cy="294" r="10" fill="#1e2d36" stroke="#b9dcd6" stroke-width="2"/>
+<circle cx="242" cy="345" r="14" fill="#1e2d36" stroke="#d9bd8e" stroke-width="2"/>
+<circle cx="346" cy="284" r="10" fill="#1e2d36" stroke="#b9dcd6" stroke-width="2"/>
+<circle cx="425" cy="332" r="10" fill="#1e2d36" stroke="#b9dcd6" stroke-width="2"/>
+<path d="M32 404L448 404" fill="none" stroke="#354953" stroke-width="2" />
+<text x="32" y="438" fill="#b9dcd6" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="1">10 SCENARIOS</text>
+<text x="245" y="438" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="1">38 GUIDED STEPS</text>
+</svg>
