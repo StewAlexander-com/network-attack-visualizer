@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="268" viewBox="0 0 1000 268" role="img" aria-labelledby="title desc">
+<title id="title">Choose, observe, explain, defend</title><desc id="desc">Four steps: choose a scenario, observe packet direction, explain what changed and why, then compare detection and defensive controls.</desc>
+<rect width="1000" height="268" rx="16" fill="#131e26"/>
+<text x="28" y="38" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="13" letter-spacing="1">FROM A MOVING PACKET TO A USEFUL QUESTION</text>
+<text x="28" y="100" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="16" >01</text>
+<text x="28" y="144" fill="#f7f3e9" font-family="Georgia, Times New Roman, serif" font-size="32" >Choose</text>
+<text x="28" y="184" fill="#bfccd3" font-family="Arial, Helvetica, sans-serif" font-size="17" >Pick a scenario.</text>
+<path d="M98 94L235 94" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M228 88l7 6-7 6" fill="none" stroke="#b9dcd6" stroke-width="2"/>
+<text x="273" y="100" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="16" >02</text>
+<text x="273" y="144" fill="#f7f3e9" font-family="Georgia, Times New Roman, serif" font-size="32" >Observe</text>
+<text x="273" y="184" fill="#bfccd3" font-family="Arial, Helvetica, sans-serif" font-size="17" >Follow packet direction.</text>
+<path d="M343 94L480 94" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M473 88l7 6-7 6" fill="none" stroke="#b9dcd6" stroke-width="2"/>
+<text x="518" y="100" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="16" >03</text>
+<text x="518" y="144" fill="#f7f3e9" font-family="Georgia, Times New Roman, serif" font-size="32" >Explain</text>
+<text x="518" y="184" fill="#bfccd3" font-family="Arial, Helvetica, sans-serif" font-size="17" >What changed, and why?</text>
+<path d="M588 94L725 94" fill="none" stroke="#b9dcd6" stroke-width="2" />
+<path d="M718 88l7 6-7 6" fill="none" stroke="#b9dcd6" stroke-width="2"/>
+<text x="763" y="100" fill="#d9bd8e" font-family="Arial, Helvetica, sans-serif" font-size="16" >04</text>
+<text x="763" y="144" fill="#f7f3e9" font-family="Georgia, Times New Roman, serif" font-size="32" >Defend</text>
+<text x="763" y="184" fill="#bfccd3" font-family="Arial, Helvetica, sans-serif" font-size="17" >Compare detection</text>
+<text x="763" y="207" fill="#bfccd3" font-family="Arial, Helvetica, sans-serif" font-size="17" >and controls.</text>
+</svg>
